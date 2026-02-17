@@ -248,13 +248,12 @@
           <div>
             <label for="rStop">stop（終點，不包含）</label>
             <input id="rStop" type="number" value="5" />
-            <div class="smallNote">例：range(1,5) 會產生 1,2,3,4</div>
           </div>
         </div>
 
         <div class="grid" style="margin-top:12px;">
           <div>
-            <label for="stepMode">step（中學常見：+1 / -1）</label>
+            <label for="stepMode">step</label>
             <select id="stepMode">
               <option value="auto" selected>自動（start&lt;stop 用 +1；start&gt;stop 用 -1）</option>
               <option value="plus">+1</option>
@@ -262,7 +261,7 @@
             </select>
           </div>
           <div>
-            <label for="bodyMode">每一輪做咩？（迴圈內容）</label>
+            <label for="bodyMode">每一輪做咩？（Loop body 迴圈內容）</label>
             <select id="bodyMode">
               <option value="print">print(i)</option>
               <option value="stars">print("*" * i)（常見圖案題）</option>
@@ -302,15 +301,15 @@
         <label style="margin-top:12px;">range 產生嘅數字（輸送帶示意）</label>
         <div class="belt" id="belt"></div>
 
-        <label style="margin-top:12px;">顯示給學生的 Python 程式碼</label>
+        <label style="margin-top:12px;">Python 程式碼</label>
         <div class="mono" id="codeBox"></div>
 
         <label style="margin-top:12px;">輸出 / Console</label>
         <div class="console" id="console"></div>
 
         <p class="hint">
-          建議教法：每次按「下一步」之前，先問學生「下一個 i 會係幾多？」<br/>
-          之後再問：「點解 stop（終點）唔會出現？」→ 強調 <b>range 的 stop 不包含</b>。
+          每次按「下一步」之前，先想一下「下一個 i 會係幾多？」<br/>
+          點解 stop（終點）唔會出現？ → <b>range 產生嘅數字不包含stop </b>。
         </p>
       </div>
     </section>
@@ -538,5 +537,6 @@
 </script>
 </body>
 </html>
+
 
 
