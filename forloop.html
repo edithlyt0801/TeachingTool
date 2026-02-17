@@ -1,0 +1,542 @@
+
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python for-each（range）互動教學工具</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --text:#eaf0ff;
+      --muted:#b9c6ff;
+      --border:rgba(255,255,255,.12);
+      --focus:#6aa8ff;
+      --shadow: 0 10px 25px rgba(0,0,0,.25);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Segoe UI, Roboto, Helvetica, Arial;
+    }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color:var(--text);
+      background: radial-gradient(1200px 700px at 20% 0%, #1a2a66 0%, var(--bg) 45%, #070a14 100%);
+    }
+    header{
+      padding: 24px 16px 8px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    h1{
+      font-size: clamp(20px, 2.6vw, 34px);
+      margin: 0 0 8px;
+      letter-spacing: .2px;
+    }
+    .sub{
+      color: var(--muted);
+      margin: 0 0 8px;
+      line-height: 1.6;
+    }
+    main{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card h2{
+      margin:0;
+      padding: 14px 16px;
+      font-size: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+    }
+    .content{ padding: 16px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    label{ font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px;}
+    input,button,select{
+      font-family: var(--sans);
+      font-size: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus{
+      border-color: rgba(106,168,255,.7);
+      box-shadow: 0 0 0 3px rgba(106,168,255,.18);
+    }
+    button{
+      cursor: pointer;
+      background: linear-gradient(180deg, rgba(106,168,255,.35), rgba(106,168,255,.18));
+      border-color: rgba(106,168,255,.5);
+      transition: transform .05s ease, filter .1s ease;
+      user-select: none;
+    }
+    button:active{ transform: translateY(1px); }
+    button.secondary{
+      background: rgba(255,255,255,.06);
+      border-color: var(--border);
+    }
+    button.danger{
+      background: rgba(255,90,95,.16);
+      border-color: rgba(255,90,95,.45);
+    }
+    button:disabled{
+      opacity: .5;
+      cursor: not-allowed;
+      filter: grayscale(.3);
+    }
+
+    .row{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .row button{ width:auto; }
+
+    .belt{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      padding: 10px;
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      min-height: 64px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .tile{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.05);
+      font-family: var(--mono);
+      min-width: 44px;
+      text-align: center;
+    }
+    .tile.current{
+      border-color: rgba(106,168,255,.9);
+      box-shadow: 0 0 0 3px rgba(106,168,255,.25);
+      background: rgba(106,168,255,.12);
+    }
+    .tile.done{ opacity: .65; }
+
+    .status{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .badge{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      font-family: var(--mono);
+    }
+    .kv{
+      display:flex;
+      flex-direction: column;
+      gap:6px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      min-width: 180px;
+    }
+    .kv .k{ color: var(--muted); font-size: 12px; }
+    .kv .v{ font-family: var(--mono); font-size: 14px; }
+
+    .mono{
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre;
+      overflow:auto;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      margin-top: 12px;
+    }
+    .console{
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.26);
+      min-height: 140px;
+      white-space: pre-wrap;
+      overflow:auto;
+      margin-top: 12px;
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+    .smallNote{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Python for 迴圈（range）互動教學工具</h1>
+    <p class="sub">
+      中學常用：<b>for i in range(start, stop)</b>（stop 不包含）。按「下一步」逐輪示範 loop variable 變化及輸出。
+    </p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>互動模擬器（只用 range）</h2>
+      <div class="content">
+
+        <div class="grid">
+          <div>
+            <label for="varName">迴圈變數名（例如 i）</label>
+            <input id="varName" type="text" value="i" />
+          </div>
+          <div>
+            <label for="rStart">start（起點，包含）</label>
+            <input id="rStart" type="number" value="1" />
+          </div>
+          <div>
+            <label for="rStop">stop（終點，不包含）</label>
+            <input id="rStop" type="number" value="5" />
+            <div class="smallNote">例：range(1,5) 會產生 1,2,3,4</div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:12px;">
+          <div>
+            <label for="stepMode">step（中學常見：+1 / -1）</label>
+            <select id="stepMode">
+              <option value="auto" selected>自動（start&lt;stop 用 +1；start&gt;stop 用 -1）</option>
+              <option value="plus">+1</option>
+              <option value="minus">-1</option>
+            </select>
+          </div>
+          <div>
+            <label for="bodyMode">每一輪做咩？（迴圈內容）</label>
+            <select id="bodyMode">
+              <option value="print">print(i)</option>
+              <option value="stars">print("*" * i)（常見圖案題）</option>
+              <option value="sum">加總 total = total + i</option>
+            </select>
+          </div>
+          <div>
+            <label for="speed">播放速度</label>
+            <select id="speed">
+              <option value="900">慢</option>
+              <option value="550" selected>正常</option>
+              <option value="250">快</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="btnBuild" class="secondary">建立 range</button>
+          <button id="btnReset" class="secondary">重設</button>
+          <button id="btnStep">下一步</button>
+          <button id="btnPlay" class="secondary">播放</button>
+          <button id="btnStop" class="danger" disabled>停止</button>
+        </div>
+
+        <div class="status">
+          <div class="pill"><span class="badge">Round</span><span id="round">0</span></div>
+          <div class="kv">
+            <div class="k">迴圈變數目前值</div>
+            <div class="v" id="varValue">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">total（加總模式）</div>
+            <div class="v" id="totalValue">0</div>
+          </div>
+        </div>
+
+        <label style="margin-top:12px;">range 產生嘅數字（輸送帶示意）</label>
+        <div class="belt" id="belt"></div>
+
+        <label style="margin-top:12px;">顯示給學生的 Python 程式碼</label>
+        <div class="mono" id="codeBox"></div>
+
+        <label style="margin-top:12px;">輸出 / Console</label>
+        <div class="console" id="console"></div>
+
+        <p class="hint">
+          建議教法：每次按「下一步」之前，先問學生「下一個 i 會係幾多？」<br/>
+          之後再問：「點解 stop（終點）唔會出現？」→ 強調 <b>range 的 stop 不包含</b>。
+        </p>
+      </div>
+    </section>
+  </main>
+
+<script>
+  // ---------- 狀態 ----------
+  let items = [];
+  let idx = 0;
+  let round = 0;
+  let playing = false;
+  let timer = null;
+  let total = 0;
+
+  const el = (id) => document.getElementById(id);
+
+  // ---------- 工具 ----------
+  function setConsole(text){ el("console").textContent = text; }
+  function log(line){
+    const c = el("console");
+    c.textContent += (c.textContent ? "\n" : "") + line;
+    c.scrollTop = c.scrollHeight;
+  }
+
+  function getStep(){
+    const mode = el("stepMode").value;
+    const start = Number(el("rStart").value);
+    const stop  = Number(el("rStop").value);
+
+    if(mode === "plus") return 1;
+    if(mode === "minus") return -1;
+
+    // auto
+    if(start < stop) return 1;
+    if(start > stop) return -1;
+    return 1; // start == stop，無所謂
+  }
+
+  // 只示範 step = ±1（符合大部分中學教材）
+  function buildRange(){
+    stopAuto();
+    setConsole("");
+
+    idx = 0;
+    round = 0;
+    total = 0;
+    el("round").textContent = "0";
+    el("varValue").textContent = "—";
+    el("totalValue").textContent = "0";
+
+    const start = Number(el("rStart").value);
+    const stop  = Number(el("rStop").value);
+    const step  = getStep();
+
+    items = [];
+
+    // Python range(start, stop, step) 的 stop 仍然「不包含」
+    // 這裡簡化：只做 step = ±1
+    if(step === 1){
+      for(let i = start; i < stop; i += 1) items.push(i);
+    } else {
+      for(let i = start; i > stop; i -= 1) items.push(i);
+    }
+
+    renderBelt();
+    updateCodeBox();
+
+    if(items.length === 0){
+      log("range 係空：冇數字可以走（可能 start == stop，或方向唔啱）。");
+    } else {
+      log(`已建立 range，共 ${items.length} 個數字。按「下一步」開始。`);
+    }
+  }
+
+  function updateCodeBox(){
+    const vname = (el("varName").value || "i").trim();
+    const start = Number(el("rStart").value);
+    const stop  = Number(el("rStop").value);
+    const step  = getStep();
+    const body  = el("bodyMode").value;
+
+    let header = "";
+    if(step === 1){
+      header = `for ${vname} in range(${start}, ${stop}):`;
+    } else {
+      // 為咗教學清晰，展示 range(start, stop, -1)
+      header = `for ${vname} in range(${start}, ${stop}, -1):`;
+    }
+
+    let bodyCode = "";
+    if(body === "print"){
+      bodyCode = `    print(${vname})`;
+    } else if(body === "stars"){
+      bodyCode = `    print("*" * ${vname})`;
+    } else if(body === "sum"){
+      bodyCode = `    total = total + ${vname}`;
+      header = `total = 0\n` + header;
+      bodyCode = bodyCode + `\nprint(total)`;
+    }
+
+    el("codeBox").textContent = header + "\n" + bodyCode;
+  }
+
+  function renderBelt(){
+    const belt = el("belt");
+    belt.innerHTML = "";
+    if(items.length === 0){
+      const span = document.createElement("span");
+      span.className = "badge";
+      span.textContent = "未建立 range（或 range 係空）";
+      belt.appendChild(span);
+      return;
+    }
+    items.forEach((val, i) => {
+      const t = document.createElement("div");
+      t.className = "tile";
+      if(i < idx) t.classList.add("done");
+      if(i === idx) t.classList.add("current");
+      t.textContent = String(val);
+      belt.appendChild(t);
+    });
+  }
+
+  function stepOnce(){
+    if(items.length === 0){
+      log("請先按「建立 range」。");
+      return;
+    }
+    if(idx >= items.length){
+      log("迴圈已完成（冇更多數字）。");
+      stopAuto();
+      return;
+    }
+
+    round += 1;
+    el("round").textContent = String(round);
+
+    const vname = (el("varName").value || "i").trim();
+    const current = items[idx];
+    el("varValue").textContent = `${vname} = ${current}`;
+
+    const body = el("bodyMode").value;
+
+    if(body === "print"){
+      log(String(current));
+    } else if(body === "stars"){
+      log("*".repeat(Math.max(0, current)));
+    } else if(body === "sum"){
+      total += current;
+      el("totalValue").textContent = String(total);
+      log(`total = total + ${current}  ->  total = ${total}`);
+      if(idx === items.length - 1){
+        log(`print(total) -> ${total}`);
+      }
+    }
+
+    idx += 1;
+    renderBelt();
+
+    if(idx >= items.length){
+      log("迴圈完成 ✅（stop 值唔會出現）");
+      stopAuto();
+    }
+  }
+
+  function play(){
+    if(playing) return;
+    if(items.length === 0){
+      log("請先按「建立 range」。");
+      return;
+    }
+    if(idx >= items.length){
+      log("已完成。請按「重設」或「建立 range」再開始。");
+      return;
+    }
+    playing = true;
+    el("btnPlay").textContent = "播放中...";
+    el("btnPlay").disabled = true;
+    el("btnStop").disabled = false;
+
+    const ms = Number(el("speed").value);
+    timer = setInterval(stepOnce, ms);
+  }
+
+  function stopAuto(){
+    playing = false;
+    if(timer){ clearInterval(timer); timer = null; }
+    el("btnPlay").textContent = "播放";
+    el("btnPlay").disabled = false;
+    el("btnStop").disabled = true;
+  }
+
+  function resetAll(){
+    stopAuto();
+    idx = 0;
+    round = 0;
+    total = 0;
+    el("round").textContent = "0";
+    el("varValue").textContent = "—";
+    el("totalValue").textContent = "0";
+    setConsole("");
+    renderBelt();
+    updateCodeBox();
+    log("已重設。按「下一步」由第一個數字開始。");
+  }
+
+  // ---------- 綁定事件 ----------
+  ["varName","rStart","rStop","stepMode","bodyMode"].forEach(id=>{
+    el(id).addEventListener("input", updateCodeBox);
+    el(id).addEventListener("change", updateCodeBox);
+  });
+
+  el("speed").addEventListener("change", () => { if(playing){ stopAuto(); play(); } });
+
+  el("btnBuild").addEventListener("click", buildRange);
+  el("btnReset").addEventListener("click", resetAll);
+  el("btnStep").addEventListener("click", stepOnce);
+  el("btnPlay").addEventListener("click", play);
+  el("btnStop").addEventListener("click", stopAuto);
+
+  // init
+  buildRange();
+  updateCodeBox();
+  log("提示：先用 range(1,5) 教 stop 不包含；再試 start > stop（例如 5 到 1）示範倒數。");
+</script>
+</body>
+</html>
+
+
