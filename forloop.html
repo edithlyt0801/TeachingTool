@@ -225,35 +225,35 @@
 
 <body>
   <header>
-    <h1>Python for 迴圈（range）互動教學工具</h1>
+    <h1>Python for loop 互動教學工具</h1>
     <p class="sub">
-      中學常用：<b>for i in range(start, stop)</b>（stop 不包含）。按「下一步」逐輪示範 loop variable 變化及輸出。
+      <b>for i in range(start, stop): </b>按「下一步」逐輪示範 loop variable 變化及輸出。
     </p>
   </header>
 
   <main>
     <section class="card">
-      <h2>互動模擬器（只用 range）</h2>
+      <h2>互動模擬器</h2>
       <div class="content">
 
         <div class="grid">
           <div>
-            <label for="varName">迴圈變數名（例如 i）</label>
+            <label for="varName">Loop variable 迴圈變數名（例如 i）</label>
             <input id="varName" type="text" value="i" />
           </div>
           <div>
-            <label for="rStart">start（起點，包含）</label>
+            <label for="rStart">Start（起點，包含）</label>
             <input id="rStart" type="number" value="1" />
           </div>
           <div>
-            <label for="rStop">stop（終點，不包含）</label>
+            <label for="rStop">Stop（終點，不包含）</label>
             <input id="rStop" type="number" value="5" />
           </div>
         </div>
 
         <div class="grid" style="margin-top:12px;">
           <div>
-            <label for="stepMode">step</label>
+            <label for="stepMode">Step</label>
             <select id="stepMode">
               <option value="auto" selected>自動（start&lt;stop 用 +1；start&gt;stop 用 -1）</option>
               <option value="plus">+1</option>
@@ -261,7 +261,7 @@
             </select>
           </div>
           <div>
-            <label for="bodyMode">每一輪做咩？（Loop body 迴圈內容）</label>
+            <label for="bodyMode">Loop body 迴圈內容（每一輪做咩？）</label>
             <select id="bodyMode">
               <option value="print">print(i)</option>
               <option value="stars">print("*" * i)（常見圖案題）</option>
@@ -289,7 +289,7 @@
         <div class="status">
           <div class="pill"><span class="badge">Round</span><span id="round">0</span></div>
           <div class="kv">
-            <div class="k">迴圈變數目前值</div>
+            <div class="k">Loop variable 迴圈變數目前值</div>
             <div class="v" id="varValue">—</div>
           </div>
           <div class="kv">
@@ -533,10 +533,10 @@
   // init
   buildRange();
   updateCodeBox();
-  log("提示：先用 range(1,5) 教 stop 不包含；再試 start > stop（例如 5 到 1）示範倒數。");
 </script>
 </body>
 </html>
+
 
 
 
