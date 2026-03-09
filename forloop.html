@@ -1,249 +1,547 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>經濟科互動教學：價格下限與最低工資</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @keyframes blink {
-            0% { opacity: 0.2; }
-            50% { opacity: 0.6; }
-            100% { opacity: 0.2; }
-        }
-        .blinking-area {
-            animation: blink 1.5s infinite;
-        }
-        .info-card {
-            transition: all 0.3s ease;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python for loop 互動教學工具</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --text:#eaf0ff;
+      --muted:#b9c6ff;
+      --border:rgba(255,255,255,.12);
+      --focus:#6aa8ff;
+      --shadow: 0 10px 25px rgba(0,0,0,.25);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Segoe UI, Roboto, Helvetica, Arial;
+    }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color:var(--text);
+      background: radial-gradient(1200px 700px at 20% 0%, #1a2a66 0%, var(--bg) 45%, #070a14 100%);
+    }
+    header{
+      padding: 24px 16px 8px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    h1{
+      font-size: clamp(20px, 2.6vw, 34px);
+      margin: 0 0 8px;
+      letter-spacing: .2px;
+    }
+    .sub{
+      color: var(--muted);
+      margin: 0 0 8px;
+      line-height: 1.6;
+    }
+    main{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card h2{
+      margin:0;
+      padding: 14px 16px;
+      font-size: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+    }
+    .content{ padding: 16px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    label{ font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px;}
+    input,button,select{
+      font-family: var(--sans);
+      font-size: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus{
+      border-color: rgba(106,168,255,.7);
+      box-shadow: 0 0 0 3px rgba(106,168,255,.18);
+    }
+    button{
+      cursor: pointer;
+      background: linear-gradient(180deg, rgba(106,168,255,.35), rgba(106,168,255,.18));
+      border-color: rgba(106,168,255,.5);
+      transition: transform .05s ease, filter .1s ease;
+      user-select: none;
+    }
+    button:active{ transform: translateY(1px); }
+    button.secondary{
+      background: rgba(255,255,255,.06);
+      border-color: var(--border);
+    }
+    button.danger{
+      background: rgba(255,90,95,.16);
+      border-color: rgba(255,90,95,.45);
+    }
+    button:disabled{
+      opacity: .5;
+      cursor: not-allowed;
+      filter: grayscale(.3);
+    }
+
+    .row{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .row button{ width:auto; }
+
+    .belt{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      padding: 10px;
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      min-height: 64px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .tile{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.05);
+      font-family: var(--mono);
+      min-width: 44px;
+      text-align: center;
+    }
+    .tile.current{
+      border-color: rgba(106,168,255,.9);
+      box-shadow: 0 0 0 3px rgba(106,168,255,.25);
+      background: rgba(106,168,255,.12);
+    }
+    .tile.done{ opacity: .65; }
+
+    .status{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .badge{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      font-family: var(--mono);
+    }
+    .kv{
+      display:flex;
+      flex-direction: column;
+      gap:6px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      min-width: 180px;
+    }
+    .kv .k{ color: var(--muted); font-size: 12px; }
+    .kv .v{ font-family: var(--mono); font-size: 14px; }
+
+    .mono{
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre;
+      overflow:auto;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      margin-top: 12px;
+    }
+    .console{
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.26);
+      min-height: 140px;
+      white-space: pre-wrap;
+      overflow:auto;
+      margin-top: 12px;
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+    .smallNote{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+  </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
 
-    <div class="max-w-6xl mx-auto p-4 md:p-8">
-        <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-indigo-900 mb-2">價格下限 (Price Floor) 互動模擬器</h1>
-            <p class="text-slate-600 text-lg">主題：香港勞工市場與最低工資案例分析</p>
-        </header>
+<body>
+  <header>
+    <h1>Python for loop 互動教學工具</h1>
+    <p class="sub">
+      <b>for i in range(start, stop): </b>按「下一步」逐輪示範 loop variable 變化及輸出。
+    </p>
+  </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Left Panel: Controls & Status -->
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 info-card">
-                    <h2 class="text-xl font-semibold mb-4 flex items-center">
-                        <span class="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center mr-2">1</span>
-                        政策設定
-                    </h2>
-                    
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-slate-700 mb-2 italic">市場均衡工資 (Pe): HK$50</label>
-                        <label for="priceSlider" class="block text-lg font-bold text-indigo-900 mb-2">
-                            法定最低工資 (Pf): HK$ <span id="priceVal">40</span>
-                        </label>
-                        <input type="range" id="priceSlider" min="10" max="90" value="40" step="1" 
-                               class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                    </div>
+  <main>
+    <section class="card">
+      <h2>互動模擬器</h2>
+      <div class="content">
 
-                    <div id="statusBadge" class="py-3 px-4 rounded-xl text-center font-bold text-lg mb-4">
-                        無效價格下限
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 info-card">
-                    <h2 class="text-xl font-semibold mb-4 flex items-center">
-                        <span class="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center mr-2">2</span>
-                        市場數據 (Q)
-                    </h2>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <span class="text-slate-600">需求量 (Qd):</span>
-                            <span id="qdVal" class="font-mono font-bold text-blue-600 text-xl">100</span>
-                        </div>
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <span class="text-slate-600">供應量 (Qs):</span>
-                            <span id="qsVal" class="font-mono font-bold text-orange-600 text-xl">100</span>
-                        </div>
-                        <div class="flex justify-between items-center pt-2">
-                            <span id="gapLabel" class="text-slate-600">市場狀態:</span>
-                            <span id="gapVal" class="font-mono font-bold text-red-600 text-xl">平衡</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-lg">
-                    <h3 class="text-lg font-bold mb-2">💡 DSE 答題重點</h3>
-                    <ul class="text-sm space-y-2 text-indigo-100">
-                        <li>• 只有當 Pf > Pe 時，才稱為「有效」。</li>
-                        <li>• 有效價格下限會導致 Qs > Qd。</li>
-                        <li>• 在勞工市場，這段差距稱為「失業」。</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Right Panel: Graph -->
-            <div class="lg:col-span-2 space-y-4">
-                <div class="bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-slate-200 relative h-[500px]">
-                    <canvas id="marketChart"></canvas>
-                    <div id="surplusOverlay" class="absolute pointer-events-none hidden" style="background-color: rgba(239, 68, 68, 0.2); border: 2px dashed #ef4444;">
-                        <div class="w-full h-full flex items-center justify-center text-red-600 font-bold text-sm md:text-base blinking-area">
-                            過剩 / 失業 (Surplus)
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Context Box -->
-                <div id="contextBox" class="bg-white p-6 rounded-2xl border-l-4 border-slate-300 shadow-sm">
-                    <h3 class="font-bold text-slate-800 mb-2">現實生活連繫：</h3>
-                    <p id="contextText" class="text-slate-600 italic">當工資設為 $40，由於低於市場均衡價 $50，僱主仍會以 $50 招聘。法定最低工資不具約束力。</p>
-                </div>
-            </div>
+        <div class="grid">
+          <div>
+            <label for="varName">Loop variable 迴圈變數名（例如 i）</label>
+            <input id="varName" type="text" value="i" />
+          </div>
+          <div>
+            <label for="rStart">Start（起點，包含）</label>
+            <input id="rStart" type="number" value="1" />
+          </div>
+          <div>
+            <label for="rStop">Stop（終點，不包含）</label>
+            <input id="rStop" type="number" value="5" />
+          </div>
         </div>
 
-        <!-- Footer -->
-        <footer class="mt-12 text-center text-slate-400 text-sm">
-            © 2025 S4 經濟科教學工具 | 專為 Band 1 學生邏輯分析設計
-        </footer>
-    </div>
+        <div class="grid" style="margin-top:12px;">
+          <div>
+            <label for="stepMode">Step</label>
+            <select id="stepMode">
+              <option value="auto" selected>自動（start&lt;stop 用 +1；start&gt;stop 用 -1）</option>
+              <option value="plus">+1</option>
+              <option value="minus">-1</option>
+            </select>
+          </div>
+          <div>
+            <label for="bodyMode">Loop body 迴圈內容（每一輪做咩？）</label>
+            <select id="bodyMode">
+              <option value="print">print(i)</option>
+              <option value="stars">print("*" * i)（常見圖案題）</option>
+              <option value="sum">加總 total = total + i</option>
+            </select>
+          </div>
+          <div>
+            <label for="speed">播放速度</label>
+            <select id="speed">
+              <option value="900">慢</option>
+              <option value="550" selected>正常</option>
+              <option value="250">快</option>
+            </select>
+          </div>
+        </div>
 
-    <script>
-        const ctx = document.getElementById('marketChart').getContext('2d');
-        const slider = document.getElementById('priceSlider');
-        const priceDisplay = document.getElementById('priceVal');
-        const qdDisplay = document.getElementById('qdVal');
-        const qsDisplay = document.getElementById('qsVal');
-        const gapValDisplay = document.getElementById('gapVal');
-        const gapLabelDisplay = document.getElementById('gapLabel');
-        const statusBadge = document.getElementById('statusBadge');
-        const contextText = document.getElementById('contextText');
-        const contextBox = document.getElementById('contextBox');
-        const surplusOverlay = document.getElementById('surplusOverlay');
+        <div class="row">
+          <button id="btnBuild" class="secondary">建立 range</button>
+          <button id="btnReset" class="secondary">重設</button>
+          <button id="btnStep">下一步</button>
+          <button id="btnPlay" class="secondary">播放</button>
+          <button id="btnStop" class="danger" disabled>停止</button>
+        </div>
 
-        // Initial Data
-        const Pe = 50;
-        const Qe = 100;
+        <div class="status">
+          <div class="pill"><span class="badge">Round</span><span id="round">0</span></div>
+          <div class="kv">
+            <div class="k">Loop variable 迴圈變數目前值</div>
+            <div class="v" id="varValue">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">total（加總模式）</div>
+            <div class="v" id="totalValue">0</div>
+          </div>
+        </div>
 
-        // Demand Curve: P = 150 - Q  => Q = 150 - P
-        // Supply Curve: P = Q - 50   => Q = P + 50
-        
-        let marketChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets: [
-                    {
-                        label: '需求曲線 (D)',
-                        data: [{x: 50, y: 100}, {x: 150, y: 0}], // Simplified
-                        borderColor: '#2563eb',
-                        borderWidth: 3,
-                        pointRadius: 0
-                    },
-                    {
-                        label: '供應曲線 (S)',
-                        data: [{x: 50, y: 0}, {x: 150, y: 100}], // Simplified
-                        borderColor: '#f97316',
-                        borderWidth: 3,
-                        pointRadius: 0
-                    },
-                    {
-                        label: '價格下限 (Pf)',
-                        data: [{x: 0, y: 40}, {x: 200, y: 40}],
-                        borderColor: '#4f46e5',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        pointRadius: 0
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear',
-                        title: { display: true, text: '數量 (勞工單位)' },
-                        min: 0, max: 200
-                    },
-                    y: {
-                        title: { display: true, text: '價格 (HK$)' },
-                        min: 0, max: 120
-                    }
-                },
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
+        <label style="margin-top:12px;">range 產生嘅數字（目前要代入Loop variable的值會被highlight）</label>
+        <div class="belt" id="belt"></div>
 
-        function updateChart() {
-            const Pf = parseInt(slider.value);
-            priceDisplay.innerText = Pf;
+        <label style="margin-top:12px;">Python 程式碼</label>
+        <div class="mono" id="codeBox"></div>
 
-            // Calculate Qd and Qs based on Pf
-            // Formula D: Q = 150 - P
-            // Formula S: Q = P + 50
-            const Qd = Math.max(0, 150 - Pf);
-            const Qs = Math.max(0, Pf + 50);
+        <label style="margin-top:12px;">輸出 / Console</label>
+        <div class="console" id="console"></div>
 
-            // Update Price Floor Line
-            marketChart.data.datasets[2].data = [{x: 0, y: Pf}, {x: 200, y: Pf}];
+        <p class="hint">
+          每次按「下一步」之前，先想一下「下一個 i 會係幾多？」<br/>
+          點解 stop（終點）唔會出現？ → <b>range 產生嘅數字不包含stop </b>。
+        </p>
+      </div>
+    </section>
+  </main>
 
-            if (Pf > Pe) {
-                // Effective
-                statusBadge.innerText = "有效價格下限 (Effective)";
-                statusBadge.className = "py-3 px-4 rounded-xl text-center font-bold text-lg mb-4 bg-red-100 text-red-700 border border-red-200";
-                qdDisplay.innerText = Qd;
-                qsDisplay.innerText = Qs;
-                gapLabelDisplay.innerText = "失業人數:";
-                gapValDisplay.innerText = Qs - Qd;
-                contextText.innerText = `⚠️ 現實案例：由於法定工資 $${Pf} 高於均衡水平 $50，僱主因成本增加減少聘請至 ${Qd} 人，但更多人 (${Qs}) 願意工作，導致市場出現過剩，即「失業」。`;
-                contextBox.className = "bg-white p-6 rounded-2xl border-l-4 border-red-500 shadow-sm";
-                
-                // Overlay Logic (simplified positioning)
-                const chartArea = marketChart.chartArea;
-                if(chartArea) {
-                    const xQd = marketChart.scales.x.getPixelForValue(Qd);
-                    const xQs = marketChart.scales.x.getPixelForValue(Qs);
-                    const yPf = marketChart.scales.y.getPixelForValue(Pf);
-                    
-                    surplusOverlay.style.display = 'block';
-                    surplusOverlay.style.left = xQd + 'px';
-                    surplusOverlay.style.top = (yPf - 20) + 'px';
-                    surplusOverlay.style.width = (xQs - xQd) + 'px';
-                    surplusOverlay.style.height = '40px';
-                }
-            } else {
-                // Ineffective
-                statusBadge.innerText = "無效價格下限 (Ineffective)";
-                statusBadge.className = "py-3 px-4 rounded-xl text-center font-bold text-lg mb-4 bg-slate-100 text-slate-500 border border-slate-200";
-                qdDisplay.innerText = Qe;
-                qsDisplay.innerText = Qe;
-                gapLabelDisplay.innerText = "市場狀態:";
-                gapValDisplay.innerText = "平衡 (交易於 $50)";
-                contextText.innerText = `✅ 現實案例：雖然政府規定工資不得低於 $${Pf}，但市場已願意支付 $50。工資會維持在 $50，對就業量沒有實質影響。`;
-                contextBox.className = "bg-white p-6 rounded-2xl border-l-4 border-slate-300 shadow-sm";
-                surplusOverlay.style.display = 'none';
-            }
+<script>
+  // ---------- 狀態 ----------
+  let items = [];
+  let idx = 0;
+  let round = 0;
+  let playing = false;
+  let timer = null;
+  let total = 0;
 
-            marketChart.update();
-        }
+  const el = (id) => document.getElementById(id);
 
-        slider.addEventListener('input', updateChart);
-        window.onload = () => {
-            // Define actual curve points for a more realistic look
-            marketChart.data.datasets[0].data = [];
-            marketChart.data.datasets[1].data = [];
-            for(let p=0; p<=150; p+=10) {
-                marketChart.data.datasets[0].data.push({y: p, x: 150-p});
-                marketChart.data.datasets[1].data.push({y: p, x: p+50});
-            }
-            updateChart();
-        };
-    </script>
+  // ---------- 工具 ----------
+  function setConsole(text){ el("console").textContent = text; }
+  function log(line){
+    const c = el("console");
+    c.textContent += (c.textContent ? "\n" : "") + line;
+    c.scrollTop = c.scrollHeight;
+  }
+
+  function getStep(){
+    const mode = el("stepMode").value;
+    const start = Number(el("rStart").value);
+    const stop  = Number(el("rStop").value);
+
+    if(mode === "plus") return 1;
+    if(mode === "minus") return -1;
+
+    // auto
+    if(start < stop) return 1;
+    if(start > stop) return -1;
+    return 1; // start == stop，無所謂
+  }
+
+  // 只示範 step = ±1（符合大部分中學教材）
+  function buildRange(){
+    stopAuto();
+    setConsole("");
+
+    idx = 0;
+    round = 0;
+    total = 0;
+    el("round").textContent = "0";
+    el("varValue").textContent = "—";
+    el("totalValue").textContent = "0";
+
+    const start = Number(el("rStart").value);
+    const stop  = Number(el("rStop").value);
+    const step  = getStep();
+
+    items = [];
+
+    // Python range(start, stop, step) 的 stop 仍然「不包含」
+    // 這裡簡化：只做 step = ±1
+    if(step === 1){
+      for(let i = start; i < stop; i += 1) items.push(i);
+    } else {
+      for(let i = start; i > stop; i -= 1) items.push(i);
+    }
+
+    renderBelt();
+    updateCodeBox();
+
+    if(items.length === 0){
+      log("range 係空：冇數字可以走（可能 start == stop，或方向唔啱）。");
+    } else {
+      log(`已建立 range，共 ${items.length} 個數字。按「下一步」開始。`);
+    }
+  }
+
+  function updateCodeBox(){
+    const vname = (el("varName").value || "i").trim();
+    const start = Number(el("rStart").value);
+    const stop  = Number(el("rStop").value);
+    const step  = getStep();
+    const body  = el("bodyMode").value;
+
+    let header = "";
+    if(step === 1){
+      header = `for ${vname} in range(${start}, ${stop}):`;
+    } else {
+      // 為咗教學清晰，展示 range(start, stop, -1)
+      header = `for ${vname} in range(${start}, ${stop}, -1):`;
+    }
+
+    let bodyCode = "";
+    if(body === "print"){
+      bodyCode = `    print(${vname})`;
+    } else if(body === "stars"){
+      bodyCode = `    print("*" * ${vname})`;
+    } else if(body === "sum"){
+      bodyCode = `    total = total + ${vname}`;
+      header = `total = 0\n` + header;
+      bodyCode = bodyCode + `\nprint(total)`;
+    }
+
+    el("codeBox").textContent = header + "\n" + bodyCode;
+  }
+
+  function renderBelt(){
+    const belt = el("belt");
+    belt.innerHTML = "";
+    if(items.length === 0){
+      const span = document.createElement("span");
+      span.className = "badge";
+      span.textContent = "未建立 range（或 range 係空）";
+      belt.appendChild(span);
+      return;
+    }
+    items.forEach((val, i) => {
+      const t = document.createElement("div");
+      t.className = "tile";
+      if(i < idx) t.classList.add("done");
+      if(i === idx) t.classList.add("current");
+      t.textContent = String(val);
+      belt.appendChild(t);
+    });
+  }
+
+  function stepOnce(){
+    if(items.length === 0){
+      log("請先按「建立 range」。");
+      return;
+    }
+    if(idx >= items.length){
+      log("迴圈已完成（冇更多數字）。");
+      stopAuto();
+      return;
+    }
+
+    round += 1;
+    el("round").textContent = String(round);
+
+    const vname = (el("varName").value || "i").trim();
+    const current = items[idx];
+    el("varValue").textContent = `${vname} = ${current}`;
+
+    const body = el("bodyMode").value;
+
+    if(body === "print"){
+      log(String(current));
+    } else if(body === "stars"){
+      log("*".repeat(Math.max(0, current)));
+    } else if(body === "sum"){
+      total += current;
+      el("totalValue").textContent = String(total);
+      log(`total = total + ${current}  ->  total = ${total}`);
+      if(idx === items.length - 1){
+        log(`print(total) -> ${total}`);
+      }
+    }
+
+    idx += 1;
+    renderBelt();
+
+    if(idx >= items.length){
+      log("迴圈完成 ✅（stop 值唔會出現）");
+      stopAuto();
+    }
+  }
+
+  function play(){
+    if(playing) return;
+    if(items.length === 0){
+      log("請先按「建立 range」。");
+      return;
+    }
+    if(idx >= items.length){
+      log("已完成。請按「重設」或「建立 range」再開始。");
+      return;
+    }
+    playing = true;
+    el("btnPlay").textContent = "播放中...";
+    el("btnPlay").disabled = true;
+    el("btnStop").disabled = false;
+
+    const ms = Number(el("speed").value);
+    timer = setInterval(stepOnce, ms);
+  }
+
+  function stopAuto(){
+    playing = false;
+    if(timer){ clearInterval(timer); timer = null; }
+    el("btnPlay").textContent = "播放";
+    el("btnPlay").disabled = false;
+    el("btnStop").disabled = true;
+  }
+
+  function resetAll(){
+    stopAuto();
+    idx = 0;
+    round = 0;
+    total = 0;
+    el("round").textContent = "0";
+    el("varValue").textContent = "—";
+    el("totalValue").textContent = "0";
+    setConsole("");
+    renderBelt();
+    updateCodeBox();
+    log("已重設。按「下一步」由第一個數字開始。");
+  }
+
+  // ---------- 綁定事件 ----------
+  ["varName","rStart","rStop","stepMode","bodyMode"].forEach(id=>{
+    el(id).addEventListener("input", updateCodeBox);
+    el(id).addEventListener("change", updateCodeBox);
+  });
+
+  el("speed").addEventListener("change", () => { if(playing){ stopAuto(); play(); } });
+
+  el("btnBuild").addEventListener("click", buildRange);
+  el("btnReset").addEventListener("click", resetAll);
+  el("btnStep").addEventListener("click", stepOnce);
+  el("btnPlay").addEventListener("click", play);
+  el("btnStop").addEventListener("click", stopAuto);
+
+  // init
+  buildRange();
+  updateCodeBox();
+</script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 
