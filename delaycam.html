@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeWarp Camera</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look if needed */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30">
+
+    <div class="min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto space-y-6">
+            
+            <!-- Header -->
+            <header class="flex items-center justify-between border-b border-slate-800 pb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl">
+                        <i class="ph ph-clock text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                            TimeWarp Camera
+                        </h1>
+                        <p class="text-sm text-slate-400 font-medium">Live video buffer & delay system</p>
+                    </div>
+                </div>
+                
+                <div id="statusBadge" class="hidden items-center space-x-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-sm font-semibold animate-pulse">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span>System Active</span>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <!-- Main Canvas View (Left/Top) -->
+                <div class="lg:col-span-3 space-y-4">
+                    <div class="relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl ring-1 ring-white/5">
+                        
+                        <div id="inactiveOverlay" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10">
+                            <i class="ph ph-monitor-play text-6xl mb-4 opacity-50"></i>
+                            <p class="text-lg font-medium">Camera is inactive</p>
+                            <p class="text-sm">Configure settings and click start.</p>
+                        </div>
+
+                        <canvas id="mainCanvas" class="w-full h-full object-contain absolute inset-0 z-0"></canvas>
+
+                        <!-- Picture-in-Picture Live Preview -->
+                        <div id="pipContainer" class="hidden absolute bottom-4 right-4 w-32 aspect-video bg-black rounded-lg overflow-hidden border-2 border-indigo-500/50 shadow-lg z-20">
+                            <div class="absolute top-1 left-2 z-30 flex items-center space-x-1">
+                                <div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                                <span class="text-[10px] font-bold text-white drop-shadow-md">LIVE</span>
+                            </div>
+                            <video id="pipVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                        </div>
+                    </div>
+
+                    <!-- Diagnostic Bar -->
+                    <div class="flex items-center space-x-6 text-sm text-slate-400 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                        <div class="flex items-center space-x-2">
+                            <i class="ph ph-activity text-indigo-400 text-lg"></i>
+                            <span>Frames in Buffer: <strong id="bufferCountDisplay" class="text-slate-200">0</strong></span>
+                        </div>
+                        <div>
+                            Delay Target: <strong id="delayTargetDisplay" class="text-slate-200">3.0s</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls Sidebar (Right/Bottom) -->
+                <div class="space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
+                        <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                            <i class="ph ph-gear text-slate-400 text-xl"></i>
+                            <h2 class="text-lg font-semibold">Controls</h2>
+                        </div>
+
+                        <!-- Start/Stop Button -->
+                        <button id="toggleBtn" class="w-full py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold transition-all bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+                            <i id="toggleBtnIcon" class="ph-fill ph-camera text-xl"></i>
+                            <span id="toggleBtnText">Start Camera</span>
+                        </button>
+
+                        <div class="space-y-5">
+                            <!-- Delay Slider -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-sm font-medium text-slate-300">Time Delay</label>
+                                    <span id="delayBadge" class="text-sm font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                                        3 Seconds
+                                    </span>
+                                </div>
+                                <input type="range" id="delaySlider" min="0" max="15" step="0.5" value="3" class="w-full accent-indigo-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    Higher delays require more memory. Max limit is 15s.
+                                </p>
+                            </div>
+
+                            <!-- Camera Selector -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-300">Camera Device</label>
+                                <select id="cameraSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
+                                    <option value="">Loading cameras...</option>
+                                </select>
+                            </div>
+
+                            <!-- Quality & FPS Row -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-slate-300">Quality</label>
+                                    <select id="qualitySelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
+                                        <option value="360p">Low (360p)</option>
+                                        <option value="480p" selected>Med (480p)</option>
+                                        <option value="720p">High (720p)</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-slate-300">Framerate</label>
+                                    <select id="fpsSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
+                                        <option value="15">15 FPS</option>
+                                        <option value="30" selected>30 FPS</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Mirror Toggle -->
+                            <div class="pt-2">
+                                <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-800">
+                                    <input type="checkbox" id="mirrorToggle" checked class="sr-only peer">
+                                    <div class="relative w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                                    <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
+                                        <i class="ph ph-flip-horizontal text-lg"></i>
+                                        <span>Mirror Image</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- AI Pose Toggle -->
+                            <div class="pt-2 space-y-2">
+                                <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-800">
+                                    <input type="checkbox" id="aiToggle" class="sr-only peer">
+                                    <div class="relative w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                                    <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
+                                        <i id="aiIcon" class="ph ph-person-simple-walk text-lg"></i>
+                                        <span id="aiText">AI Skeleton Pose</span>
+                                    </div>
+                                </label>
+                                <p id="aiError" class="hidden text-xs text-rose-400 font-medium px-3"></p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script type="module">
+        // --- CONSTANTS & STATE ---
+        const POSE_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
+            [9, 10], [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
+            [17, 19], [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
+            [11, 23], [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28],
+            [27, 29], [28, 30], [29, 31], [30, 32], [27, 31], [28, 32]
+        ];
+
+        let state = {
+            isStreaming: false,
+            delayMs: 3000,
+            fps: 30,
+            resolution: '480p',
+            isMirrored: true,
+            showSkeleton: false,
+            isBuffering: true
+        };
+
+        let hiddenVideo = document.createElement('video');
+        hiddenVideo.autoplay = true;
+        hiddenVideo.playsInline = true;
+        hiddenVideo.muted = true;
+
+        let frameBuffer = [];
+        let renderLoopId = null;
+        let lastCaptureTime = 0;
+        let lastPoseTime = 0;
+        let poseLandmarker = null;
+
+        // --- DOM ELEMENTS ---
+        const canvas = document.getElementById('mainCanvas');
+        const pipVideo = document.getElementById('pipVideo');
+        const pipContainer = document.getElementById('pipContainer');
+        const inactiveOverlay = document.getElementById('inactiveOverlay');
+        const statusBadge = document.getElementById('statusBadge');
+        
+        const btnToggle = document.getElementById('toggleBtn');
+        const btnToggleIcon = document.getElementById('toggleBtnIcon');
+        const btnToggleText = document.getElementById('toggleBtnText');
+        
+        const sldDelay = document.getElementById('delaySlider');
+        const txtDelayBadge = document.getElementById('delayBadge');
+        const txtDelayTarget = document.getElementById('delayTargetDisplay');
+        const txtBufferCount = document.getElementById('bufferCountDisplay');
+        
+        const selCamera = document.getElementById('cameraSelect');
+        const selQuality = document.getElementById('qualitySelect');
+        const selFps = document.getElementById('fpsSelect');
+        const chkMirror = document.getElementById('mirrorToggle');
+        const chkAi = document.getElementById('aiToggle');
+        
+        const aiIcon = document.getElementById('aiIcon');
+        const aiText = document.getElementById('aiText');
+        const aiError = document.getElementById('aiError');
+
+        // --- INITIALIZATION ---
+        async function init() {
+            try {
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoInputs = devices.filter(d => d.kind === 'videoinput');
+                
+                selCamera.innerHTML = '';
+                if(videoInputs.length === 0) {
+                    selCamera.innerHTML = '<option value="">No cameras found</option>';
+                } else {
+                    videoInputs.forEach((d, index) => {
+                        const opt = document.createElement('option');
+                        opt.value = d.deviceId;
+                        opt.text = d.label || `Camera ${index + 1}`;
+                        selCamera.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error("Camera access denied:", err);
+                selCamera.innerHTML = '<option value="">Permission denied</option>';
+            }
+
+            // Event Listeners
+            btnToggle.addEventListener('click', toggleStream);
+            
+            sldDelay.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (state.delayMs < val * 1000) state.isBuffering = true;
+                state.delayMs = val * 1000;
+                txtDelayBadge.textContent = `${val} Seconds`;
+                txtDelayTarget.textContent = `${val.toFixed(1)}s`;
+            });
+
+            selQuality.addEventListener('change', (e) => state.resolution = e.target.value);
+            selFps.addEventListener('change', (e) => state.fps = parseInt(e.target.value));
+            
+            chkMirror.addEventListener('change', (e) => {
+                state.isMirrored = e.target.checked;
+                pipVideo.style.transform = state.isMirrored ? 'scaleX(-1)' : 'none';
+            });
+
+            chkAi.addEventListener('change', async (e) => {
+                state.showSkeleton = e.target.checked;
+                if (state.showSkeleton && !poseLandmarker) {
+                    await loadAIModel();
+                }
+            });
+        }
+
+        // --- AI MODEL LOADING ---
+        async function loadAIModel() {
+            aiIcon.className = "ph ph-spinner-gap text-lg animate-spin text-indigo-400";
+            aiText.textContent = "Loading AI Model...";
+            aiError.classList.add('hidden');
+            
+            try {
+                const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs');
+                const visionResolver = await vision.FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm"
+                );
+                poseLandmarker = await vision.PoseLandmarker.createFromOptions(visionResolver, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                        delegate: "CPU"
+                    },
+                    runningMode: "VIDEO",
+                    numPoses: 1
+                });
+                
+                aiIcon.className = "ph ph-person-simple-walk text-lg";
+                aiText.textContent = "AI Skeleton Pose";
+            } catch (err) {
+                console.error(err);
+                aiIcon.className = "ph ph-person-simple-walk text-lg";
+                aiText.textContent = "AI Skeleton Pose";
+                aiError.textContent = "Failed to load AI. Check adblocker or connection.";
+                aiError.classList.remove('hidden');
+                chkAi.checked = false;
+                state.showSkeleton = false;
+            }
+        }
+
+        // --- STREAM CONTROL ---
+        async function toggleStream() {
+            if (state.isStreaming) {
+                stopStream();
+            } else {
+                startStream();
+            }
+        }
+
+        async function startStream() {
+            const width = state.resolution === '720p' ? 1280 : state.resolution === '480p' ? 640 : 320;
+            const height = state.resolution === '720p' ? 720 : state.resolution === '480p' ? 480 : 240;
+            const deviceId = selCamera.value;
+
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: width },
+                    height: { ideal: height },
+                    frameRate: { ideal: state.fps }
+                }
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                hiddenVideo.srcObject = stream;
+                pipVideo.srcObject = stream;
+                pipVideo.style.transform = state.isMirrored ? 'scaleX(-1)' : 'none';
+                await hiddenVideo.play();
+                
+                state.isStreaming = true;
+                state.isBuffering = true;
+                frameBuffer = [];
+                lastCaptureTime = performance.now();
+                
+                updateUIState(true);
+                renderLoopId = requestAnimationFrame(renderLoop);
+            } catch (err) {
+                alert("Could not access camera. Make sure Google Sites has camera permissions allowed in your browser.");
+            }
+        }
+
+        function stopStream() {
+            state.isStreaming = false;
+            
+            if (hiddenVideo.srcObject) {
+                hiddenVideo.srcObject.getTracks().forEach(t => t.stop());
+                hiddenVideo.srcObject = null;
+            }
+            if (pipVideo.srcObject) {
+                pipVideo.srcObject = null;
+            }
+            
+            if (renderLoopId) cancelAnimationFrame(renderLoopId);
+            
+            // Clean memory
+            frameBuffer.forEach(f => { if (f && f.bitmap) f.bitmap.close() });
+            frameBuffer = [];
+            txtBufferCount.textContent = "0";
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            updateUIState(false);
+        }
+
+        function updateUIState(isPlaying) {
+            selCamera.disabled = isPlaying;
+            selQuality.disabled = isPlaying;
+            
+            if (isPlaying) {
+                btnToggle.className = "w-full py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold transition-all bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20";
+                btnToggleIcon.className = "ph-fill ph-square text-xl";
+                btnToggleText.textContent = "Stop Camera";
+                inactiveOverlay.classList.add('hidden');
+                pipContainer.classList.remove('hidden');
+                statusBadge.classList.replace('hidden', 'flex');
+            } else {
+                btnToggle.className = "w-full py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold transition-all bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20";
+                btnToggleIcon.className = "ph-fill ph-camera text-xl";
+                btnToggleText.textContent = "Start Camera";
+                inactiveOverlay.classList.remove('hidden');
+                pipContainer.classList.add('hidden');
+                statusBadge.classList.replace('flex', 'hidden');
+            }
+        }
+
+        // --- RENDER LOOP ---
+        function renderLoop(now) {
+            if (!state.isStreaming) return;
+
+            if (hiddenVideo.readyState < 2 || hiddenVideo.videoWidth === 0) {
+                renderLoopId = requestAnimationFrame(renderLoop);
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
+            const captureInterval = 1000 / state.fps;
+
+            if (canvas.width !== hiddenVideo.videoWidth || canvas.height !== hiddenVideo.videoHeight) {
+                canvas.width = hiddenVideo.videoWidth;
+                canvas.height = hiddenVideo.videoHeight;
+            }
+
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // 1. CAPTURE
+            if (now - lastCaptureTime >= captureInterval) {
+                const captureNow = now;
+                lastCaptureTime = now;
+
+                createImageBitmap(hiddenVideo).then(bitmap => {
+                    if (state.isStreaming) {
+                        frameBuffer.push({ timestamp: captureNow, bitmap });
+                    } else {
+                        bitmap.close();
+                    }
+                }).catch(() => {});
+            }
+
+            // 2. PLAYBACK
+            let didDrawFrame = false;
+            let currentTimestamp = now;
+
+            if (state.delayMs === 0) {
+                state.isBuffering = false;
+                ctx.save();
+                if (state.isMirrored) {
+                    ctx.scale(-1, 1);
+                    ctx.translate(-width, 0);
+                }
+                ctx.drawImage(hiddenVideo, 0, 0, width, height);
+                ctx.restore();
+                didDrawFrame = true;
+                currentTimestamp = now;
+                
+                while (frameBuffer.length > 0) frameBuffer.shift().bitmap.close();
+            } else {
+                let frameToDraw = null;
+                while (frameBuffer.length > 0 && now - frameBuffer[0].timestamp >= state.delayMs) {
+                    if (frameToDraw) frameToDraw.bitmap.close();
+                    frameToDraw = frameBuffer.shift();
+                }
+
+                if (frameToDraw) {
+                    state.isBuffering = false;
+                    ctx.save();
+                    if (state.isMirrored) {
+                        ctx.scale(-1, 1);
+                        ctx.translate(-width, 0);
+                    }
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.drawImage(frameToDraw.bitmap, 0, 0, width, height);
+                    ctx.restore();
+                    didDrawFrame = true;
+                    currentTimestamp = frameToDraw.timestamp;
+                    
+                    frameToDraw.bitmap.close();
+                } else if (state.isBuffering && frameBuffer.length > 0) {
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = '500 24px system-ui';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    const oldestFrame = frameBuffer[0];
+                    const elapsed = now - oldestFrame.timestamp;
+                    const progress = Math.min(100, Math.round((elapsed / state.delayMs) * 100));
+                    
+                    ctx.fillText(`Buffering: ${progress}%`, width / 2, height / 2 - 15);
+                    ctx.font = '16px system-ui';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText(`Waiting for ${state.delayMs / 1000}s delay...`, width / 2, height / 2 + 15);
+                }
+            }
+
+            // 3. AI POSE
+            if (didDrawFrame && state.showSkeleton && poseLandmarker) {
+                let poseTime = Math.floor(currentTimestamp);
+                if (poseTime <= lastPoseTime) poseTime = lastPoseTime + 1;
+                lastPoseTime = poseTime;
+                
+                try {
+                    const results = poseLandmarker.detectForVideo(canvas, poseTime);
+                    if (results && results.landmarks && results.landmarks.length > 0) {
+                        drawSkeleton(ctx, results.landmarks[0], width, height);
+                    }
+                } catch (err) {
+                    // Ignore transient detection errors
+                }
+            }
+
+            if (Math.random() < 0.05) txtBufferCount.textContent = frameBuffer.length;
+
+            renderLoopId = requestAnimationFrame(renderLoop);
+        }
+
+        function drawSkeleton(ctx, landmarks, width, height) {
+            ctx.save();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#10b981';
+            ctx.fillStyle = '#ffffff';
+
+            POSE_CONNECTIONS.forEach(([i, j]) => {
+                const p1 = landmarks[i];
+                const p2 = landmarks[j];
+                const v1 = p1?.visibility !== undefined ? p1.visibility : 1;
+                const v2 = p2?.visibility !== undefined ? p2.visibility : 1;
+
+                if (p1 && p2 && v1 > 0.1 && v2 > 0.1) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x * width, p1.y * height);
+                    ctx.lineTo(p2.x * width, p2.y * height);
+                    ctx.stroke();
+                }
+            });
+
+            landmarks.forEach(p => {
+                const v = p?.visibility !== undefined ? p.visibility : 1;
+                if (p && v > 0.1) {
+                    ctx.beginPath();
+                    ctx.arc(p.x * width, p.y * height, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            });
+            ctx.restore();
+        }
+
+        // Run Init
+        init();
+
+    </script>
+</body>
+</html>
