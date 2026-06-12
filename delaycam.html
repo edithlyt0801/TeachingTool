@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TimeWarp Camera</title>
-    <!-- Tailwind CSS -->
+    <title>TimeWarp & Posture Analysis</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        /* Custom scrollbar for a cleaner look if needed */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -21,151 +18,161 @@
     <div class="min-h-screen p-4 md:p-8">
         <div class="max-w-6xl mx-auto space-y-6">
             
-            <!-- Header -->
-            <header class="flex items-center justify-between border-b border-slate-800 pb-6">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl">
-                        <i class="ph ph-clock text-2xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                            TimeWarp Camera
-                        </h1>
-                        <p class="text-sm text-slate-400 font-medium">Live video buffer & delay system</p>
+            <header class="border-b border-slate-800 pb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl">
+                            <i class="ph ph-activity text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                                Motion Analysis Lab
+                            </h1>
+                            <p class="text-sm text-slate-400 font-medium">Live Delay & Posture Comparison</p>
+                        </div>
                     </div>
                 </div>
-                
-                <div id="statusBadge" class="hidden items-center space-x-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-sm font-semibold animate-pulse">
-                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span>System Active</span>
+
+                <div class="flex space-x-4 border-b border-slate-800">
+                    <button id="tabBtnLive" class="px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors">
+                        <i class="ph ph-camera mr-2"></i>Live Camera
+                    </button>
+                    <button id="tabBtnAnalyze" class="px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors">
+                        <i class="ph ph-film-strip mr-2"></i>Video Analysis
+                    </button>
                 </div>
             </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                
-                <!-- Main Canvas View (Left/Top) -->
+            <!-- ========================================== -->
+            <!-- TAB 1: LIVE CAMERA                         -->
+            <!-- ========================================== -->
+            <div id="tabLive" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 space-y-4">
                     <div class="relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl ring-1 ring-white/5">
-                        
                         <div id="inactiveOverlay" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10">
                             <i class="ph ph-monitor-play text-6xl mb-4 opacity-50"></i>
                             <p class="text-lg font-medium">Camera is inactive</p>
-                            <p class="text-sm">Configure settings and click start.</p>
+                            <p class="text-sm text-center px-4">If embedded on Google Sites, the camera may be blocked by your browser.<br>Use the "Video Analysis" tab instead.</p>
                         </div>
-
                         <canvas id="mainCanvas" class="w-full h-full object-contain absolute inset-0 z-0"></canvas>
-
-                        <!-- Picture-in-Picture Live Preview -->
                         <div id="pipContainer" class="hidden absolute bottom-4 right-4 w-32 aspect-video bg-black rounded-lg overflow-hidden border-2 border-indigo-500/50 shadow-lg z-20">
-                            <div class="absolute top-1 left-2 z-30 flex items-center space-x-1">
-                                <div class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                                <span class="text-[10px] font-bold text-white drop-shadow-md">LIVE</span>
-                            </div>
                             <video id="pipVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
-                        </div>
-                    </div>
-
-                    <!-- Diagnostic Bar -->
-                    <div class="flex items-center space-x-6 text-sm text-slate-400 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
-                        <div class="flex items-center space-x-2">
-                            <i class="ph ph-activity text-indigo-400 text-lg"></i>
-                            <span>Frames in Buffer: <strong id="bufferCountDisplay" class="text-slate-200">0</strong></span>
-                        </div>
-                        <div>
-                            Delay Target: <strong id="delayTargetDisplay" class="text-slate-200">3.0s</strong>
                         </div>
                     </div>
                 </div>
 
-                <!-- Controls Sidebar (Right/Bottom) -->
                 <div class="space-y-6">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
-                        <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
-                            <i class="ph ph-gear text-slate-400 text-xl"></i>
-                            <h2 class="text-lg font-semibold">Controls</h2>
-                        </div>
-
-                        <!-- Start/Stop Button -->
-                        <button id="toggleBtn" class="w-full py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold transition-all bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                        <button id="toggleBtn" class="w-full mb-6 py-3 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold bg-indigo-500 hover:bg-indigo-600 text-white transition-all">
                             <i id="toggleBtnIcon" class="ph-fill ph-camera text-xl"></i>
                             <span id="toggleBtnText">Start Camera</span>
                         </button>
 
                         <div class="space-y-5">
-                            <!-- Delay Slider -->
                             <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <label class="text-sm font-medium text-slate-300">Time Delay</label>
-                                    <span id="delayBadge" class="text-sm font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                                        3 Seconds
-                                    </span>
-                                </div>
+                                <label class="text-sm font-medium text-slate-300">Time Delay: <span id="delayBadge" class="text-indigo-400">3s</span></label>
                                 <input type="range" id="delaySlider" min="0" max="15" step="0.5" value="3" class="w-full accent-indigo-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
-                                <p class="text-xs text-slate-500 leading-relaxed">
-                                    Higher delays require more memory. Max limit is 15s.
-                                </p>
                             </div>
-
-                            <!-- Camera Selector -->
+                            
                             <div class="space-y-2">
-                                <label class="text-sm font-medium text-slate-300">Camera Device</label>
-                                <select id="cameraSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
-                                    <option value="">Loading cameras...</option>
-                                </select>
+                                <label class="text-sm font-medium text-slate-300">Camera</label>
+                                <select id="cameraSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none"></select>
                             </div>
 
-                            <!-- Quality & FPS Row -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="space-y-2">
-                                    <label class="text-sm font-medium text-slate-300">Quality</label>
-                                    <select id="qualitySelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
-                                        <option value="360p">Low (360p)</option>
-                                        <option value="480p" selected>Med (480p)</option>
-                                        <option value="720p">High (720p)</option>
-                                    </select>
+                            <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent">
+                                <input type="checkbox" id="aiToggleLive" class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                                <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
+                                    <i id="aiIconLive" class="ph ph-person-simple-walk text-lg"></i>
+                                    <span id="aiTextLive">AI Skeleton Overlay</span>
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-sm font-medium text-slate-300">Framerate</label>
-                                    <select id="fpsSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none">
-                                        <option value="15">15 FPS</option>
-                                        <option value="30" selected>30 FPS</option>
-                                    </select>
+                            </label>
+                            
+                            <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent">
+                                <input type="checkbox" id="anglesToggleLive" class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                                <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
+                                    <i class="ph ph-protractor text-lg"></i>
+                                    <span>Show Joint Angles</span>
                                 </div>
-                            </div>
-
-                            <!-- Mirror Toggle -->
-                            <div class="pt-2">
-                                <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-800">
-                                    <input type="checkbox" id="mirrorToggle" checked class="sr-only peer">
-                                    <div class="relative w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                                    <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
-                                        <i class="ph ph-flip-horizontal text-lg"></i>
-                                        <span>Mirror Image</span>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <!-- AI Pose Toggle -->
-                            <div class="pt-2 space-y-2">
-                                <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-800">
-                                    <input type="checkbox" id="aiToggle" class="sr-only peer">
-                                    <div class="relative w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                                    <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
-                                        <i id="aiIcon" class="ph ph-person-simple-walk text-lg"></i>
-                                        <span id="aiText">AI Skeleton Pose</span>
-                                    </div>
-                                </label>
-                                <p id="aiError" class="hidden text-xs text-rose-400 font-medium px-3"></p>
-                            </div>
-
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: VIDEO ANALYSIS (HORIZONTAL LAYOUT)  -->
+            <!-- ========================================== -->
+            <div id="tabAnalyze" class="hidden space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Video 1 Frame -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center">
+                        <div class="w-full flex justify-between items-center mb-3">
+                            <span class="text-sm font-semibold text-indigo-400">Video 1</span>
+                            <input type="file" id="upload1" accept="video/mp4,video/webm,video/quicktime" class="block text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 cursor-pointer"/>
+                        </div>
+                        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center max-h-[500px]">
+                            <p id="vid1Placeholder" class="text-slate-600 absolute">Upload Video 1</p>
+                            <video id="video1" class="absolute inset-0 w-full h-full object-contain z-10" playsinline muted></video>
+                            <canvas id="canvas1" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Video 2 Frame -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center">
+                        <div class="w-full flex justify-between items-center mb-3">
+                            <span class="text-sm font-semibold text-indigo-400">Video 2</span>
+                            <input type="file" id="upload2" accept="video/mp4,video/webm,video/quicktime" class="block text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 cursor-pointer"/>
+                        </div>
+                        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center max-h-[500px]">
+                            <p id="vid2Placeholder" class="text-slate-600 absolute">Upload Video 2</p>
+                            <video id="video2" class="absolute inset-0 w-full h-full object-contain z-10" playsinline muted></video>
+                            <canvas id="canvas2" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Sync Controls -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button id="btnSyncPlay" class="w-12 h-12 rounded-full bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors">
+                            <i id="syncPlayIcon" class="ph-fill ph-play text-xl"></i>
+                        </button>
+                        <div>
+                            <h3 class="font-bold text-slate-200">Synchronized Playback</h3>
+                            <p class="text-sm text-slate-400">Plays both videos simultaneously</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4 flex-wrap justify-end">
+                        <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent">
+                            <input type="checkbox" id="aiToggleAnalyze" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                            <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
+                                <i id="aiIconAnalyze" class="ph ph-person-simple-walk text-lg"></i>
+                                <span id="aiTextAnalyze">AI Skeleton Overlay</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent">
+                            <input type="checkbox" id="anglesToggleAnalyze" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                            <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
+                                <i class="ph ph-protractor text-lg"></i>
+                                <span>Show Angles</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
     </div>
 
-    <!-- Application Logic -->
     <script type="module">
         // --- CONSTANTS & STATE ---
         const POSE_CONNECTIONS = [
@@ -176,114 +183,156 @@
             [27, 29], [28, 30], [29, 31], [30, 32], [27, 31], [28, 32]
         ];
 
+        const ANGLES_TO_DRAW = [
+            { p1: 11, p2: 13, p3: 15 }, // L-Elbow
+            { p1: 12, p2: 14, p3: 16 }, // R-Elbow
+            { p1: 23, p2: 25, p3: 27 }, // L-Knee
+            { p1: 24, p2: 26, p3: 28 }, // R-Knee
+            { p1: 11, p2: 23, p3: 25 }, // L-Hip
+            { p1: 12, p2: 24, p3: 26 }, // R-Hip
+            { p1: 23, p2: 11, p3: 13 }, // L-Shoulder
+            { p1: 24, p2: 12, p3: 14 }  // R-Shoulder
+        ];
+
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs(radians * 180.0 / Math.PI);
+            if (angle > 180.0) angle = 360.0 - angle;
+            return Math.round(angle);
+        }
+
         let state = {
+            activeTab: 'live', // 'live' or 'analyze'
             isStreaming: false,
             delayMs: 3000,
-            fps: 30,
-            resolution: '480p',
-            isMirrored: true,
-            showSkeleton: false,
-            isBuffering: true
+            showSkeletonLive: false,
+            showAnglesLive: false,
+            showSkeletonAnalyze: false,
+            showAnglesAnalyze: false,
+            isVideoPlaying: false
         };
 
-        let hiddenVideo = document.createElement('video');
-        hiddenVideo.autoplay = true;
-        hiddenVideo.playsInline = true;
-        hiddenVideo.muted = true;
-
-        let frameBuffer = [];
-        let renderLoopId = null;
-        let lastCaptureTime = 0;
-        let lastPoseTime = 0;
         let poseLandmarker = null;
+        let isModelLoading = false;
 
-        // --- DOM ELEMENTS ---
-        const canvas = document.getElementById('mainCanvas');
+        // --- DOM ELEMENTS: TABS ---
+        const tabBtnLive = document.getElementById('tabBtnLive');
+        const tabBtnAnalyze = document.getElementById('tabBtnAnalyze');
+        const tabLive = document.getElementById('tabLive');
+        const tabAnalyze = document.getElementById('tabAnalyze');
+
+        // --- DOM ELEMENTS: LIVE ---
+        let hiddenVideo = document.createElement('video');
+        hiddenVideo.autoplay = true; hiddenVideo.playsInline = true; hiddenVideo.muted = true;
+        const mainCanvas = document.getElementById('mainCanvas');
         const pipVideo = document.getElementById('pipVideo');
         const pipContainer = document.getElementById('pipContainer');
         const inactiveOverlay = document.getElementById('inactiveOverlay');
-        const statusBadge = document.getElementById('statusBadge');
-        
         const btnToggle = document.getElementById('toggleBtn');
-        const btnToggleIcon = document.getElementById('toggleBtnIcon');
         const btnToggleText = document.getElementById('toggleBtnText');
-        
         const sldDelay = document.getElementById('delaySlider');
         const txtDelayBadge = document.getElementById('delayBadge');
-        const txtDelayTarget = document.getElementById('delayTargetDisplay');
-        const txtBufferCount = document.getElementById('bufferCountDisplay');
-        
         const selCamera = document.getElementById('cameraSelect');
-        const selQuality = document.getElementById('qualitySelect');
-        const selFps = document.getElementById('fpsSelect');
-        const chkMirror = document.getElementById('mirrorToggle');
-        const chkAi = document.getElementById('aiToggle');
-        
-        const aiIcon = document.getElementById('aiIcon');
-        const aiText = document.getElementById('aiText');
-        const aiError = document.getElementById('aiError');
+        const chkAiLive = document.getElementById('aiToggleLive');
+        const chkAnglesLive = document.getElementById('anglesToggleLive');
+        const aiIconLive = document.getElementById('aiIconLive');
+        const aiTextLive = document.getElementById('aiTextLive');
+        let frameBuffer = [];
+        let renderLoopId = null;
+        let lastCaptureTime = 0;
+
+        // --- DOM ELEMENTS: ANALYZE ---
+        const upload1 = document.getElementById('upload1');
+        const upload2 = document.getElementById('upload2');
+        const video1 = document.getElementById('video1');
+        const video2 = document.getElementById('video2');
+        const canvas1 = document.getElementById('canvas1');
+        const canvas2 = document.getElementById('canvas2');
+        const vid1Placeholder = document.getElementById('vid1Placeholder');
+        const vid2Placeholder = document.getElementById('vid2Placeholder');
+        const btnSyncPlay = document.getElementById('btnSyncPlay');
+        const syncPlayIcon = document.getElementById('syncPlayIcon');
+        const chkAiAnalyze = document.getElementById('aiToggleAnalyze');
+        const chkAnglesAnalyze = document.getElementById('anglesToggleAnalyze');
+        const aiIconAnalyze = document.getElementById('aiIconAnalyze');
+        const aiTextAnalyze = document.getElementById('aiTextAnalyze');
+        let analyzeLoopId = null;
 
         // --- INITIALIZATION ---
         async function init() {
+            // Tab switching logic
+            tabBtnLive.addEventListener('click', () => switchTab('live'));
+            tabBtnAnalyze.addEventListener('click', () => switchTab('analyze'));
+
+            // Live logic
             try {
-                await navigator.mediaDevices.getUserMedia({ video: true });
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoInputs = devices.filter(d => d.kind === 'videoinput');
-                
-                selCamera.innerHTML = '';
-                if(videoInputs.length === 0) {
-                    selCamera.innerHTML = '<option value="">No cameras found</option>';
-                } else {
-                    videoInputs.forEach((d, index) => {
-                        const opt = document.createElement('option');
-                        opt.value = d.deviceId;
-                        opt.text = d.label || `Camera ${index + 1}`;
-                        selCamera.appendChild(opt);
-                    });
-                }
-            } catch (err) {
-                console.error("Camera access denied:", err);
-                selCamera.innerHTML = '<option value="">Permission denied</option>';
-            }
+                selCamera.innerHTML = videoInputs.length ? '' : '<option value="">No cameras found</option>';
+                videoInputs.forEach((d, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = d.deviceId; opt.text = d.label || `Camera ${i + 1}`;
+                    selCamera.appendChild(opt);
+                });
+            } catch (err) { selCamera.innerHTML = '<option value="">Permission denied</option>'; }
 
-            // Event Listeners
             btnToggle.addEventListener('click', toggleStream);
-            
             sldDelay.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                if (state.delayMs < val * 1000) state.isBuffering = true;
-                state.delayMs = val * 1000;
-                txtDelayBadge.textContent = `${val} Seconds`;
-                txtDelayTarget.textContent = `${val.toFixed(1)}s`;
+                state.delayMs = parseFloat(e.target.value) * 1000;
+                txtDelayBadge.textContent = `${e.target.value}s`;
             });
 
-            selQuality.addEventListener('change', (e) => state.resolution = e.target.value);
-            selFps.addEventListener('change', (e) => state.fps = parseInt(e.target.value));
-            
-            chkMirror.addEventListener('change', (e) => {
-                state.isMirrored = e.target.checked;
-                pipVideo.style.transform = state.isMirrored ? 'scaleX(-1)' : 'none';
-            });
+            // Video Analysis Logic
+            upload1.addEventListener('change', (e) => handleUpload(e, video1, vid1Placeholder));
+            upload2.addEventListener('change', (e) => handleUpload(e, video2, vid2Placeholder));
+            btnSyncPlay.addEventListener('click', toggleSyncPlay);
 
-            chkAi.addEventListener('change', async (e) => {
-                state.showSkeleton = e.target.checked;
-                if (state.showSkeleton && !poseLandmarker) {
-                    await loadAIModel();
+            // AI Toggles
+            chkAiLive.addEventListener('change', async (e) => {
+                state.showSkeletonLive = e.target.checked;
+                if (e.target.checked) await loadAIModel(aiIconLive, aiTextLive);
+            });
+            chkAiAnalyze.addEventListener('change', async (e) => {
+                state.showSkeletonAnalyze = e.target.checked;
+                if (e.target.checked) {
+                    await loadAIModel(aiIconAnalyze, aiTextAnalyze);
+                    if (!analyzeLoopId) analyzeLoop(); // Start processing
                 }
+            });
+
+            chkAnglesLive.addEventListener('change', (e) => state.showAnglesLive = e.target.checked);
+            chkAnglesAnalyze.addEventListener('change', (e) => {
+                state.showAnglesAnalyze = e.target.checked;
+                if (!analyzeLoopId && state.showSkeletonAnalyze) analyzeLoop(); 
             });
         }
 
+        function switchTab(target) {
+            state.activeTab = target;
+            if (target === 'live') {
+                tabBtnLive.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
+                tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
+                tabLive.classList.remove('hidden'); tabAnalyze.classList.add('hidden');
+            } else {
+                tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
+                tabBtnLive.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
+                tabAnalyze.classList.remove('hidden'); tabLive.classList.add('hidden');
+                
+                // Pause live camera to save resources if we switch away
+                if(state.isStreaming) stopStream();
+            }
+        }
+
         // --- AI MODEL LOADING ---
-        async function loadAIModel() {
-            aiIcon.className = "ph ph-spinner-gap text-lg animate-spin text-indigo-400";
-            aiText.textContent = "Loading AI Model...";
-            aiError.classList.add('hidden');
+        async function loadAIModel(iconEl, textEl) {
+            if (poseLandmarker || isModelLoading) return;
+            isModelLoading = true;
+            iconEl.className = "ph ph-spinner-gap text-lg animate-spin text-indigo-400";
+            textEl.textContent = "Loading AI...";
             
             try {
                 const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs');
-                const visionResolver = await vision.FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm"
-                );
+                const visionResolver = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
                 poseLandmarker = await vision.PoseLandmarker.createFromOptions(visionResolver, {
                     baseOptions: {
                         modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
@@ -292,254 +341,219 @@
                     runningMode: "VIDEO",
                     numPoses: 1
                 });
-                
-                aiIcon.className = "ph ph-person-simple-walk text-lg";
-                aiText.textContent = "AI Skeleton Pose";
+                iconEl.className = "ph ph-person-simple-walk text-lg text-emerald-400";
+                textEl.textContent = "AI Ready";
             } catch (err) {
                 console.error(err);
-                aiIcon.className = "ph ph-person-simple-walk text-lg";
-                aiText.textContent = "AI Skeleton Pose";
-                aiError.textContent = "Failed to load AI. Check adblocker or connection.";
-                aiError.classList.remove('hidden');
-                chkAi.checked = false;
-                state.showSkeleton = false;
+                iconEl.className = "ph ph-warning-circle text-lg text-rose-400";
+                textEl.textContent = "AI Failed";
+                chkAiLive.checked = false; chkAiAnalyze.checked = false;
+            }
+            isModelLoading = false;
+        }
+
+        // --- TAB 2: ANALYSIS LOGIC ---
+        function handleUpload(event, videoElement, placeholder) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            videoElement.src = url;
+            placeholder.classList.add('hidden');
+            
+            // Adjust canvas size to match video once metadata loads
+            videoElement.onloadedmetadata = () => {
+                if (videoElement.id === 'video1') {
+                    canvas1.width = videoElement.videoWidth; canvas1.height = videoElement.videoHeight;
+                } else {
+                    canvas2.width = videoElement.videoWidth; canvas2.height = videoElement.videoHeight;
+                }
+                // Draw initial frame if AI is active
+                if(state.showSkeletonAnalyze) analyzeLoop();
+            };
+        }
+
+        // Handle window resizing to keep canvases matching the visual size of videos
+        window.addEventListener('resize', () => {
+            if (state.activeTab === 'analyze') {
+                if (video1.src) {
+                    canvas1.width = video1.videoWidth; canvas1.height = video1.videoHeight;
+                }
+                if (video2.src) {
+                    canvas2.width = video2.videoWidth; canvas2.height = video2.videoHeight;
+                }
+                if (state.showSkeletonAnalyze && !state.isVideoPlaying) {
+                    analyzeLoop();
+                }
+            }
+        });
+
+        function toggleSyncPlay() {
+            if (state.isVideoPlaying) {
+                video1.pause(); video2.pause();
+                syncPlayIcon.className = "ph-fill ph-play text-xl";
+                state.isVideoPlaying = false;
+                cancelAnimationFrame(analyzeLoopId); analyzeLoopId = null;
+            } else {
+                video1.play(); video2.play();
+                syncPlayIcon.className = "ph-fill ph-pause text-xl";
+                state.isVideoPlaying = true;
+                if (!analyzeLoopId) analyzeLoopId = requestAnimationFrame(analyzeLoop);
             }
         }
 
-        // --- STREAM CONTROL ---
-        async function toggleStream() {
-            if (state.isStreaming) {
-                stopStream();
+        function analyzeLoop() {
+            if (state.activeTab !== 'analyze') return;
+
+            if (state.showSkeletonAnalyze && poseLandmarker) {
+                processVideoAI(video1, canvas1);
+                processVideoAI(video2, canvas2);
             } else {
-                startStream();
+                canvas1.getContext('2d').clearRect(0, 0, canvas1.width, canvas1.height);
+                canvas2.getContext('2d').clearRect(0, 0, canvas2.width, canvas2.height);
+            }
+
+            if (state.isVideoPlaying) {
+                analyzeLoopId = requestAnimationFrame(analyzeLoop);
             }
         }
+
+        function processVideoAI(video, canvas) {
+            if (video.readyState < 2 || video.videoWidth === 0) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            try {
+                // Use the video's current playback time as the timestamp for MediaPipe
+                const timeMs = video.currentTime * 1000; 
+                // Hack: MediaPipe VIDEO mode requires strictly increasing timestamps.
+                const safeTime = performance.now(); 
+                
+                const results = poseLandmarker.detectForVideo(video, safeTime);
+                if (results && results.landmarks && results.landmarks.length > 0) {
+                    drawSkeleton(ctx, results.landmarks[0], canvas.width, canvas.height, state.showAnglesAnalyze);
+                }
+            } catch (e) { /* Ignore minor frame drops */ }
+        }
+
+        // --- TAB 1: LIVE STREAM LOGIC ---
+        async function toggleStream() { state.isStreaming ? stopStream() : startStream(); }
 
         async function startStream() {
-            const width = state.resolution === '720p' ? 1280 : state.resolution === '480p' ? 640 : 320;
-            const height = state.resolution === '720p' ? 720 : state.resolution === '480p' ? 480 : 240;
-            const deviceId = selCamera.value;
-
-            const constraints = {
-                video: {
-                    deviceId: deviceId ? { exact: deviceId } : undefined,
-                    width: { ideal: width },
-                    height: { ideal: height },
-                    frameRate: { ideal: state.fps }
-                }
-            };
-
             try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                hiddenVideo.srcObject = stream;
-                pipVideo.srcObject = stream;
-                pipVideo.style.transform = state.isMirrored ? 'scaleX(-1)' : 'none';
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selCamera.value }});
+                hiddenVideo.srcObject = stream; pipVideo.srcObject = stream;
+                pipVideo.style.transform = 'scaleX(-1)'; // Mirror local PiP
                 await hiddenVideo.play();
-                
-                state.isStreaming = true;
-                state.isBuffering = true;
-                frameBuffer = [];
-                lastCaptureTime = performance.now();
-                
-                updateUIState(true);
-                renderLoopId = requestAnimationFrame(renderLoop);
-            } catch (err) {
-                alert("Could not access camera. Make sure Google Sites has camera permissions allowed in your browser.");
-            }
+                state.isStreaming = true; frameBuffer = []; lastCaptureTime = performance.now();
+                inactiveOverlay.classList.add('hidden'); pipContainer.classList.remove('hidden');
+                btnToggleText.textContent = "Stop Camera"; btnToggle.classList.replace('bg-indigo-500', 'bg-rose-500');
+                renderLoopId = requestAnimationFrame(liveRenderLoop);
+            } catch (err) { alert("Camera blocked or unavailable."); }
         }
 
         function stopStream() {
             state.isStreaming = false;
-            
-            if (hiddenVideo.srcObject) {
-                hiddenVideo.srcObject.getTracks().forEach(t => t.stop());
-                hiddenVideo.srcObject = null;
-            }
-            if (pipVideo.srcObject) {
-                pipVideo.srcObject = null;
-            }
-            
+            if (hiddenVideo.srcObject) hiddenVideo.srcObject.getTracks().forEach(t => t.stop());
             if (renderLoopId) cancelAnimationFrame(renderLoopId);
-            
-            // Clean memory
             frameBuffer.forEach(f => { if (f && f.bitmap) f.bitmap.close() });
-            frameBuffer = [];
-            txtBufferCount.textContent = "0";
-            
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            updateUIState(false);
+            mainCanvas.getContext('2d').clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            inactiveOverlay.classList.remove('hidden'); pipContainer.classList.add('hidden');
+            btnToggleText.textContent = "Start Camera"; btnToggle.classList.replace('bg-rose-500', 'bg-indigo-500');
         }
 
-        function updateUIState(isPlaying) {
-            selCamera.disabled = isPlaying;
-            selQuality.disabled = isPlaying;
-            
-            if (isPlaying) {
-                btnToggle.className = "w-full py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold transition-all bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20";
-                btnToggleIcon.className = "ph-fill ph-square text-xl";
-                btnToggleText.textContent = "Stop Camera";
-                inactiveOverlay.classList.add('hidden');
-                pipContainer.classList.remove('hidden');
-                statusBadge.classList.replace('hidden', 'flex');
-            } else {
-                btnToggle.className = "w-full py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold transition-all bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20";
-                btnToggleIcon.className = "ph-fill ph-camera text-xl";
-                btnToggleText.textContent = "Start Camera";
-                inactiveOverlay.classList.remove('hidden');
-                pipContainer.classList.add('hidden');
-                statusBadge.classList.replace('flex', 'hidden');
-            }
-        }
-
-        // --- RENDER LOOP ---
-        function renderLoop(now) {
+        function liveRenderLoop(now) {
             if (!state.isStreaming) return;
+            if (hiddenVideo.readyState < 2) return requestAnimationFrame(liveRenderLoop);
 
-            if (hiddenVideo.readyState < 2 || hiddenVideo.videoWidth === 0) {
-                renderLoopId = requestAnimationFrame(renderLoop);
-                return;
+            const ctx = mainCanvas.getContext('2d');
+            if (mainCanvas.width !== hiddenVideo.videoWidth) {
+                mainCanvas.width = hiddenVideo.videoWidth; mainCanvas.height = hiddenVideo.videoHeight;
             }
 
-            const ctx = canvas.getContext('2d');
-            const captureInterval = 1000 / state.fps;
-
-            if (canvas.width !== hiddenVideo.videoWidth || canvas.height !== hiddenVideo.videoHeight) {
-                canvas.width = hiddenVideo.videoWidth;
-                canvas.height = hiddenVideo.videoHeight;
-            }
-
-            const width = canvas.width;
-            const height = canvas.height;
-
-            // 1. CAPTURE
-            if (now - lastCaptureTime >= captureInterval) {
-                const captureNow = now;
+            // Capture
+            if (now - lastCaptureTime >= (1000 / 30)) {
                 lastCaptureTime = now;
-
                 createImageBitmap(hiddenVideo).then(bitmap => {
-                    if (state.isStreaming) {
-                        frameBuffer.push({ timestamp: captureNow, bitmap });
-                    } else {
-                        bitmap.close();
-                    }
-                }).catch(() => {});
+                    if (state.isStreaming) frameBuffer.push({ ts: now, bitmap }); else bitmap.close();
+                }).catch(()=>{});
             }
 
-            // 2. PLAYBACK
-            let didDrawFrame = false;
-            let currentTimestamp = now;
+            // Playback Delay
+            let frameToDraw = null;
+            while (frameBuffer.length > 0 && now - frameBuffer[0].ts >= state.delayMs) {
+                if (frameToDraw) frameToDraw.bitmap.close();
+                frameToDraw = frameBuffer.shift();
+            }
 
-            if (state.delayMs === 0) {
-                state.isBuffering = false;
-                ctx.save();
-                if (state.isMirrored) {
-                    ctx.scale(-1, 1);
-                    ctx.translate(-width, 0);
-                }
-                ctx.drawImage(hiddenVideo, 0, 0, width, height);
+            if (frameToDraw) {
+                ctx.save(); ctx.scale(-1, 1); ctx.translate(-mainCanvas.width, 0); // Mirror output
+                ctx.drawImage(frameToDraw.bitmap, 0, 0, mainCanvas.width, mainCanvas.height);
                 ctx.restore();
-                didDrawFrame = true;
-                currentTimestamp = now;
                 
-                while (frameBuffer.length > 0) frameBuffer.shift().bitmap.close();
-            } else {
-                let frameToDraw = null;
-                while (frameBuffer.length > 0 && now - frameBuffer[0].timestamp >= state.delayMs) {
-                    if (frameToDraw) frameToDraw.bitmap.close();
-                    frameToDraw = frameBuffer.shift();
+                // Apply AI to Live
+                if (state.showSkeletonLive && poseLandmarker) {
+                    try {
+                        const results = poseLandmarker.detectForVideo(mainCanvas, performance.now());
+                        if (results?.landmarks?.length) drawSkeleton(ctx, results.landmarks[0], mainCanvas.width, mainCanvas.height, state.showAnglesLive);
+                    } catch (e) {}
                 }
-
-                if (frameToDraw) {
-                    state.isBuffering = false;
-                    ctx.save();
-                    if (state.isMirrored) {
-                        ctx.scale(-1, 1);
-                        ctx.translate(-width, 0);
-                    }
-                    ctx.clearRect(0, 0, width, height);
-                    ctx.drawImage(frameToDraw.bitmap, 0, 0, width, height);
-                    ctx.restore();
-                    didDrawFrame = true;
-                    currentTimestamp = frameToDraw.timestamp;
-                    
-                    frameToDraw.bitmap.close();
-                } else if (state.isBuffering && frameBuffer.length > 0) {
-                    ctx.clearRect(0, 0, width, height);
-                    ctx.fillStyle = '#0f172a';
-                    ctx.fillRect(0, 0, width, height);
-                    ctx.fillStyle = '#f8fafc';
-                    ctx.font = '500 24px system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    
-                    const oldestFrame = frameBuffer[0];
-                    const elapsed = now - oldestFrame.timestamp;
-                    const progress = Math.min(100, Math.round((elapsed / state.delayMs) * 100));
-                    
-                    ctx.fillText(`Buffering: ${progress}%`, width / 2, height / 2 - 15);
-                    ctx.font = '16px system-ui';
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.fillText(`Waiting for ${state.delayMs / 1000}s delay...`, width / 2, height / 2 + 15);
-                }
+                frameToDraw.bitmap.close();
             }
 
-            // 3. AI POSE
-            if (didDrawFrame && state.showSkeleton && poseLandmarker) {
-                let poseTime = Math.floor(currentTimestamp);
-                if (poseTime <= lastPoseTime) poseTime = lastPoseTime + 1;
-                lastPoseTime = poseTime;
-                
-                try {
-                    const results = poseLandmarker.detectForVideo(canvas, poseTime);
-                    if (results && results.landmarks && results.landmarks.length > 0) {
-                        drawSkeleton(ctx, results.landmarks[0], width, height);
-                    }
-                } catch (err) {
-                    // Ignore transient detection errors
-                }
-            }
-
-            if (Math.random() < 0.05) txtBufferCount.textContent = frameBuffer.length;
-
-            renderLoopId = requestAnimationFrame(renderLoop);
+            renderLoopId = requestAnimationFrame(liveRenderLoop);
         }
 
-        function drawSkeleton(ctx, landmarks, width, height) {
-            ctx.save();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#10b981';
-            ctx.fillStyle = '#ffffff';
-
+        // --- GLOBAL DRAW FUNCTION ---
+        function drawSkeleton(ctx, landmarks, w, h, showAngles = false) {
+            ctx.save(); ctx.lineWidth = 4; ctx.strokeStyle = '#10b981'; ctx.fillStyle = '#ffffff';
             POSE_CONNECTIONS.forEach(([i, j]) => {
-                const p1 = landmarks[i];
-                const p2 = landmarks[j];
-                const v1 = p1?.visibility !== undefined ? p1.visibility : 1;
-                const v2 = p2?.visibility !== undefined ? p2.visibility : 1;
-
+                const p1 = landmarks[i], p2 = landmarks[j];
+                const v1 = p1?.visibility ?? 1, v2 = p2?.visibility ?? 1;
                 if (p1 && p2 && v1 > 0.1 && v2 > 0.1) {
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x * width, p1.y * height);
-                    ctx.lineTo(p2.x * width, p2.y * height);
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(p1.x * w, p1.y * h); ctx.lineTo(p2.x * w, p2.y * h); ctx.stroke();
+                }
+            });
+            landmarks.forEach(p => {
+                if (p && (p.visibility ?? 1) > 0.1) {
+                    ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 5, 0, 2 * Math.PI); ctx.fill();
                 }
             });
 
-            landmarks.forEach(p => {
-                const v = p?.visibility !== undefined ? p.visibility : 1;
-                if (p && v > 0.1) {
-                    ctx.beginPath();
-                    ctx.arc(p.x * width, p.y * height, 4, 0, 2 * Math.PI);
-                    ctx.fill();
-                }
-            });
+            if (showAngles) {
+                ctx.font = 'bold 16px system-ui';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                
+                ANGLES_TO_DRAW.forEach(joint => {
+                    const a = landmarks[joint.p1];
+                    const b = landmarks[joint.p2];
+                    const c = landmarks[joint.p3];
+                    const v1 = a?.visibility ?? 1;
+                    const v2 = b?.visibility ?? 1;
+                    const v3 = c?.visibility ?? 1;
+
+                    if (a && b && c && v1 > 0.3 && v2 > 0.3 && v3 > 0.3) {
+                        const angle = calculateAngle(a, b, c);
+                        const x = b.x * w + 12;
+                        const y = b.y * h;
+                        
+                        ctx.shadowColor = "black";
+                        ctx.shadowBlur = 4;
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = "black";
+                        ctx.strokeText(`${angle}°`, x, y);
+                        
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = '#fde047';
+                        ctx.fillText(`${angle}°`, x, y);
+                    }
+                });
+            }
+
             ctx.restore();
         }
 
-        // Run Init
         init();
-
     </script>
 </body>
 </html>
