@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TimeWarp & Posture Analysis</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        canvas { cursor: crosshair; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30">
@@ -61,8 +64,9 @@
                     </div>
                 </div>
 
+                <!-- Live Configuration sidebar panel -->
                 <div class="space-y-6">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
                         <button id="toggleBtn" class="w-full mb-6 py-3 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold bg-indigo-500 hover:bg-indigo-600 text-white transition-all">
                             <i id="toggleBtnIcon" class="ph-fill ph-camera text-xl"></i>
                             <span id="toggleBtnText">Start Camera</span>
@@ -104,67 +108,181 @@
             <!-- ========================================== -->
             <!-- TAB 2: VIDEO ANALYSIS (HORIZONTAL LAYOUT)  -->
             <!-- ========================================== -->
-            <div id="tabAnalyze" class="hidden space-y-6">
+            <div id="tabAnalyze" class="hidden grid grid-cols-1 lg:grid-cols-4 gap-6">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    <!-- Video 1 Frame -->
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center">
-                        <div class="w-full flex justify-between items-center mb-3">
-                            <span class="text-sm font-semibold text-indigo-400">Video 1</span>
-                            <input type="file" id="upload1" accept="video/mp4,video/webm,video/quicktime" class="block text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 cursor-pointer"/>
+                <!-- Left Column (Videos Viewport, Inputs & Timing Playback bar - spans 3 columns) -->
+                <div class="lg:col-span-3 space-y-4">
+                    <!-- Upload controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Video 1 (Base - Green Kinematics)</label>
+                            <input type="file" id="upload1" accept="video/mp4,video/webm,video/quicktime" class="block w-full text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer"/>
                         </div>
-                        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center max-h-[500px]">
-                            <p id="vid1Placeholder" class="text-slate-600 absolute">Upload Video 1</p>
-                            <video id="video1" class="absolute inset-0 w-full h-full object-contain z-10" playsinline muted></video>
-                            <canvas id="canvas1" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Video 2 Frame -->
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center">
-                        <div class="w-full flex justify-between items-center mb-3">
-                            <span class="text-sm font-semibold text-indigo-400">Video 2</span>
-                            <input type="file" id="upload2" accept="video/mp4,video/webm,video/quicktime" class="block text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 cursor-pointer"/>
-                        </div>
-                        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center max-h-[500px]">
-                            <p id="vid2Placeholder" class="text-slate-600 absolute">Upload Video 2</p>
-                            <video id="video2" class="absolute inset-0 w-full h-full object-contain z-10" playsinline muted></video>
-                            <canvas id="canvas2" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none"></canvas>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-pink-400 uppercase tracking-wider">Video 2 (Overlay - Pink Kinematics)</label>
+                            <input type="file" id="upload2" accept="video/mp4,video/webm,video/quicktime" class="block w-full text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-500/10 file:text-pink-400 hover:file:bg-pink-500/20 cursor-pointer"/>
                         </div>
                     </div>
 
+                    <!-- Unified Superimposed Video Viewport -->
+                    <div class="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl ring-1 ring-white/5 flex items-center justify-center max-h-[600px]">
+                        
+                        <p id="vidPlaceholder" class="text-slate-500 text-sm flex flex-col items-center space-y-2 z-10">
+                            <i class="ph ph-upload-simple text-4xl opacity-50"></i>
+                            <span>Upload videos above to begin superimposed overlay analysis</span>
+                        </p>
+
+                        <!-- Base Video Layer -->
+                        <video id="video1" class="absolute inset-0 w-full h-full object-contain z-0 origin-center transition-transform duration-75" playsinline muted></video>
+                        <canvas id="canvas1" class="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none origin-center transition-transform duration-75"></canvas>
+
+                        <!-- Top Overlay Video Layer -->
+                        <video id="video2" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none opacity-50 origin-center transition-transform duration-75" playsinline muted></video>
+                        <canvas id="canvas2" class="absolute inset-0 w-full h-full object-contain z-30 pointer-events-none opacity-50 origin-center transition-transform duration-75"></canvas>
+                        
+                        <!-- Top interaction layer for Manual Protractor Click/Drag -->
+                        <canvas id="interactionCanvas" class="absolute inset-0 w-full h-full object-contain z-40 origin-center transition-transform duration-75"></canvas>
+                    </div>
+
+                    <!-- Timing, Playback & Calibration Controls Row -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-xl">
+                        <div class="flex items-center space-x-4">
+                            <button id="btnSyncPlay" class="w-12 h-12 rounded-full bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors">
+                                <i id="syncPlayIcon" class="ph-fill ph-play text-xl"></i>
+                            </button>
+                            <div>
+                                <h3 class="font-bold text-slate-200">Synchronized Playback</h3>
+                                <p class="text-sm text-slate-400">Plays both videos concurrently in overlay mode</p>
+                            </div>
+                        </div>
+
+                        <!-- Overlay Opacity Control Slider -->
+                        <div class="flex-1 max-w-xs w-full space-y-1">
+                            <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
+                                <span>Overlay Opacity (Video 2)</span>
+                                <span id="opacityVal">50%</span>
+                            </div>
+                            <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.5" class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Sync Controls -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <button id="btnSyncPlay" class="w-12 h-12 rounded-full bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors">
-                            <i id="syncPlayIcon" class="ph-fill ph-play text-xl"></i>
-                        </button>
-                        <div>
-                            <h3 class="font-bold text-slate-200">Synchronized Playback</h3>
-                            <p class="text-sm text-slate-400">Plays both videos simultaneously</p>
+                <!-- Right Column (Sidebar Controls panel - stacks vertically inside) -->
+                <div class="space-y-6 lg:col-span-1">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
+                        <div class="border-b border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-slate-200 flex items-center space-x-2">
+                                <i class="ph ph-sliders text-indigo-400 text-lg"></i>
+                                <span>Calibrations & Tools</span>
+                            </h3>
                         </div>
-                    </div>
 
-                    <div class="flex items-center space-x-4 flex-wrap justify-end">
-                        <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent">
-                            <input type="checkbox" id="aiToggleAnalyze" class="sr-only peer">
-                            <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                            <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
-                                <i id="aiIconAnalyze" class="ph ph-person-simple-walk text-lg"></i>
-                                <span id="aiTextAnalyze">AI Skeleton Overlay</span>
+                        <!-- Manual Kinematic Chain Activation -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60 space-y-3 font-sans">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Kinematic Chain</span>
+                                <span class="text-[10px] text-slate-500 leading-tight mt-0.5">Left-click to add nodes. Right-click to delete. Drag to refine.</span>
                             </div>
-                        </label>
-                        <label class="flex items-center cursor-pointer p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent">
-                            <input type="checkbox" id="anglesToggleAnalyze" class="sr-only peer">
-                            <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                            <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
-                                <i class="ph ph-protractor text-lg"></i>
-                                <span>Show Angles</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btnManualProt1" class="text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                                    <i class="ph ph-crosshair"></i> V1 (Green)
+                                </button>
+                                <button id="btnManualProt2" class="text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                                    <i class="ph ph-crosshair"></i> V2 (Pink)
+                                </button>
                             </div>
-                        </label>
+                            <button id="btnClearManual" class="w-full text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 py-2 rounded-md font-semibold transition-all border border-rose-500/20">
+                                Clear Kinematic Chains
+                            </button>
+                        </div>
+
+                        <!-- Video 1 Calibration (Base Video) -->
+                        <div class="space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800/60">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Video 1 (Base - Green)</span>
+                                <button id="btnResetV1" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">Reset</button>
+                            </div>
+                            
+                            <!-- Scale / Zoom -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Scale (Zoom Factor)</span>
+                                    <span id="v1ScaleVal">100%</span>
+                                </div>
+                                <input type="range" id="v1ScaleSlider" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
+                            </div>
+
+                            <!-- Position Pan (X Offset) -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Offset X (Pan Horizontal)</span>
+                                    <span id="v1XVal">0%</span>
+                                </div>
+                                <input type="range" id="v1XSlider" min="-50" max="50" step="1" value="0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
+                            </div>
+
+                            <!-- Position Pan (Y Offset) -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Offset Y (Pan Vertical)</span>
+                                    <span id="v1YVal">0%</span>
+                                </div>
+                                <input type="range" id="v1YSlider" min="-50" max="50" step="1" value="0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
+                            </div>
+
+                            <!-- Temporal Trim Start -->
+                            <div class="space-y-1.5 pt-2 border-t border-slate-800/40">
+                                <div class="flex justify-between text-xs text-slate-300 font-semibold">
+                                    <span>Trim Start (Timeline Lock)</span>
+                                    <span id="v1TrimVal" class="text-emerald-400">0.00s</span>
+                                </div>
+                                <input type="range" id="v1TrimSlider" min="0" max="30" step="0.1" value="0" class="w-full accent-emerald-500 h-1.5 bg-slate-800 rounded">
+                            </div>
+                        </div>
+
+                        <!-- Video 2 Calibration (Overlay Video) -->
+                        <div class="space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800/60">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-pink-400">Video 2 (Overlay - Pink)</span>
+                                <button id="btnResetV2" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">Reset</button>
+                            </div>
+                            
+                            <!-- Scale / Zoom -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Scale (Zoom Factor)</span>
+                                    <span id="v2ScaleVal">100%</span>
+                                </div>
+                                <input type="range" id="v2ScaleSlider" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
+                            </div>
+
+                            <!-- Position Pan (X Offset) -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Offset X (Pan Horizontal)</span>
+                                    <span id="v2XVal">0%</span>
+                                </div>
+                                <input type="range" id="v2XSlider" min="-50" max="50" step="1" value="0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
+                            </div>
+
+                            <!-- Position Pan (Y Offset) -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Offset Y (Pan Vertical)</span>
+                                    <span id="v2YVal">0%</span>
+                                </div>
+                                <input type="range" id="v2YSlider" min="-50" max="50" step="1" value="0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
+                            </div>
+
+                            <!-- Temporal Trim Start -->
+                            <div class="space-y-1.5 pt-2 border-t border-slate-800/40">
+                                <div class="flex justify-between text-xs text-slate-300 font-semibold">
+                                    <span>Trim Start (Timeline Lock)</span>
+                                    <span id="v2TrimVal" class="text-pink-400">0.00s</span>
+                                </div>
+                                <input type="range" id="v2TrimSlider" min="0" max="30" step="0.1" value="0" class="w-full accent-pink-500 h-1.5 bg-slate-800 rounded">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -174,7 +292,6 @@
     </div>
 
     <script type="module">
-        // --- CONSTANTS & STATE ---
         const POSE_CONNECTIONS = [
             [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
             [9, 10], [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
@@ -184,32 +301,57 @@
         ];
 
         const ANGLES_TO_DRAW = [
-            { p1: 11, p2: 13, p3: 15 }, // L-Elbow
-            { p1: 12, p2: 14, p3: 16 }, // R-Elbow
-            { p1: 23, p2: 25, p3: 27 }, // L-Knee
-            { p1: 24, p2: 26, p3: 28 }, // R-Knee
-            { p1: 11, p2: 23, p3: 25 }, // L-Hip
-            { p1: 12, p2: 24, p3: 26 }, // R-Hip
-            { p1: 23, p2: 11, p3: 13 }, // L-Shoulder
-            { p1: 24, p2: 12, p3: 14 }  // R-Shoulder
+            { name: "Left Elbow", p1: 11, p2: 13, p3: 15 },
+            { name: "Right Elbow", p1: 12, p2: 14, p3: 16 },
+            { name: "Left Knee", p1: 23, p2: 25, p3: 27 },
+            { name: "Right Knee", p1: 24, p2: 26, p3: 28 },
+            { name: "Left Hip", p1: 11, p2: 23, p3: 25 },
+            { name: "Right Hip", p1: 12, p2: 24, p3: 26 },
+            { name: "Left Shoulder", p1: 23, p2: 11, p3: 13 },
+            { name: "Right Shoulder", p1: 24, p2: 12, p3: 14 }
         ];
 
-        function calculateAngle(a, b, c) {
-            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+        // Real coordinate-invariant angle calculation
+        function calculateAngle(a, b, c, aspect = 1) {
+            const ax = a.x * aspect;
+            const bx = b.x * aspect;
+            const cx = c.x * aspect;
+            
+            const radians = Math.atan2(c.y - b.y, cx - bx) - Math.atan2(a.y - b.y, ax - bx);
             let angle = Math.abs(radians * 180.0 / Math.PI);
             if (angle > 180.0) angle = 360.0 - angle;
             return Math.round(angle);
         }
 
+        // --- GLOBAL CALIBRATION & TIMING STATES ---
+        let transformState = {
+            v1Scale: 1.0, v1X: 0, v1Y: 0,
+            v2Scale: 1.0, v2X: 0, v2Y: 0
+        };
+
+        let timingState = {
+            v1Start: 0,
+            v2Start: 0
+        };
+
         let state = {
-            activeTab: 'live', // 'live' or 'analyze'
+            activeTab: 'live',
             isStreaming: false,
             delayMs: 3000,
+            isVideoPlaying: false,
+            overlayOpacity: 0.5,
             showSkeletonLive: false,
             showAnglesLive: false,
-            showSkeletonAnalyze: false,
-            showAnglesAnalyze: false,
-            isVideoPlaying: false
+            minConfidence: 0.3
+        };
+
+        // --- MANUAL PROTRACTOR STATE ---
+        let manualProtState = {
+            activeTrack: null, // null, 1 (V1), or 2 (V2)
+            v1Points: [], // unlimited points [{x, y}] in local canvas coordinates
+            v2Points: [], // unlimited points [{x, y}]
+            draggingPointIdx: -1,
+            draggingTrack: null
         };
 
         let poseLandmarker = null;
@@ -248,23 +390,44 @@
         const video2 = document.getElementById('video2');
         const canvas1 = document.getElementById('canvas1');
         const canvas2 = document.getElementById('canvas2');
-        const vid1Placeholder = document.getElementById('vid1Placeholder');
-        const vid2Placeholder = document.getElementById('vid2Placeholder');
+        const interactionCanvas = document.getElementById('interactionCanvas');
+        const vidPlaceholder = document.getElementById('vidPlaceholder');
         const btnSyncPlay = document.getElementById('btnSyncPlay');
         const syncPlayIcon = document.getElementById('syncPlayIcon');
-        const chkAiAnalyze = document.getElementById('aiToggleAnalyze');
-        const chkAnglesAnalyze = document.getElementById('anglesToggleAnalyze');
-        const aiIconAnalyze = document.getElementById('aiIconAnalyze');
-        const aiTextAnalyze = document.getElementById('aiTextAnalyze');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityVal = document.getElementById('opacityVal');
         let analyzeLoopId = null;
 
-        // --- INITIALIZATION ---
+        // --- CALIBRATION INTERFACE ELEMENTS ---
+        const v1ScaleSlider = document.getElementById('v1ScaleSlider');
+        const v1ScaleVal = document.getElementById('v1ScaleVal');
+        const v1XSlider = document.getElementById('v1XSlider');
+        const v1XVal = document.getElementById('v1XVal');
+        const v1YSlider = document.getElementById('v1YSlider');
+        const v1YVal = document.getElementById('v1YVal');
+        const v1TrimSlider = document.getElementById('v1TrimSlider');
+        const v1TrimVal = document.getElementById('v1TrimVal');
+        const btnResetV1 = document.getElementById('btnResetV1');
+
+        const v2ScaleSlider = document.getElementById('v2ScaleSlider');
+        const v2ScaleVal = document.getElementById('v2ScaleVal');
+        const v2XSlider = document.getElementById('v2XSlider');
+        const v2XVal = document.getElementById('v2XVal');
+        const v2YSlider = document.getElementById('v2YSlider');
+        const v2YVal = document.getElementById('v2YVal');
+        const v2TrimSlider = document.getElementById('v2TrimSlider');
+        const v2TrimVal = document.getElementById('v2TrimVal');
+        const btnResetV2 = document.getElementById('btnResetV2');
+
+        // --- MANUAL PROTRACTOR BTNS ---
+        const btnManualProt1 = document.getElementById('btnManualProt1');
+        const btnManualProt2 = document.getElementById('btnManualProt2');
+        const btnClearManual = document.getElementById('btnClearManual');
+
         async function init() {
-            // Tab switching logic
             tabBtnLive.addEventListener('click', () => switchTab('live'));
             tabBtnAnalyze.addEventListener('click', () => switchTab('analyze'));
 
-            // Live logic
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoInputs = devices.filter(d => d.kind === 'videoinput');
@@ -282,29 +445,131 @@
                 txtDelayBadge.textContent = `${e.target.value}s`;
             });
 
-            // Video Analysis Logic
-            upload1.addEventListener('change', (e) => handleUpload(e, video1, vid1Placeholder));
-            upload2.addEventListener('change', (e) => handleUpload(e, video2, vid2Placeholder));
+            upload1.addEventListener('change', (e) => handleUpload(e, video1, canvas1));
+            upload2.addEventListener('change', (e) => handleUpload(e, video2, canvas2));
+            
+            video1.addEventListener('timeupdate', onVideoFrameUpdate);
+            video1.addEventListener('seeked', onVideoFrameUpdate);
+            video2.addEventListener('timeupdate', onVideoFrameUpdate);
+            video2.addEventListener('seeked', onVideoFrameUpdate);
+
             btnSyncPlay.addEventListener('click', toggleSyncPlay);
 
-            // AI Toggles
+            opacitySlider.addEventListener('input', (e) => {
+                const opacity = parseFloat(e.target.value);
+                state.overlayOpacity = opacity;
+                opacityVal.textContent = `${Math.round(opacity * 100)}%`;
+                video2.style.opacity = opacity;
+                canvas2.style.opacity = opacity;
+                
+                // Update opacity on interaction layer canvas representation
+                drawManualProtractors();
+            });
+
+            // --- SPATIAL & TEMPORAL CALIBRATION ---
+            v1ScaleSlider.addEventListener('input', (e) => {
+                transformState.v1Scale = parseFloat(e.target.value);
+                v1ScaleVal.textContent = `${Math.round(transformState.v1Scale * 100)}%`;
+                applyTransforms();
+            });
+            v1XSlider.addEventListener('input', (e) => {
+                transformState.v1X = parseInt(e.target.value);
+                v1XVal.textContent = `${transformState.v1X > 0 ? '+' : ''}${transformState.v1X}%`;
+                applyTransforms();
+            });
+            v1YSlider.addEventListener('input', (e) => {
+                transformState.v1Y = parseInt(e.target.value);
+                v1YVal.textContent = `${transformState.v1Y > 0 ? '+' : ''}${transformState.v1Y}%`;
+                applyTransforms();
+            });
+            v1TrimSlider.addEventListener('input', (e) => {
+                timingState.v1Start = parseFloat(e.target.value);
+                v1TrimVal.textContent = `${timingState.v1Start.toFixed(2)}s`;
+                if (!state.isVideoPlaying && isFinite(timingState.v1Start)) {
+                    try { video1.currentTime = timingState.v1Start; } catch (err) {}
+                }
+            });
+            btnResetV1.addEventListener('click', () => {
+                v1ScaleSlider.value = 1.0; transformState.v1Scale = 1.0; v1ScaleVal.textContent = "100%";
+                v1XSlider.value = 0; transformState.v1X = 0; v1XVal.textContent = "0%";
+                v1YSlider.value = 0; transformState.v1Y = 0; v1YVal.textContent = "0%";
+                v1TrimSlider.value = 0; timingState.v1Start = 0; v1TrimVal.textContent = "0.00s";
+                if (!state.isVideoPlaying) {
+                    try { video1.currentTime = 0; } catch (err) {}
+                }
+                applyTransforms();
+            });
+
+            v2ScaleSlider.addEventListener('input', (e) => {
+                transformState.v2Scale = parseFloat(e.target.value);
+                v2ScaleVal.textContent = `${Math.round(transformState.v2Scale * 100)}%`;
+                applyTransforms();
+            });
+            v2XSlider.addEventListener('input', (e) => {
+                transformState.v2X = parseInt(e.target.value);
+                v2XVal.textContent = `${transformState.v2X > 0 ? '+' : ''}${transformState.v2X}%`;
+                applyTransforms();
+            });
+            v2YSlider.addEventListener('input', (e) => {
+                transformState.v2Y = parseInt(e.target.value);
+                v2YVal.textContent = `${transformState.v2Y > 0 ? '+' : ''}${transformState.v2Y}%`;
+                applyTransforms();
+            });
+            v2TrimSlider.addEventListener('input', (e) => {
+                timingState.v2Start = parseFloat(e.target.value);
+                v2TrimVal.textContent = `${timingState.v2Start.toFixed(2)}s`;
+                if (!state.isVideoPlaying && isFinite(timingState.v2Start)) {
+                    try { video2.currentTime = timingState.v2Start; } catch (err) {}
+                }
+            });
+            btnResetV2.addEventListener('click', () => {
+                v2ScaleSlider.value = 1.0; transformState.v2Scale = 1.0; v2ScaleVal.textContent = "100%";
+                v2XSlider.value = 0; transformState.v2X = 0; v2XVal.textContent = "0%";
+                v2YSlider.value = 0; transformState.v2Y = 0; v2YVal.textContent = "0%";
+                v2TrimSlider.value = 0; timingState.v2Start = 0; v2TrimVal.textContent = "0.00s";
+                if (!state.isVideoPlaying) {
+                    try { video2.currentTime = 0; } catch (err) {}
+                }
+                applyTransforms();
+            });
+
+            // --- MANUAL PROTRACTOR CONSOLE HANDLERS ---
+            btnManualProt1.addEventListener('click', () => toggleManualProtTrack(1));
+            btnManualProt2.addEventListener('click', () => toggleManualProtTrack(2));
+            btnClearManual.addEventListener('click', clearManualProtPoints);
+
+            interactionCanvas.addEventListener('mousedown', onInteractionMouseDown);
+            interactionCanvas.addEventListener('mousemove', onInteractionMouseMove);
+            window.addEventListener('mouseup', onInteractionMouseUp);
+            
+            // Right-click listener to delete individual points dynamically
+            interactionCanvas.addEventListener('contextmenu', onInteractionContextMenu);
+
+            // AI Toggles (Live tab)
             chkAiLive.addEventListener('change', async (e) => {
                 state.showSkeletonLive = e.target.checked;
                 if (e.target.checked) await loadAIModel(aiIconLive, aiTextLive);
             });
-            chkAiAnalyze.addEventListener('change', async (e) => {
-                state.showSkeletonAnalyze = e.target.checked;
-                if (e.target.checked) {
-                    await loadAIModel(aiIconAnalyze, aiTextAnalyze);
-                    if (!analyzeLoopId) analyzeLoop(); // Start processing
-                }
+            chkAnglesLive.addEventListener('change', (e) => {
+                state.showAnglesLive = e.target.checked;
             });
+        }
 
-            chkAnglesLive.addEventListener('change', (e) => state.showAnglesLive = e.target.checked);
-            chkAnglesAnalyze.addEventListener('change', (e) => {
-                state.showAnglesAnalyze = e.target.checked;
-                if (!analyzeLoopId && state.showSkeletonAnalyze) analyzeLoop(); 
-            });
+        // --- SPATIAL TRANSFORM APPLIER ---
+        function applyTransforms() {
+            const t1 = `scale(${transformState.v1Scale}) translate(${transformState.v1X}%, ${transformState.v1Y}%)`;
+            video1.style.transform = t1;
+            canvas1.style.transform = t1;
+
+            const t2 = `scale(${transformState.v2Scale}) translate(${transformState.v2X}%, ${transformState.v2Y}%)`;
+            video2.style.transform = t2;
+            canvas2.style.transform = t2;
+        }
+
+        function onVideoFrameUpdate() {
+            if (state.activeTab === 'analyze' && !state.isVideoPlaying) {
+                analyzeLoop();
+            }
         }
 
         function switchTab(target) {
@@ -317,13 +582,21 @@
                 tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
                 tabBtnLive.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
                 tabAnalyze.classList.remove('hidden'); tabLive.classList.add('hidden');
-                
-                // Pause live camera to save resources if we switch away
                 if(state.isStreaming) stopStream();
+                
+                // Adjust overlay canvas properties to align with view container bounds
+                setTimeout(resizeInteractionCanvas, 100);
             }
         }
 
-        // --- AI MODEL LOADING ---
+        function resizeInteractionCanvas() {
+            const rect = interactionCanvas.getBoundingClientRect();
+            interactionCanvas.width = interactionCanvas.clientWidth;
+            interactionCanvas.height = interactionCanvas.clientHeight;
+            drawManualProtractors();
+        }
+
+        // --- AI MODEL LOADING (Live camera) ---
         async function loadAIModel(iconEl, textEl) {
             if (poseLandmarker || isModelLoading) return;
             isModelLoading = true;
@@ -333,12 +606,13 @@
             try {
                 const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs');
                 const visionResolver = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
+                
                 poseLandmarker = await vision.PoseLandmarker.createFromOptions(visionResolver, {
                     baseOptions: {
-                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
                         delegate: "CPU"
                     },
-                    runningMode: "VIDEO",
+                    runningMode: "IMAGE", 
                     numPoses: 1
                 });
                 iconEl.className = "ph ph-person-simple-walk text-lg text-emerald-400";
@@ -347,45 +621,32 @@
                 console.error(err);
                 iconEl.className = "ph ph-warning-circle text-lg text-rose-400";
                 textEl.textContent = "AI Failed";
-                chkAiLive.checked = false; chkAiAnalyze.checked = false;
+                chkAiLive.checked = false;
             }
             isModelLoading = false;
         }
 
-        // --- TAB 2: ANALYSIS LOGIC ---
-        function handleUpload(event, videoElement, placeholder) {
+        function handleUpload(event, videoElement, canvasElement) {
             const file = event.target.files[0];
             if (!file) return;
             const url = URL.createObjectURL(file);
             videoElement.src = url;
-            placeholder.classList.add('hidden');
+            vidPlaceholder.classList.add('hidden');
             
-            // Adjust canvas size to match video once metadata loads
             videoElement.onloadedmetadata = () => {
+                canvasElement.width = videoElement.videoWidth; 
+                canvasElement.height = videoElement.videoHeight;
+                
                 if (videoElement.id === 'video1') {
-                    canvas1.width = videoElement.videoWidth; canvas1.height = videoElement.videoHeight;
+                    v1TrimSlider.max = videoElement.duration;
                 } else {
-                    canvas2.width = videoElement.videoWidth; canvas2.height = videoElement.videoHeight;
+                    v2TrimSlider.max = videoElement.duration;
                 }
-                // Draw initial frame if AI is active
-                if(state.showSkeletonAnalyze) analyzeLoop();
+
+                analyzeLoop();
+                resizeInteractionCanvas();
             };
         }
-
-        // Handle window resizing to keep canvases matching the visual size of videos
-        window.addEventListener('resize', () => {
-            if (state.activeTab === 'analyze') {
-                if (video1.src) {
-                    canvas1.width = video1.videoWidth; canvas1.height = video1.videoHeight;
-                }
-                if (video2.src) {
-                    canvas2.width = video2.videoWidth; canvas2.height = video2.videoHeight;
-                }
-                if (state.showSkeletonAnalyze && !state.isVideoPlaying) {
-                    analyzeLoop();
-                }
-            }
-        });
 
         function toggleSyncPlay() {
             if (state.isVideoPlaying) {
@@ -394,7 +655,19 @@
                 state.isVideoPlaying = false;
                 cancelAnimationFrame(analyzeLoopId); analyzeLoopId = null;
             } else {
-                video1.play(); video2.play();
+                if (isFinite(timingState.v1Start) && isFinite(video1.currentTime)) {
+                    try { video1.currentTime = Math.max(timingState.v1Start, video1.currentTime); } catch (e) {}
+                }
+                if (isFinite(timingState.v2Start) && isFinite(video2.currentTime)) {
+                    try { video2.currentTime = Math.max(timingState.v2Start, video2.currentTime); } catch (e) {}
+                }
+                
+                // Play and robustly capture promises to catch and silence interrupt/abort errors
+                const p1 = video1.play();
+                if (p1 !== undefined) p1.catch(() => {});
+                const p2 = video2.play();
+                if (p2 !== undefined) p2.catch(() => {});
+
                 syncPlayIcon.className = "ph-fill ph-pause text-xl";
                 state.isVideoPlaying = true;
                 if (!analyzeLoopId) analyzeLoopId = requestAnimationFrame(analyzeLoop);
@@ -404,35 +677,239 @@
         function analyzeLoop() {
             if (state.activeTab !== 'analyze') return;
 
-            if (state.showSkeletonAnalyze && poseLandmarker) {
-                processVideoAI(video1, canvas1);
-                processVideoAI(video2, canvas2);
-            } else {
-                canvas1.getContext('2d').clearRect(0, 0, canvas1.width, canvas1.height);
-                canvas2.getContext('2d').clearRect(0, 0, canvas2.width, canvas2.height);
+            // Enforce temporal sync lock between the two video clips while playing (with finite check guards)
+            if (state.isVideoPlaying) {
+                if (isFinite(video1.currentTime) && isFinite(timingState.v1Start) && isFinite(timingState.v2Start) && isFinite(video2.currentTime) && isFinite(video2.duration)) {
+                    const elapsedV1 = video1.currentTime - timingState.v1Start;
+                    const expectedV2 = timingState.v2Start + elapsedV1;
+                    
+                    // If drift exceeds 150ms, perform micro-seek correction
+                    if (isFinite(expectedV2) && Math.abs(video2.currentTime - expectedV2) > 0.15) {
+                        try {
+                            video2.currentTime = Math.max(0, Math.min(video2.duration, expectedV2));
+                        } catch (e) {}
+                    }
+                }
+
+                // Auto reset if loop limits are exceeded
+                if (video1.ended || video2.ended) {
+                    video1.pause(); video2.pause();
+                    if (isFinite(timingState.v1Start)) {
+                        try { video1.currentTime = timingState.v1Start; } catch (e) {}
+                    }
+                    if (isFinite(timingState.v2Start)) {
+                        try { video2.currentTime = timingState.v2Start; } catch (e) {}
+                    }
+                    syncPlayIcon.className = "ph-fill ph-play text-xl";
+                    state.isVideoPlaying = false;
+                }
             }
+
+            // Always update the manual digitizer visual lines in sync with playback frames
+            drawManualProtractors();
 
             if (state.isVideoPlaying) {
                 analyzeLoopId = requestAnimationFrame(analyzeLoop);
             }
         }
 
-        function processVideoAI(video, canvas) {
-            if (video.readyState < 2 || video.videoWidth === 0) return;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            try {
-                // Use the video's current playback time as the timestamp for MediaPipe
-                const timeMs = video.currentTime * 1000; 
-                // Hack: MediaPipe VIDEO mode requires strictly increasing timestamps.
-                const safeTime = performance.now(); 
-                
-                const results = poseLandmarker.detectForVideo(video, safeTime);
-                if (results && results.landmarks && results.landmarks.length > 0) {
-                    drawSkeleton(ctx, results.landmarks[0], canvas.width, canvas.height, state.showAnglesAnalyze);
+        // --- MANUAL PROTRACTOR CONSOLE CONTROLLER LOGIC ---
+        function toggleManualProtTrack(trackId) {
+            if (manualProtState.activeTrack === trackId) {
+                manualProtState.activeTrack = null;
+                deactivateProtButtons();
+            } else {
+                manualProtState.activeTrack = trackId;
+                deactivateProtButtons();
+                if (trackId === 1) {
+                    btnManualProt1.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25 flex items-center justify-center gap-1";
+                } else {
+                    btnManualProt2.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-pink-500 text-slate-950 shadow-md shadow-pink-500/25 flex items-center justify-center gap-1";
                 }
-            } catch (e) { /* Ignore minor frame drops */ }
+            }
+        }
+
+        function deactivateProtButtons() {
+            btnManualProt1.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1";
+            btnManualProt2.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1";
+        }
+
+        function clearManualProtPoints() {
+            manualProtState.v1Points = [];
+            manualProtState.v2Points = [];
+            manualProtState.activeTrack = null;
+            deactivateProtButtons();
+            drawManualProtractors();
+        }
+
+        function getMousePos(canvasElement, evt) {
+            const rect = canvasElement.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+
+        // --- EVENTS ---
+        function onInteractionMouseDown(e) {
+            if (e.button === 2) return; // Ignore right-clicks here (handled by contextmenu)
+            
+            const pos = getMousePos(interactionCanvas, e);
+            const clickTolerance = 15; // px boundary around circles to drag
+
+            // 1. Check if user is clicking to DRAG an existing point
+            // Check Video 1 points
+            for (let i = 0; i < manualProtState.v1Points.length; i++) {
+                const pt = manualProtState.v1Points[i];
+                const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
+                if (d < clickTolerance) {
+                    manualProtState.draggingTrack = 1;
+                    manualProtState.draggingPointIdx = i;
+                    return;
+                }
+            }
+            // Check Video 2 points
+            for (let i = 0; i < manualProtState.v2Points.length; i++) {
+                const pt = manualProtState.v2Points[i];
+                const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
+                if (d < clickTolerance) {
+                    manualProtState.draggingTrack = 2;
+                    manualProtState.draggingPointIdx = i;
+                    return;
+                }
+            }
+
+            // 2. If not dragging, and a track calibration is active, ADD a new manual point (unlimited allowed)
+            if (manualProtState.activeTrack === 1) {
+                manualProtState.v1Points.push(pos);
+                drawManualProtractors();
+            } else if (manualProtState.activeTrack === 2) {
+                manualProtState.v2Points.push(pos);
+                drawManualProtractors();
+            }
+        }
+
+        function onInteractionMouseMove(e) {
+            if (manualProtState.draggingTrack !== null && manualProtState.draggingPointIdx !== -1) {
+                const pos = getMousePos(interactionCanvas, e);
+                const track = manualProtState.draggingTrack;
+                const idx = manualProtState.draggingPointIdx;
+
+                if (track === 1) {
+                    manualProtState.v1Points[idx] = pos;
+                } else if (track === 2) {
+                    manualProtState.v2Points[idx] = pos;
+                }
+                drawManualProtractors();
+            }
+        }
+
+        function onInteractionMouseUp() {
+            manualProtState.draggingTrack = null;
+            manualProtState.draggingPointIdx = -1;
+        }
+
+        // Context menu handler to delete individual points on right-click
+        function onInteractionContextMenu(e) {
+            e.preventDefault();
+            const pos = getMousePos(interactionCanvas, e);
+            const clickTolerance = 15; // px click tolerance
+
+            // Search and delete from Base Video (V1)
+            for (let i = 0; i < manualProtState.v1Points.length; i++) {
+                const pt = manualProtState.v1Points[i];
+                if (Math.hypot(pt.x - pos.x, pt.y - pos.y) < clickTolerance) {
+                    manualProtState.v1Points.splice(i, 1);
+                    drawManualProtractors();
+                    return;
+                }
+            }
+
+            // Search and delete from Overlay Video (V2)
+            for (let i = 0; i < manualProtState.v2Points.length; i++) {
+                const pt = manualProtState.v2Points[i];
+                if (Math.hypot(pt.x - pos.x, pt.y - pos.y) < clickTolerance) {
+                    manualProtState.v2Points.splice(i, 1);
+                    drawManualProtractors();
+                    return;
+                }
+            }
+        }
+
+        function drawManualProtractors() {
+            const ctx = interactionCanvas.getContext('2d');
+            ctx.clearRect(0, 0, interactionCanvas.width, interactionCanvas.height);
+
+            // Draw Video 1 manual skeleton/angle lines
+            if (manualProtState.v1Points.length > 0) {
+                drawManualOverlayLines(ctx, manualProtState.v1Points, '#10b981', 'Video 1 (Base)');
+            }
+
+            // Draw Video 2 manual skeleton/angle lines (respecting dynamic slider opacity)
+            if (manualProtState.v2Points.length > 0) {
+                ctx.save();
+                ctx.globalAlpha = state.overlayOpacity;
+                drawManualOverlayLines(ctx, manualProtState.v2Points, '#ec4899', 'Video 2 (Overlay)');
+                ctx.restore();
+            }
+        }
+
+        function drawManualOverlayLines(ctx, points, color, label) {
+            ctx.save();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = color;
+            ctx.fillStyle = '#ffffff';
+
+            // Connect lines sequentially
+            if (points.length >= 2) {
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+                ctx.stroke();
+            }
+
+            // Draw joint nodes
+            points.forEach((pt, idx) => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw index identifier
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(idx + 1, pt.x, pt.y);
+            });
+
+            // Calculate & draw angles at every intersection where we have 3 sequential points
+            if (points.length >= 3) {
+                for (let i = 1; i < points.length - 1; i++) {
+                    const angle = calculateAngle(points[i - 1], points[i], points[i + 1], 1);
+                    const vertex = points[i];
+                    
+                    ctx.shadowColor = "black";
+                    ctx.shadowBlur = 4;
+                    ctx.font = 'bold 15px system-ui';
+                    ctx.textAlign = 'left';
+                    
+                    // Draw text label backdrop
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#000000';
+                    ctx.strokeText(`${angle}°`, vertex.x + 14, vertex.y);
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#fde047'; // bright yellow
+                    ctx.fillText(`${angle}°`, vertex.x + 14, vertex.y);
+                }
+            }
+            ctx.restore();
         }
 
         // --- TAB 1: LIVE STREAM LOGIC ---
@@ -442,7 +919,7 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selCamera.value }});
                 hiddenVideo.srcObject = stream; pipVideo.srcObject = stream;
-                pipVideo.style.transform = 'scaleX(-1)'; // Mirror local PiP
+                pipVideo.style.transform = 'scaleX(-1)';
                 await hiddenVideo.play();
                 state.isStreaming = true; frameBuffer = []; lastCaptureTime = performance.now();
                 inactiveOverlay.classList.add('hidden'); pipContainer.classList.remove('hidden');
@@ -470,7 +947,6 @@
                 mainCanvas.width = hiddenVideo.videoWidth; mainCanvas.height = hiddenVideo.videoHeight;
             }
 
-            // Capture
             if (now - lastCaptureTime >= (1000 / 30)) {
                 lastCaptureTime = now;
                 createImageBitmap(hiddenVideo).then(bitmap => {
@@ -478,7 +954,6 @@
                 }).catch(()=>{});
             }
 
-            // Playback Delay
             let frameToDraw = null;
             while (frameBuffer.length > 0 && now - frameBuffer[0].ts >= state.delayMs) {
                 if (frameToDraw) frameToDraw.bitmap.close();
@@ -486,15 +961,16 @@
             }
 
             if (frameToDraw) {
-                ctx.save(); ctx.scale(-1, 1); ctx.translate(-mainCanvas.width, 0); // Mirror output
+                ctx.save(); ctx.scale(-1, 1); ctx.translate(-mainCanvas.width, 0);
                 ctx.drawImage(frameToDraw.bitmap, 0, 0, mainCanvas.width, mainCanvas.height);
                 ctx.restore();
                 
-                // Apply AI to Live
                 if (state.showSkeletonLive && poseLandmarker) {
                     try {
-                        const results = poseLandmarker.detectForVideo(mainCanvas, performance.now());
-                        if (results?.landmarks?.length) drawSkeleton(ctx, results.landmarks[0], mainCanvas.width, mainCanvas.height, state.showAnglesLive);
+                        const results = poseLandmarker.detect(mainCanvas);
+                        if (results?.landmarks?.length) {
+                            drawSkeleton(ctx, results.landmarks[0], mainCanvas.width, mainCanvas.height, state.showAnglesLive, '#10b981');
+                        }
                     } catch (e) {}
                 }
                 frameToDraw.bitmap.close();
@@ -503,18 +979,20 @@
             renderLoopId = requestAnimationFrame(liveRenderLoop);
         }
 
-        // --- GLOBAL DRAW FUNCTION ---
-        function drawSkeleton(ctx, landmarks, w, h, showAngles = false) {
-            ctx.save(); ctx.lineWidth = 4; ctx.strokeStyle = '#10b981'; ctx.fillStyle = '#ffffff';
+        // --- GLOBAL DRAW FUNCTION (AI Overlay for Live camera) ---
+        function drawSkeleton(ctx, landmarks, w, h, showAngles = false, skeletonColor = '#10b981') {
+            const aspect = w / h; // Get aspect ratio directly from the canvas parameters
+            ctx.save(); ctx.lineWidth = 4; ctx.strokeStyle = skeletonColor; ctx.fillStyle = '#ffffff';
             POSE_CONNECTIONS.forEach(([i, j]) => {
                 const p1 = landmarks[i], p2 = landmarks[j];
                 const v1 = p1?.visibility ?? 1, v2 = p2?.visibility ?? 1;
-                if (p1 && p2 && v1 > 0.1 && v2 > 0.1) {
+                // Use user customized confidence threshold
+                if (p1 && p2 && v1 > state.minConfidence && v2 > state.minConfidence) {
                     ctx.beginPath(); ctx.moveTo(p1.x * w, p1.y * h); ctx.lineTo(p2.x * w, p2.y * h); ctx.stroke();
                 }
             });
             landmarks.forEach(p => {
-                if (p && (p.visibility ?? 1) > 0.1) {
+                if (p && (p.visibility ?? 1) > state.minConfidence) {
                     ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 5, 0, 2 * Math.PI); ctx.fill();
                 }
             });
@@ -532,8 +1010,9 @@
                     const v2 = b?.visibility ?? 1;
                     const v3 = c?.visibility ?? 1;
 
-                    if (a && b && c && v1 > 0.3 && v2 > 0.3 && v3 > 0.3) {
-                        const angle = calculateAngle(a, b, c);
+                    // Angle indicators also filter based on confidence threshold dynamically
+                    if (a && b && c && v1 > state.minConfidence && v2 > state.minConfidence && v3 > state.minConfidence) {
+                        const angle = calculateAngle(a, b, c, aspect);
                         const x = b.x * w + 12;
                         const y = b.y * h;
                         
