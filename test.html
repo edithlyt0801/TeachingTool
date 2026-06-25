@@ -1,1 +1,757 @@
 
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Artemis: Archery posture analysis lab</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MediaPipe Pose (預留供AI骨架辨識使用) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+    <style>
+        /* 客製化樣式與玻璃擬態 */
+        body {
+            background-color: #0f172a; /* 深色背景 */
+            color: #f8fafc;
+            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .neon-yellow { color: #FACC15; text-shadow: 0 0 5px rgba(250, 204, 21, 0.5); }
+        .neon-pink { color: #F472B6; text-shadow: 0 0 5px rgba(244, 114, 182, 0.5); }
+        .bg-neon-yellow { background-color: #FACC15; }
+        .bg-neon-pink { background-color: #F472B6; }
+        .border-neon-yellow { border-color: #FACC15; }
+        .border-neon-pink { border-color: #F472B6; }
+
+        /* 影片容器：確保重疊 */
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            overflow: hidden;
+            border-radius: 0.75rem;
+        }
+
+        .video-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transform-origin: center center;
+            transition: opacity 0.1s;
+        }
+
+        #drawCanvas, #liveCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: crosshair;
+            touch-action: none; /* 讓手勢不會觸發網頁捲動，方便畫圖 */
+        }
+
+        /* 隱藏預設卷軸 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Range Input Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px; width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        input[type=range].yellow-range::-webkit-slider-thumb { background: #FACC15; }
+        input[type=range].pink-range::-webkit-slider-thumb { background: #F472B6; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px;
+            cursor: pointer;
+            background: #475569;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header (不固定，隨頁面捲動) -->
+    <header class="w-full p-4 flex justify-between items-center bg-gray-900 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+            <!-- Logo Icon (採用主題色) -->
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 border-2 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]">
+                <i class="fa-solid fa-bow-arrow neon-pink text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-wider" style="background: linear-gradient(90deg, #FACC15, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Artemis</h1>
+                <p class="text-xs text-gray-400" id="txt-subtitle">Archery posture analysis lab</p>
+            </div>
+        </div>
+        <button id="langToggleBtn" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-sm transition-colors">
+            English / 中文
+        </button>
+    </header>
+
+    <!-- 主內容區 -->
+    <main class="flex-grow p-2 md:p-4 w-full max-w-7xl mx-auto space-y-4">
+        
+        <!-- 分頁切換按鈕 -->
+        <div class="flex gap-2 glass-panel p-1 rounded-xl">
+            <button id="tab-live-btn" class="flex-1 py-3 text-center rounded-lg font-bold transition-all bg-blue-600 text-white shadow-lg" onclick="switchTab('live')">
+                <i class="fa-solid fa-video mr-2"></i><span id="txt-tab-live">即時攝影</span>
+            </button>
+            <button id="tab-analysis-btn" class="flex-1 py-3 text-center rounded-lg font-bold transition-all hover:bg-gray-700 text-gray-400" onclick="switchTab('analysis')">
+                <i class="fa-solid fa-film mr-2"></i><span id="txt-tab-analysis">影片分析</span>
+            </button>
+        </div>
+
+        <!-- ==================== 即時攝影模式 (Live Camera) ==================== -->
+        <div id="view-live" class="space-y-4">
+            <!-- 影像區域 (置於上方) -->
+            <div class="glass-panel p-2 rounded-xl">
+                <div class="video-container rounded-lg border border-gray-700 shadow-inner">
+                    <video id="liveVideo" class="video-layer" autoplay playsinline muted></video>
+                    <canvas id="liveCanvas"></canvas>
+                    <div id="liveStatus" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                        <p id="txt-cam-status"><i class="fa-solid fa-camera-slash mr-2"></i>攝影機未啟動</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 控制台 (置於下方) -->
+            <div class="glass-panel p-4 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-4">
+                    <h3 class="font-bold text-lg border-b border-gray-700 pb-2"><i class="fa-solid fa-sliders mr-2"></i><span id="txt-cam-ctrl">攝影機控制</span></h3>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1" id="txt-sel-cam">選擇攝影機</label>
+                        <select id="cameraSelect" class="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-yellow-400">
+                            <option value="">載入中...</option>
+                        </select>
+                    </div>
+
+                    <button id="btn-start-cam" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold transition-colors shadow-lg">
+                        <i class="fa-solid fa-play mr-2"></i><span id="txt-start-cam">啟動攝影機</span>
+                    </button>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1 flex justify-between">
+                            <span id="txt-delay-time">延遲時間 (秒)</span>
+                            <span id="delayValDisplay" class="text-white">0</span>
+                        </label>
+                        <input type="range" id="delaySlider" min="0" max="10" step="0.5" value="0" class="yellow-range">
+                        <p class="text-xs text-gray-500 mt-1" id="txt-delay-desc">* 僅供參考框架，實際延遲需配合緩衝演算法</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-bold text-lg border-b border-gray-700 pb-2"><i class="fa-solid fa-brain mr-2"></i><span id="txt-ai-ctrl">AI 分析設定</span></h3>
+                    
+                    <label class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-gray-500 transition-colors">
+                        <input type="checkbox" id="aiSkeletonToggle" class="w-5 h-5 accent-yellow-400">
+                        <span id="txt-ai-skel" class="font-medium">AI 骨架疊加 (MediaPipe)</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-gray-500 transition-colors">
+                        <input type="checkbox" id="showAngleToggle" class="w-5 h-5 accent-yellow-400">
+                        <span id="txt-show-angle" class="font-medium">顯示關節角度</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 影片分析模式 (Video Analysis) ==================== -->
+        <div id="view-analysis" class="space-y-4 hidden">
+            <!-- 影像區域 (置於上方) -->
+            <div class="glass-panel p-2 rounded-xl">
+                <div class="video-container rounded-lg border border-gray-700 bg-gray-950" id="analysisVideoContainer">
+                    <!-- 影片一 (基準) -->
+                    <video id="video1" class="video-layer" playsinline muted></video>
+                    <!-- 影片二 (比對) -->
+                    <video id="video2" class="video-layer mix-blend-screen" playsinline muted style="opacity: 0.5;"></video>
+                    <!-- 手動標記畫布 -->
+                    <canvas id="drawCanvas"></canvas>
+                    
+                    <div id="analysisStatus" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 pointer-events-none">
+                        <i class="fa-solid fa-upload text-4xl mb-2"></i>
+                        <p id="txt-upload-hint">請於下方上傳影片以進行比對</p>
+                    </div>
+
+                    <!-- 同步播放控制器懸浮於影片右下角 -->
+                    <div class="absolute bottom-4 right-4 flex gap-2 z-20">
+                        <button id="btn-sync-play" class="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full border border-white/20 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-play text-white"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 疊加透明度 -->
+                <div class="mt-4 px-2">
+                    <label class="block text-sm text-gray-400 mb-1 flex justify-between">
+                        <span id="txt-opacity">疊加透明度 (影片二)</span>
+                        <span id="opacityValDisplay" class="neon-pink">50%</span>
+                    </label>
+                    <input type="range" id="opacitySlider" min="0" max="1" step="0.01" value="0.5" class="pink-range">
+                </div>
+            </div>
+
+            <!-- 工具與校準控制台 (置於下方) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                
+                <!-- 影片一控制 (黃色) -->
+                <div class="glass-panel p-4 rounded-xl border-t-4 border-yellow-400">
+                    <h3 class="font-bold text-lg mb-3 neon-yellow"><i class="fa-solid fa-file-video mr-2"></i><span id="txt-v1-title">影片一 (基準)</span></h3>
+                    
+                    <div class="mb-4">
+                        <label class="block w-full text-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-yellow-500/50 rounded-lg cursor-pointer transition-colors text-sm">
+                            <i class="fa-solid fa-folder-open mr-2"></i><span id="txt-v1-btn">選擇檔案</span>
+                            <input type="file" id="uploadV1" accept="video/*" class="hidden">
+                        </label>
+                        <p id="fileNameV1" class="text-xs text-gray-400 mt-1 truncate">未選擇任何檔案</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium" id="txt-v1-calib">影像校準</span>
+                            <button class="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600" onclick="resetCalib(1)" id="txt-v1-reset">重設</button>
+                        </div>
+                        
+                        <!-- V1 Scale -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v1-scale">縮放比例</span><span id="v1-scale-val">100%</span>
+                            </div>
+                            <input type="range" id="v1-scale" min="0.5" max="2" step="0.01" value="1" class="yellow-range" oninput="updateCalib(1)">
+                        </div>
+                        <!-- V1 X -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v1-x">水平平移</span><span id="v1-x-val">0%</span>
+                            </div>
+                            <input type="range" id="v1-x" min="-50" max="50" step="1" value="0" class="yellow-range" oninput="updateCalib(1)">
+                        </div>
+                        <!-- V1 Y -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v1-y">垂直平移</span><span id="v1-y-val">0%</span>
+                            </div>
+                            <input type="range" id="v1-y" min="-50" max="50" step="1" value="0" class="yellow-range" oninput="updateCalib(1)">
+                        </div>
+                        <!-- V1 Time -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v1-time">開始時間 (秒)</span><span id="v1-time-val">0.00</span>
+                            </div>
+                            <input type="range" id="v1-time" min="0" max="10" step="0.05" value="0" class="yellow-range" oninput="updateCalib(1)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片二控制 (粉紅) -->
+                <div class="glass-panel p-4 rounded-xl border-t-4 border-pink-400">
+                    <h3 class="font-bold text-lg mb-3 neon-pink"><i class="fa-solid fa-file-video mr-2"></i><span id="txt-v2-title">影片二 (疊加)</span></h3>
+                    
+                    <div class="mb-4">
+                        <label class="block w-full text-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-pink-500/50 rounded-lg cursor-pointer transition-colors text-sm">
+                            <i class="fa-solid fa-folder-open mr-2"></i><span id="txt-v2-btn">選擇檔案</span>
+                            <input type="file" id="uploadV2" accept="video/*" class="hidden">
+                        </label>
+                        <p id="fileNameV2" class="text-xs text-gray-400 mt-1 truncate">未選擇任何檔案</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium" id="txt-v2-calib">影像校準</span>
+                            <button class="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600" onclick="resetCalib(2)" id="txt-v2-reset">重設</button>
+                        </div>
+                        
+                        <!-- V2 Scale -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v2-scale">縮放比例</span><span id="v2-scale-val">100%</span>
+                            </div>
+                            <input type="range" id="v2-scale" min="0.5" max="2" step="0.01" value="1" class="pink-range" oninput="updateCalib(2)">
+                        </div>
+                        <!-- V2 X -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v2-x">水平平移</span><span id="v2-x-val">0%</span>
+                            </div>
+                            <input type="range" id="v2-x" min="-50" max="50" step="1" value="0" class="pink-range" oninput="updateCalib(2)">
+                        </div>
+                        <!-- V2 Y -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v2-y">垂直平移</span><span id="v2-y-val">0%</span>
+                            </div>
+                            <input type="range" id="v2-y" min="-50" max="50" step="1" value="0" class="pink-range" oninput="updateCalib(2)">
+                        </div>
+                        <!-- V2 Time -->
+                        <div>
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span id="txt-v2-time">開始時間 (秒)</span><span id="v2-time-val">0.00</span>
+                            </div>
+                            <input type="range" id="v2-time" min="0" max="10" step="0.05" value="0" class="pink-range" oninput="updateCalib(2)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 運動鏈工具 (Kinematic Chain) -->
+                <div class="glass-panel p-4 rounded-xl border-t-4 border-gray-400 flex flex-col">
+                    <h3 class="font-bold text-lg mb-3"><i class="fa-solid fa-pen-nodes mr-2"></i><span id="txt-chain-title">運動鏈工具</span></h3>
+                    <p class="text-xs text-gray-400 mb-4" id="txt-chain-desc">在影片上點擊左鍵新增節點，右鍵刪除，拖曳移動位置。</p>
+                    
+                    <div class="space-y-3 flex-grow">
+                        <label class="flex items-center gap-3 p-2 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-yellow-500 transition-colors">
+                            <input type="radio" name="chainTarget" value="1" checked class="w-4 h-4 accent-yellow-400">
+                            <span class="font-medium text-sm neon-yellow" id="txt-chain-v1">編輯 V1 (黃色骨架)</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-2 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-pink-500 transition-colors">
+                            <input type="radio" name="chainTarget" value="2" class="w-4 h-4 accent-pink-400">
+                            <span class="font-medium text-sm neon-pink" id="txt-chain-v2">編輯 V2 (粉紅骨架)</span>
+                        </label>
+                    </div>
+
+                    <button class="w-full mt-4 py-2 bg-red-900/50 hover:bg-red-800/80 text-red-200 border border-red-700 rounded-lg text-sm transition-colors" onclick="clearChains()" id="txt-chain-clear">
+                        <i class="fa-solid fa-trash-can mr-2"></i>清除所有運動鏈
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="text-center p-4 text-xs text-gray-600 mt-auto">
+        &copy; 2026 Artemis Archery posture analysis lab. All rights reserved.
+    </footer>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        // --- 1. 語系切換 (i18n) ---
+        const i18n = {
+            zh: {
+                subtitle: "Archery posture analysis lab",
+                tabLive: "即時攝影", tabAnalysis: "影片分析",
+                camStatusNo: "攝影機未啟動", camCtrl: "攝影機控制", selCam: "選擇攝影機",
+                startCam: "啟動攝影機", stopCam: "停止攝影機",
+                delayTime: "延遲時間 (秒)", delayDesc: "* 僅供參考框架，實際延遲需配合緩衝演算法",
+                aiCtrl: "AI 分析設定", aiSkel: "AI 骨架疊加 (MediaPipe)", showAngle: "顯示關節角度",
+                uploadHint: "請於下方上傳影片以進行比對", opacity: "疊加透明度 (影片二)",
+                v1Title: "影片一 (基準)", v1Btn: "選擇檔案", v1Calib: "影像校準", v1Reset: "重設",
+                scale: "縮放比例", xShift: "水平平移", yShift: "垂直平移", startTime: "開始時間 (秒)",
+                v2Title: "影片二 (疊加比對)", v2Btn: "選擇檔案", v2Calib: "影像校準", v2Reset: "重設",
+                chainTitle: "運動鏈工具", chainDesc: "在影片上點擊左鍵新增節點，右鍵刪除，拖曳移動位置。",
+                chainV1: "編輯 V1 (黃色骨架)", chainV2: "編輯 V2 (粉紅骨架)", chainClear: "清除所有運動鏈",
+                noFile: "未選擇任何檔案"
+            },
+            en: {
+                subtitle: "Archery posture analysis lab",
+                tabLive: "Live Camera", tabAnalysis: "Video Analysis",
+                camStatusNo: "Camera not started", camCtrl: "Camera Controls", selCam: "Select Camera",
+                startCam: "Start Camera", stopCam: "Stop Camera",
+                delayTime: "Delay Time (sec)", delayDesc: "* UI framework only, actual delay needs buffer logic",
+                aiCtrl: "AI Analysis Settings", aiSkel: "AI Skeleton Overlay (MediaPipe)", showAngle: "Show Joint Angles",
+                uploadHint: "Please upload videos below to compare", opacity: "Overlay Opacity (Video 2)",
+                v1Title: "Video 1 (Base)", v1Btn: "Choose File", v1Calib: "Calibration", v1Reset: "Reset",
+                scale: "Scale", xShift: "X Translate", yShift: "Y Translate", startTime: "Start Time (sec)",
+                v2Title: "Video 2 (Compare)", v2Btn: "Choose File", v2Calib: "Calibration", v2Reset: "Reset",
+                chainTitle: "Kinematic Chain", chainDesc: "Left click to add nodes, right click to delete, drag to move.",
+                chainV1: "Edit V1 (Yellow Skeleton)", chainV2: "Edit V2 (Pink Skeleton)", chainClear: "Clear All Chains",
+                noFile: "No file selected"
+            }
+        };
+
+        let currentLang = 'zh';
+        const langToggleBtn = document.getElementById('langToggleBtn');
+
+        function updateTexts() {
+            const t = i18n[currentLang];
+            document.getElementById('txt-subtitle').innerText = t.subtitle;
+            document.getElementById('txt-tab-live').innerText = t.tabLive;
+            document.getElementById('txt-tab-analysis').innerText = t.tabAnalysis;
+            if(!isStreaming) document.getElementById('txt-cam-status').innerHTML = `<i class="fa-solid fa-camera-slash mr-2"></i>${t.camStatusNo}`;
+            document.getElementById('txt-cam-ctrl').innerText = t.camCtrl;
+            document.getElementById('txt-sel-cam').innerText = t.selCam;
+            document.getElementById('txt-start-cam').innerText = isStreaming ? t.stopCam : t.startCam;
+            document.getElementById('txt-delay-time').innerText = t.delayTime;
+            document.getElementById('txt-delay-desc').innerText = t.delayDesc;
+            document.getElementById('txt-ai-ctrl').innerText = t.aiCtrl;
+            document.getElementById('txt-ai-skel').innerText = t.aiSkel;
+            document.getElementById('txt-show-angle').innerText = t.showAngle;
+            document.getElementById('txt-upload-hint').innerText = t.uploadHint;
+            document.getElementById('txt-opacity').innerText = t.opacity;
+            
+            document.getElementById('txt-v1-title').innerText = t.v1Title;
+            document.getElementById('txt-v1-btn').innerText = t.v1Btn;
+            document.getElementById('txt-v1-calib').innerText = t.v1Calib;
+            document.getElementById('txt-v1-reset').innerText = t.v1Reset;
+            document.getElementById('txt-v1-scale').innerText = t.scale;
+            document.getElementById('txt-v1-x').innerText = t.xShift;
+            document.getElementById('txt-v1-y').innerText = t.yShift;
+            document.getElementById('txt-v1-time').innerText = t.startTime;
+            
+            document.getElementById('txt-v2-title').innerText = t.v2Title;
+            document.getElementById('txt-v2-btn').innerText = t.v2Btn;
+            document.getElementById('txt-v2-calib').innerText = t.v2Calib;
+            document.getElementById('txt-v2-reset').innerText = t.v2Reset;
+            document.getElementById('txt-v2-scale').innerText = t.scale;
+            document.getElementById('txt-v2-x').innerText = t.xShift;
+            document.getElementById('txt-v2-y').innerText = t.yShift;
+            document.getElementById('txt-v2-time').innerText = t.startTime;
+
+            document.getElementById('txt-chain-title').innerText = t.chainTitle;
+            document.getElementById('txt-chain-desc').innerText = t.chainDesc;
+            document.getElementById('txt-chain-v1').innerText = t.chainV1;
+            document.getElementById('txt-chain-v2').innerText = t.chainV2;
+            document.getElementById('txt-chain-clear').innerHTML = `<i class="fa-solid fa-trash-can mr-2"></i>${t.chainClear}`;
+
+            if(document.getElementById('uploadV1').files.length === 0) document.getElementById('fileNameV1').innerText = t.noFile;
+            if(document.getElementById('uploadV2').files.length === 0) document.getElementById('fileNameV2').innerText = t.noFile;
+        }
+
+        langToggleBtn.addEventListener('click', () => {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            updateTexts();
+        });
+
+        // --- 2. 分頁切換 (Tabs) ---
+        function switchTab(tabId) {
+            const viewLive = document.getElementById('view-live');
+            const viewAnalysis = document.getElementById('view-analysis');
+            const btnLive = document.getElementById('tab-live-btn');
+            const btnAnalysis = document.getElementById('tab-analysis-btn');
+
+            if (tabId === 'live') {
+                viewLive.classList.remove('hidden');
+                viewAnalysis.classList.add('hidden');
+                btnLive.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all bg-blue-600 text-white shadow-lg';
+                btnAnalysis.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all hover:bg-gray-700 text-gray-400';
+            } else {
+                viewLive.classList.add('hidden');
+                viewAnalysis.classList.remove('hidden');
+                btnAnalysis.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all bg-blue-600 text-white shadow-lg';
+                btnLive.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all hover:bg-gray-700 text-gray-400';
+                resizeCanvas(); // 切換到分析時確保canvas大小正確
+            }
+        }
+
+        // --- 3. 即時攝影與裝置控制 ---
+        let liveStream = null;
+        let isStreaming = false;
+        const liveVideo = document.getElementById('liveVideo');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const btnStartCam = document.getElementById('btn-start-cam');
+        const liveStatus = document.getElementById('liveStatus');
+
+        // 取得攝影機列表
+        async function getCameras() {
+            try {
+                await navigator.mediaDevices.getUserMedia({video: true}); // 請求權限
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                cameraSelect.innerHTML = '';
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Camera access denied", err);
+                cameraSelect.innerHTML = '<option value="">No Camera Access</option>';
+            }
+        }
+        getCameras();
+
+        btnStartCam.addEventListener('click', async () => {
+            if (isStreaming) {
+                // 停止
+                liveStream.getTracks().forEach(track => track.stop());
+                liveVideo.srcObject = null;
+                isStreaming = false;
+                liveStatus.style.display = 'flex';
+                btnStartCam.innerHTML = `<i class="fa-solid fa-play mr-2"></i><span id="txt-start-cam">${i18n[currentLang].startCam}</span>`;
+                btnStartCam.className = 'w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold transition-colors shadow-lg';
+            } else {
+                // 啟動
+                const deviceId = cameraSelect.value;
+                const constraints = {
+                    video: deviceId ? { deviceId: { exact: deviceId } } : true
+                };
+                try {
+                    liveStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    liveVideo.srcObject = liveStream;
+                    isStreaming = true;
+                    liveStatus.style.display = 'none';
+                    btnStartCam.innerHTML = `<i class="fa-solid fa-stop mr-2"></i><span id="txt-start-cam">${i18n[currentLang].stopCam}</span>`;
+                    btnStartCam.className = 'w-full py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold transition-colors shadow-lg';
+                } catch (err) {
+                    alert("無法啟動攝影機: " + err.message);
+                }
+            }
+        });
+
+        // 延遲 Slider 更新UI
+        const delaySlider = document.getElementById('delaySlider');
+        delaySlider.addEventListener('input', (e) => {
+            document.getElementById('delayValDisplay').innerText = e.target.value;
+        });
+
+        // --- 4. 影片分析: 上傳與同步播放 ---
+        const video1 = document.getElementById('video1');
+        const video2 = document.getElementById('video2');
+        const uploadV1 = document.getElementById('uploadV1');
+        const uploadV2 = document.getElementById('uploadV2');
+        const btnSyncPlay = document.getElementById('btn-sync-play');
+        let isSyncPlaying = false;
+
+        uploadV1.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                document.getElementById('fileNameV1').innerText = file.name;
+                video1.src = URL.createObjectURL(file);
+                document.getElementById('analysisStatus').style.display = 'none';
+                updateCalib(1); // 套用時間
+            }
+        });
+
+        uploadV2.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                document.getElementById('fileNameV2').innerText = file.name;
+                video2.src = URL.createObjectURL(file);
+                document.getElementById('analysisStatus').style.display = 'none';
+                updateCalib(2);
+            }
+        });
+
+        // 同步播放邏輯
+        btnSyncPlay.addEventListener('click', () => {
+            if (isSyncPlaying) {
+                video1.pause();
+                video2.pause();
+                btnSyncPlay.innerHTML = '<i class="fa-solid fa-play text-white"></i>';
+            } else {
+                // 從設定的開始時間播放
+                video1.currentTime = parseFloat(document.getElementById('v1-time').value) || 0;
+                video2.currentTime = parseFloat(document.getElementById('v2-time').value) || 0;
+                video1.play();
+                video2.play();
+                btnSyncPlay.innerHTML = '<i class="fa-solid fa-pause text-white"></i>';
+            }
+            isSyncPlaying = !isSyncPlaying;
+        });
+
+        // 透明度
+        const opacitySlider = document.getElementById('opacitySlider');
+        opacitySlider.addEventListener('input', (e) => {
+            video2.style.opacity = e.target.value;
+            document.getElementById('opacityValDisplay').innerText = Math.round(e.target.value * 100) + '%';
+        });
+
+        // --- 5. 影片校準 (Transform & Trim) ---
+        function updateCalib(v) {
+            const scale = document.getElementById(`v${v}-scale`).value;
+            const x = document.getElementById(`v${v}-x`).value;
+            const y = document.getElementById(`v${v}-y`).value;
+            const time = document.getElementById(`v${v}-time`).value;
+
+            document.getElementById(`v${v}-scale-val`).innerText = Math.round(scale * 100) + '%';
+            document.getElementById(`v${v}-x-val`).innerText = x + '%';
+            document.getElementById(`v${v}-y-val`).innerText = y + '%';
+            document.getElementById(`v${v}-time-val`).innerText = parseFloat(time).toFixed(2);
+
+            const vid = v === 1 ? video1 : video2;
+            vid.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
+            
+            // 如果暫停中，更新畫面預覽
+            if(!isSyncPlaying) {
+                vid.currentTime = time;
+            }
+        }
+
+        function resetCalib(v) {
+            document.getElementById(`v${v}-scale`).value = 1;
+            document.getElementById(`v${v}-x`).value = 0;
+            document.getElementById(`v${v}-y`).value = 0;
+            document.getElementById(`v${v}-time`).value = 0;
+            updateCalib(v);
+        }
+
+        // --- 6. 運動鏈畫布 (手動骨架標記) ---
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        let pointsV1 = []; // [{x, y}] 相對於canvas
+        let pointsV2 = [];
+        let draggingPoint = null;
+        let dragTargetArray = null;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            drawChains();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawChains() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 畫 V1 (黃色)
+            ctx.strokeStyle = '#FACC15';
+            ctx.fillStyle = '#FACC15';
+            ctx.lineWidth = 3;
+            drawPointsAndLines(pointsV1);
+
+            // 畫 V2 (粉紅)
+            ctx.strokeStyle = '#F472B6';
+            ctx.fillStyle = '#F472B6';
+            drawPointsAndLines(pointsV2);
+        }
+
+        function drawPointsAndLines(pts) {
+            if(pts.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x * canvas.width, pts[0].y * canvas.height);
+                for(let i=1; i<pts.length; i++) {
+                    ctx.lineTo(pts[i].x * canvas.width, pts[i].y * canvas.height);
+                }
+                ctx.stroke();
+            }
+            pts.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x * canvas.width, p.y * canvas.height, 5, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        // 滑鼠事件處理
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (evt.clientX - rect.left) / canvas.width,
+                y: (evt.clientY - rect.top) / canvas.height
+            };
+        }
+
+        function getActiveArray() {
+            const val = document.querySelector('input[name="chainTarget"]:checked').value;
+            return val === '1' ? pointsV1 : pointsV2;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            const activeArr = getActiveArray();
+            
+            // 右鍵刪除
+            if(e.button === 2) {
+                const idx = activeArr.findIndex(p => 
+                    Math.hypot(p.x*canvas.width - pos.x*canvas.width, p.y*canvas.height - pos.y*canvas.height) < 10
+                );
+                if(idx !== -1) {
+                    activeArr.splice(idx, 1);
+                    drawChains();
+                }
+                return;
+            }
+
+            // 左鍵：檢查是否點到現有節點以準備拖曳
+            const hitIdx = activeArr.findIndex(p => 
+                Math.hypot(p.x*canvas.width - pos.x*canvas.width, p.y*canvas.height - pos.y*canvas.height) < 10
+            );
+
+            if(hitIdx !== -1) {
+                draggingPoint = activeArr[hitIdx];
+                dragTargetArray = activeArr;
+            } else {
+                // 點擊空白處新增
+                activeArr.push({x: pos.x, y: pos.y});
+                drawChains();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if(draggingPoint) {
+                const pos = getMousePos(e);
+                draggingPoint.x = pos.x;
+                draggingPoint.y = pos.y;
+                drawChains();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => { draggingPoint = null; dragTargetArray = null; });
+        canvas.addEventListener('mouseleave', () => { draggingPoint = null; dragTargetArray = null; });
+        // 停用右鍵選單
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // 觸控支援
+        canvas.addEventListener('touchstart', (e) => {
+            if(e.touches.length > 0) {
+                const touch = e.touches[0];
+                const mouseEvt = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    button: 0 // 手指輕觸視為左鍵新增/拖曳
+                });
+                canvas.dispatchEvent(mouseEvt);
+            }
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            if(draggingPoint && e.touches.length > 0) {
+                const touch = e.touches[0];
+                const mouseEvt = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvt);
+                e.preventDefault(); // 防止滾動
+            }
+        }, {passive: false});
+        canvas.addEventListener('touchend', () => {
+            const mouseEvt = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvt);
+        });
+
+        function clearChains() {
+            pointsV1 = [];
+            pointsV2 = [];
+            drawChains();
+        }
+
+        // 初始化
+        setTimeout(resizeCanvas, 100);
+        
+    </script>
+</body>
+</html>
