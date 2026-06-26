@@ -172,7 +172,7 @@
                                     <i class="ph-fill ph-robot text-emerald-400 text-2xl mr-1"></i>
                                     AI Archery Vision Coach
                                 </h3>
-                                <p class="text-xs text-slate-400 mt-1">Extracts current frames and analyzes archery biomechanics using AI based on professional coaching rubrics.</p>
+                                <p class="text-xs text-slate-400 mt-1">Extracts current frames and analyzes archery biomechanics via Cloudflare proxy based on professional coaching rubrics.</p>
                             </div>
                         </div>
 
@@ -180,24 +180,11 @@
                             <div class="space-y-1.5">
                                 <label class="text-xs font-semibold text-slate-300">AI Provider</label>
                                 <select id="providerSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 outline-none focus:border-indigo-500">
-                                    <option value="builtin" selected>Built-in Proxy AI (No Key Required)</option>
-                                    <option value="openai">Use Your Own OpenAI API Key</option>
+                                    <option value="cloudflare_gemini" selected>Cloudflare Proxy (Gemini AI)</option>
+                                    <option value="cloudflare_openai">Cloudflare Proxy (OpenAI)</option>
                                 </select>
                             </div>
-                            <div id="apiKeyContainer" class="hidden space-y-1.5 col-span-1 md:col-span-2">
-                                <label class="text-xs font-semibold text-slate-300">OpenAI API Key (Required for OpenAI Provider)</label>
-                                <div class="relative">
-                                    <input type="password" id="aiApiKeyInput" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-emerald-500 transition-colors">
-                                </div>
-                            </div>
-                            <div id="modelContainer" class="hidden space-y-1.5 col-span-1 md:col-span-3">
-                                <label class="text-xs font-semibold text-slate-300">OpenAI Model</label>
-                                <select id="modelSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 outline-none focus:border-indigo-500">
-                                    <option value="gpt-4o-mini" selected>GPT-4o Mini (Fast & Efficient)</option>
-                                    <option value="gpt-4o">GPT-4o (Deep Analysis)</option>
-                                </select>
-                            </div>
-                            <div class="flex items-end col-span-1 md:col-span-3">
+                            <div class="flex items-end col-span-1 md:col-span-2">
                                 <button id="btnGenerateAiReport" class="w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <i id="aiBtnIcon" class="ph-bold ph-magic-wand text-lg"></i>
                                     <span id="aiBtnText">Generate Report</span>
@@ -210,7 +197,7 @@
                             <div class="flex justify-between items-center text-sm font-semibold text-slate-300">
                                 <span id="aiLoadingStatus" class="flex items-center gap-2">
                                     <i class="ph ph-spinner-gap animate-spin text-emerald-400 text-lg"></i>
-                                    <span>Extracting frames & initializing AI Vision Analysis...</span>
+                                    <span>Extracting frames & sending to Cloudflare...</span>
                                 </span>
                                 <span id="aiLoadingProgressVal" class="text-emerald-400">0%</span>
                             </div>
@@ -629,10 +616,6 @@ Phase 3: Release 與 Follow Through
 
         // AI Elements
         const providerSelect = document.getElementById('providerSelect');
-        const apiKeyContainer = document.getElementById('apiKeyContainer');
-        const modelContainer = document.getElementById('modelContainer');
-        const aiApiKeyInput = document.getElementById('aiApiKeyInput');
-        const modelSelect = document.getElementById('modelSelect');
         const btnGenerateAiReport = document.getElementById('btnGenerateAiReport');
         const aiBtnIcon = document.getElementById('aiBtnIcon');
         const aiBtnText = document.getElementById('aiBtnText');
@@ -771,16 +754,6 @@ Phase 3: Release 與 Follow Through
         async function init() {
             tabBtnLive.addEventListener('click', () => switchTab('live'));
             tabBtnAnalyze.addEventListener('click', () => switchTab('analyze'));
-
-            providerSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'openai') {
-                    apiKeyContainer.classList.remove('hidden');
-                    modelContainer.classList.remove('hidden');
-                } else {
-                    apiKeyContainer.classList.add('hidden');
-                    modelContainer.classList.add('hidden');
-                }
-            });
 
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
@@ -923,7 +896,7 @@ Phase 3: Release 與 Follow Through
             window.addEventListener('mouseup', onInteractionMouseUp);
             interactionCanvas.addEventListener('contextmenu', onInteractionContextMenu);
 
-            // AI Coach (Must be explicitly bound to functions)
+            // AI Coach
             btnGenerateAiReport.addEventListener('click', generateAIVisionReport);
             btnCopyReport.addEventListener('click', copyReportJSON);
 
@@ -1302,25 +1275,14 @@ Phase 3: Release 與 Follow Through
             const provider = providerSelect.value;
             let url = "";
             let payload = {};
-            let headers = { 'Content-Type': 'application/json' };
 
             if (!video1.src || !video2.src || video1.readyState < 2 || video2.readyState < 2) {
                 showAIError("Please upload both Video 1 and Video 2 to proceed.");
                 return;
             }
 
-            if (provider === 'openai') {
-                const apiKey = aiApiKeyInput.value.trim();
-                if (!apiKey) {
-                    showAIError("Please enter a valid OpenAI API Key to generate the report.");
-                    return;
-                }
-                url = "https://api.openai.com/v1/chat/completions";
-                headers['Authorization'] = `Bearer ${apiKey}`;
-            } else {
-                 // 使用您的專屬 Cloudflare Worker Proxy！
-                 url = `https://my-api-proxy.edithlyt0801.workers.dev/v1beta/models/gemini-1.5-flash:generateContent`;
-            }
+            // --- CLOUDFLARE WORKER PROXY URL ---
+            url = "https://my-api-proxy.edithlyt0801.workers.dev/";
 
             const base64Img1 = await captureVideoFrameAsBase64(video1);
             const base64Img2 = await captureVideoFrameAsBase64(video2);
@@ -1341,8 +1303,8 @@ Phase 3: Release 與 Follow Through
             aiLoadingProgressBar.style.width = '0%';
             aiLoadingProgressVal.textContent = '0%';
             const statusUpdates = [
-                { limit: 20, text: "Uploading frames to Vision AI..." },
-                { limit: 40, text: "Cross-referencing technique rubric..." },
+                { limit: 20, text: "Uploading frames to Worker Proxy..." },
+                { limit: 40, text: "Proxying request to OpenAI..." },
                 { limit: 60, text: "Evaluating pose alignment & similarity..." },
                 { limit: 80, text: "Synthesizing coaching recommendations..." },
                 { limit: 95, text: "Formatting JSON report data..." }
@@ -1363,58 +1325,33 @@ Phase 3: Release 與 Follow Through
             }, 150);
 
             try {
-                if (provider === 'openai') {
-                    payload = {
-                        model: modelSelect.value,
-                        response_format: { type: "json_object" },
-                        messages: [
-                            { role: "system", content: AI_SYSTEM_PROMPT },
-                            { role: "user", content: [
-                                { type: "text", text: "Analyze these two frames. Image 1 is Video A (current), Image 2 is Video B (reference)." },
-                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img1}` } },
-                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img2}` } }
-                            ]}
-                        ]
-                    };
-                } else {
-                     payload = {
-                        systemInstruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
-                        contents: [{
-                            parts: [
-                                { text: "Analyze these two frames. Image 1 is Video A (current), Image 2 is Video B (reference)." },
-                                { inlineData: { mimeType: "image/jpeg", data: base64Img1 } },
-                                { inlineData: { mimeType: "image/jpeg", data: base64Img2 } }
-                            ]
-                        }],
-                        generationConfig: {
-                            responseMimeType: "application/json"
-                        }
-                    };
-                }
+                // OpenAI payload format
+                payload = {
+                    model: "gpt-4o", // Or you can make this configurable
+                    response_format: { type: "json_object" },
+                    messages: [
+                        { role: "system", content: AI_SYSTEM_PROMPT },
+                        { role: "user", content: [
+                            { type: "text", text: "Analyze these two frames. Image 1 is Video A (current), Image 2 is Video B (reference)." },
+                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img1}` } },
+                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img2}` } }
+                        ]}
+                    ]
+                };
 
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: headers,
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
                     const errBody = await response.text();
-                    // Catch invalid API Key error gracefully
-                    if (response.status === 400 && errBody.includes("API_KEY_INVALID")) {
-                        throw new Error("Invalid API key. Please double-check your API configuration.");
-                    }
                     throw new Error(`API Error ${response.status}: ${errBody}`);
                 }
 
                 const data = await response.json();
-                let jsonStr = "";
-                
-                if (provider === 'openai') {
-                     jsonStr = data.choices?.[0]?.message?.content;
-                } else {
-                     jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                }
+                let jsonStr = data.choices?.[0]?.message?.content;
                 
                 if (!jsonStr) throw new Error("No output received from AI.");
                 
