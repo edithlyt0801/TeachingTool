@@ -24,9 +24,7 @@
             <header class="border-b border-slate-800 pb-6">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center space-x-3">
-                        <div class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl">
-                            <i class="ph ph-activity text-2xl"></i>
-                        </div>
+                        <img src="https://raw.githubusercontent.com/edithlyt0801/TeachingTool/refs/heads/main/logo.png" alt="Teaching Tool Logo" class="h-12 w-auto object-contain rounded-lg">
                         <div>
                             <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
                                 Motion Analysis Lab
@@ -110,16 +108,16 @@
             <!-- ========================================== -->
             <div id="tabAnalyze" class="hidden grid grid-cols-1 lg:grid-cols-4 gap-6">
                 
-                <!-- Left Column (Videos Viewport, Inputs & Timing Playback bar - spans 3 columns) -->
+                <!-- Left Column (Videos Viewport, Inputs, Timing Playback - spans 3 columns) -->
                 <div class="lg:col-span-3 space-y-4">
                     <!-- Upload controls -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
                         <div class="space-y-1">
-                            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Video 1 (Base - Green Kinematics)</label>
+                            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Video 1 (Base / 目前動作)</label>
                             <input type="file" id="upload1" accept="video/mp4,video/webm,video/quicktime" class="block w-full text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer"/>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-xs font-bold text-pink-400 uppercase tracking-wider">Video 2 (Overlay - Pink Kinematics)</label>
+                            <label class="text-xs font-bold text-pink-400 uppercase tracking-wider">Video 2 (Overlay / 參考目標)</label>
                             <input type="file" id="upload2" accept="video/mp4,video/webm,video/quicktime" class="block w-full text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-500/10 file:text-pink-400 hover:file:bg-pink-500/20 cursor-pointer"/>
                         </div>
                     </div>
@@ -133,11 +131,11 @@
                         </p>
 
                         <!-- Base Video Layer -->
-                        <video id="video1" class="absolute inset-0 w-full h-full object-contain z-0 origin-center transition-transform duration-75" playsinline muted></video>
+                        <video id="video1" class="absolute inset-0 w-full h-full object-contain z-0 origin-center transition-transform duration-75" playsinline muted crossorigin="anonymous"></video>
                         <canvas id="canvas1" class="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none origin-center transition-transform duration-75"></canvas>
 
                         <!-- Top Overlay Video Layer -->
-                        <video id="video2" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none opacity-50 origin-center transition-transform duration-75" playsinline muted></video>
+                        <video id="video2" class="absolute inset-0 w-full h-full object-contain z-20 pointer-events-none opacity-50 origin-center transition-transform duration-75" playsinline muted crossorigin="anonymous"></video>
                         <canvas id="canvas2" class="absolute inset-0 w-full h-full object-contain z-30 pointer-events-none opacity-50 origin-center transition-transform duration-75"></canvas>
                         
                         <!-- Top interaction layer for Manual Protractor Click/Drag -->
@@ -165,14 +163,120 @@
                             <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.5" class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
                         </div>
                     </div>
+
+                    <!-- ADVANCED AI COACHING REPORT SECTION -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mt-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-4 mb-4 gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400 flex items-center space-x-2">
+                                    <i class="ph-fill ph-robot text-emerald-400 text-2xl mr-1"></i>
+                                    AI Archery Vision Coach
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-1">Extracts current frames and analyzes archery biomechanics using AI based on professional coaching rubrics.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-300">AI Provider</label>
+                                <select id="providerSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 outline-none focus:border-indigo-500">
+                                    <option value="builtin" selected>Built-in Proxy AI (No Key Required)</option>
+                                    <option value="openai">Use Your Own OpenAI API Key</option>
+                                </select>
+                            </div>
+                            <div id="apiKeyContainer" class="hidden space-y-1.5 col-span-1 md:col-span-2">
+                                <label class="text-xs font-semibold text-slate-300">OpenAI API Key (Required for OpenAI Provider)</label>
+                                <div class="relative">
+                                    <input type="password" id="aiApiKeyInput" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-emerald-500 transition-colors">
+                                </div>
+                            </div>
+                            <div id="modelContainer" class="hidden space-y-1.5 col-span-1 md:col-span-3">
+                                <label class="text-xs font-semibold text-slate-300">OpenAI Model</label>
+                                <select id="modelSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 outline-none focus:border-indigo-500">
+                                    <option value="gpt-4o-mini" selected>GPT-4o Mini (Fast & Efficient)</option>
+                                    <option value="gpt-4o">GPT-4o (Deep Analysis)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end col-span-1 md:col-span-3">
+                                <button id="btnGenerateAiReport" class="w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i id="aiBtnIcon" class="ph-bold ph-magic-wand text-lg"></i>
+                                    <span id="aiBtnText">Generate Report</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar Container -->
+                        <div id="aiLoadingContainer" class="hidden space-y-3 py-6">
+                            <div class="flex justify-between items-center text-sm font-semibold text-slate-300">
+                                <span id="aiLoadingStatus" class="flex items-center gap-2">
+                                    <i class="ph ph-spinner-gap animate-spin text-emerald-400 text-lg"></i>
+                                    <span>Extracting frames & initializing AI Vision Analysis...</span>
+                                </span>
+                                <span id="aiLoadingProgressVal" class="text-emerald-400">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800">
+                                <div id="aiLoadingProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-xs text-slate-500">The AI is cross-referencing your posture against the Archery Technique Scoring Rubric.</p>
+                        </div>
+
+                        <!-- AI Report Output Container -->
+                        <div id="aiReportContainer" class="hidden mt-6 space-y-6">
+                            <div class="flex justify-between items-center">
+                                <h2 id="repTitle" class="text-2xl font-black text-white">射箭動作對比分析報告</h2>
+                                <button id="btnCopyReport" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-md transition-all flex items-center gap-1">
+                                    <i class="ph ph-copy"></i> Copy JSON
+                                </button>
+                            </div>
+
+                            <!-- Dashboard Cards Row -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center text-center">
+                                    <span class="text-xs text-slate-400 font-bold uppercase mb-1">Overall Similarity</span>
+                                    <div class="text-4xl font-black text-emerald-400" id="repOverallScore">-</div>
+                                </div>
+                                <div class="col-span-1 md:col-span-2 bg-slate-950 border border-slate-800 p-4 rounded-xl">
+                                    <span class="text-xs text-slate-400 font-bold uppercase mb-1 block">Coach Summary</span>
+                                    <p class="text-sm text-slate-200" id="repCoachSummary">-</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-slate-950 border border-emerald-500/20 p-4 rounded-xl">
+                                    <span class="text-xs text-emerald-400 font-bold uppercase mb-2 flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Main Strengths</span>
+                                    <ul id="repStrengths" class="list-disc list-inside text-sm text-slate-300 space-y-1 ml-2"></ul>
+                                </div>
+                                <div class="bg-slate-950 border border-rose-500/20 p-4 rounded-xl">
+                                    <span class="text-xs text-rose-400 font-bold uppercase mb-2 flex items-center gap-1"><i class="ph-fill ph-warning-circle"></i> Main Weaknesses</span>
+                                    <ul id="repWeaknesses" class="list-disc list-inside text-sm text-slate-300 space-y-1 ml-2"></ul>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Phase Analysis Blocks -->
+                            <div id="phaseAnalysisContainer" class="space-y-6">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+
+                            <!-- Top Priorities -->
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-200 border-b border-slate-800 pb-2 mb-4">Top 3 Improvement Priorities</h3>
+                                <div id="repPriorities" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- Error Container -->
+                        <div id="aiErrorContainer" class="hidden mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                            <p class="text-rose-400 text-sm font-semibold" id="aiErrorMessage"></p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Right Column (Sidebar Controls panel - stacks vertically inside) -->
+                <!-- Right Column (Sidebar Controls panel) -->
                 <div class="space-y-6 lg:col-span-1">
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
                         <div class="border-b border-slate-800 pb-3">
                             <h3 class="text-base font-bold text-slate-200 flex items-center space-x-2">
-                                <i class="ph ph-sliders text-indigo-400 text-lg"></i>
+                                <i class="ph ph-sliders-horizontal text-indigo-400 text-lg"></i>
                                 <span>Calibrations & Tools</span>
                             </h3>
                         </div>
@@ -183,15 +287,28 @@
                                 <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Kinematic Chain</span>
                                 <span class="text-[10px] text-slate-500 leading-tight mt-0.5">Left-click to add nodes. Right-click to delete. Drag to refine.</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button id="btnManualProt1" class="text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
-                                    <i class="ph ph-crosshair"></i> V1 (Green)
-                                </button>
-                                <button id="btnManualProt2" class="text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
-                                    <i class="ph ph-crosshair"></i> V2 (Pink)
-                                </button>
+                            
+                            <div class="space-y-2">
+                                <!-- V1 Setup -->
+                                <div class="flex gap-2">
+                                    <button id="btnManualProt1" class="flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                                        <i class="ph ph-crosshair"></i> Edit V1 (Green)
+                                    </button>
+                                    <button id="btnLockV1" class="px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center" title="Lock V1 Nodes">
+                                        <i id="iconLockV1" class="ph ph-lock-open text-base"></i>
+                                    </button>
+                                </div>
+                                <!-- V2 Setup -->
+                                <div class="flex gap-2">
+                                    <button id="btnManualProt2" class="flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                                        <i class="ph ph-crosshair"></i> Edit V2 (Pink)
+                                    </button>
+                                    <button id="btnLockV2" class="px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center" title="Lock V2 Nodes">
+                                        <i id="iconLockV2" class="ph ph-lock-open text-base"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <button id="btnClearManual" class="w-full text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 py-2 rounded-md font-semibold transition-all border border-rose-500/20">
+                            <button id="btnClearManual" class="w-full text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 py-2 rounded-md font-semibold transition-all border border-rose-500/20 mt-2">
                                 Clear Kinematic Chains
                             </button>
                         </div>
@@ -199,11 +316,10 @@
                         <!-- Video 1 Calibration (Base Video) -->
                         <div class="space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800/60">
                             <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Video 1 (Base - Green)</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Video 1 (Base) Config</span>
                                 <button id="btnResetV1" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">Reset</button>
                             </div>
                             
-                            <!-- Scale / Zoom -->
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
                                     <span>Scale (Zoom Factor)</span>
@@ -212,28 +328,25 @@
                                 <input type="range" id="v1ScaleSlider" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
                             </div>
 
-                            <!-- Position Pan (X Offset) -->
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset X (Pan Horizontal)</span>
+                                    <span>Offset X (Pan Horiz)</span>
                                     <span id="v1XVal">0%</span>
                                 </div>
                                 <input type="range" id="v1XSlider" min="-50" max="50" step="1" value="0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
                             </div>
 
-                            <!-- Position Pan (Y Offset) -->
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset Y (Pan Vertical)</span>
+                                    <span>Offset Y (Pan Vert)</span>
                                     <span id="v1YVal">0%</span>
                                 </div>
                                 <input type="range" id="v1YSlider" min="-50" max="50" step="1" value="0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
                             </div>
 
-                            <!-- Temporal Trim Start -->
                             <div class="space-y-1.5 pt-2 border-t border-slate-800/40">
                                 <div class="flex justify-between text-xs text-slate-300 font-semibold">
-                                    <span>Trim Start (Timeline Lock)</span>
+                                    <span>Trim Start (Time Lock)</span>
                                     <span id="v1TrimVal" class="text-emerald-400">0.00s</span>
                                 </div>
                                 <input type="range" id="v1TrimSlider" min="0" max="30" step="0.1" value="0" class="w-full accent-emerald-500 h-1.5 bg-slate-800 rounded">
@@ -243,11 +356,10 @@
                         <!-- Video 2 Calibration (Overlay Video) -->
                         <div class="space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800/60">
                             <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-pink-400">Video 2 (Overlay - Pink)</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-pink-400">Video 2 (Overlay) Config</span>
                                 <button id="btnResetV2" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">Reset</button>
                             </div>
                             
-                            <!-- Scale / Zoom -->
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
                                     <span>Scale (Zoom Factor)</span>
@@ -256,33 +368,31 @@
                                 <input type="range" id="v2ScaleSlider" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
                             </div>
 
-                            <!-- Position Pan (X Offset) -->
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset X (Pan Horizontal)</span>
+                                    <span>Offset X (Pan Horiz)</span>
                                     <span id="v2XVal">0%</span>
                                 </div>
                                 <input type="range" id="v2XSlider" min="-50" max="50" step="1" value="0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
                             </div>
 
-                            <!-- Position Pan (Y Offset) -->
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset Y (Pan Vertical)</span>
+                                    <span>Offset Y (Pan Vert)</span>
                                     <span id="v2YVal">0%</span>
                                 </div>
                                 <input type="range" id="v2YSlider" min="-50" max="50" step="1" value="0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
                             </div>
 
-                            <!-- Temporal Trim Start -->
                             <div class="space-y-1.5 pt-2 border-t border-slate-800/40">
                                 <div class="flex justify-between text-xs text-slate-300 font-semibold">
-                                    <span>Trim Start (Timeline Lock)</span>
+                                    <span>Trim Start (Time Lock)</span>
                                     <span id="v2TrimVal" class="text-pink-400">0.00s</span>
                                 </div>
                                 <input type="range" id="v2TrimSlider" min="0" max="30" step="0.1" value="0" class="w-full accent-pink-500 h-1.5 bg-slate-800 rounded">
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -291,7 +401,94 @@
         </div>
     </div>
 
+    <!-- MAIN JAVASCRIPT LOGIC -->
     <script type="module">
+        // ---------------------------------------------------------
+        // CONSTANTS & PROMPTS FOR AI VISION COACH
+        // ---------------------------------------------------------
+        const AI_SYSTEM_PROMPT = `
+你是一位專業、細心、具鼓勵性的射箭教練。你的任務是根據提供的兩張射箭關鍵畫面（Image 1 代表「目前動作 Video A」，Image 2 代表「參考動作、教練示範 Video B」），生成一份清晰、明確、正式而具建設性的射箭技術對比分析報告。
+請逐項比較兩張圖片中的技術差異。
+
+語氣要求:
+- 專業、正式、清晰、具鼓勵性
+- 不要過度批評
+- 不要使用模糊說法，應使用具體技術描述 (如「持弓肩略有上提」)
+- 如果畫面角度不足、被遮擋、畫質太低，請標示：「由於畫面角度限制,此項只能作初步判斷」或「無法可靠判斷」。
+
+必須分析的技術點：
+Phase 1:舉弓至 Anchor
+1. 持弓手肩膀形態是否一致 (是否聳肩)
+2. 持弓手手肘是否過度伸展 (Over Extend)
+3. 持弓手手腕形態
+4. 站姿是否傾側
+5. 拉弦手將弦壓到面部時,靠位位置是否一致
+6. 拉弦手食指掌指關節是否貼近下巴
+7. 拉弦手手肘角度是否太高/太低
+
+Phase 2: Anchor 至 Clicker
+1. 持弓手手肘是否因加力而進一步 over extend
+2. 站姿是否因加力而傾側
+3. 拉弦手手肘加力方向是否一致
+4. 推拉力量是否平衡
+5. 是否出現身體後仰、手臂補拉、肩膀上提等代償
+
+Phase 3: Release 與 Follow Through
+1. 持弓手是否維持水平高度
+2. 拉弦手放箭時手指是否保持形狀
+3. 放箭後身體是否保持平衡
+4. 整體放箭形態
+
+高階觀察事項:
+肩線 (Shoulder Line), 推拉力量平衡, 肩胛控制, 骨架支撐, 力量傳遞路徑, 重心穩定.
+
+評分原則 (每個技術點 0-100分):
+90-100: 非常接近目標動作
+80-89: 整體良好,有少量可改善細節
+70-79: 可接受,但有明顯技術差異
+60-69: 問題明顯,可能影響穩定性
+50-59: 技術偏差較大,需要優先改善
+0-49: 嚴重偏差或無法判斷
+
+你必須嚴格按照以下 JSON Schema 輸出，絕對不要輸出任何 markdown backticks (例如 \`\`\`json)，只輸出純 JSON 字串：
+{
+"report_title":"射箭動作對比分析報告",
+"video_a_label":"目前動作",
+"video_b_label":"參考動作",
+"overall_similarity_score": 0,
+"main_strengths": ["優點1", "優點2"],
+"main_weaknesses":["缺點1", "缺點2"],
+"coach_summary": "教練總結語...",
+"score_table": {
+  "phase_1_raise_to_anchor": { "score": 0, "comment":"" },
+  "phase_2_anchor_to_clicker": { "score": 0, "comment":"" },
+  "phase_3_release_follow_through": { "score": 0, "comment":"" },
+  "rhythm_similarity": { "score": 0, "comment":"" },
+  "overall_similarity": { "score": 0, "comment":"" }
+},
+"phase_1_raise_to_anchor": [
+  { "item": "bow_shoulder_shape", "display_name": "持弓手肩膀形態", "observation": "", "comparison": "", "impact": "", "recommendation": "", "similarity_score": 0, "confidence": "high / medium / low" }
+],
+"phase_2_anchor_to_clicker": [
+  { "item": "push_pull_balance", "display_name":"推拉力量平衡", "observation": "", "comparison": "", "impact": "", "recommendation": "", "similarity_score": 0, "confidence": "high" }
+],
+"phase_3_release_follow_through": [
+  { "item": "overall_release_shape", "display_name":"整體放箭形態", "observation": "", "comparison": "", "impact": "", "recommendation": "", "similarity_score": 0, "confidence": "high" }
+],
+"advanced_analysis": {
+  "shoulder_line": { "score": 0, "analysis": "", "recommendation": "" },
+  "skeletal_alignment": { "score": 0, "analysis": "", "recommendation": "" }
+},
+"timing_analysis": {
+  "raise_to_anchor": { "video_a_seconds": 0, "video_b_seconds": 0, "difference_seconds": 0, "comment":"" }
+},
+"top_3_priorities": [
+  { "priority": 1, "title": "", "reason": "", "suggested_drill": "" }
+],
+"limitations": ["如影片角度不足、畫面模糊或身體部位被遮擋,相關項目只作初步判斷。"]
+}
+`;
+
         const POSE_CONNECTIONS = [
             [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
             [9, 10], [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
@@ -311,7 +508,9 @@
             { name: "Right Shoulder", p1: 24, p2: 12, p3: 14 }
         ];
 
-        // Real coordinate-invariant angle calculation
+        // ---------------------------------------------------------
+        // STATE MANAGEMENT
+        // ---------------------------------------------------------
         function calculateAngle(a, b, c, aspect = 1) {
             const ax = a.x * aspect;
             const bx = b.x * aspect;
@@ -323,7 +522,6 @@
             return Math.round(angle);
         }
 
-        // --- GLOBAL CALIBRATION & TIMING STATES ---
         let transformState = {
             v1Scale: 1.0, v1X: 0, v1Y: 0,
             v2Scale: 1.0, v2X: 0, v2Y: 0
@@ -345,25 +543,29 @@
             minConfidence: 0.3
         };
 
-        // --- MANUAL PROTRACTOR STATE ---
         let manualProtState = {
-            activeTrack: null, // null, 1 (V1), or 2 (V2)
-            v1Points: [], // unlimited points [{x, y}] in local canvas coordinates
-            v2Points: [], // unlimited points [{x, y}]
+            activeTrack: null, 
+            v1Points: [], 
+            v2Points: [], 
             draggingPointIdx: -1,
-            draggingTrack: null
+            draggingTrack: null,
+            v1Locked: false,
+            v2Locked: false
         };
+        
+        let aiReportCache = null;
 
         let poseLandmarker = null;
         let isModelLoading = false;
 
-        // --- DOM ELEMENTS: TABS ---
+        // ---------------------------------------------------------
+        // DOM ELEMENTS
+        // ---------------------------------------------------------
         const tabBtnLive = document.getElementById('tabBtnLive');
         const tabBtnAnalyze = document.getElementById('tabBtnAnalyze');
         const tabLive = document.getElementById('tabLive');
         const tabAnalyze = document.getElementById('tabAnalyze');
 
-        // --- DOM ELEMENTS: LIVE ---
         let hiddenVideo = document.createElement('video');
         hiddenVideo.autoplay = true; hiddenVideo.playsInline = true; hiddenVideo.muted = true;
         const mainCanvas = document.getElementById('mainCanvas');
@@ -383,7 +585,6 @@
         let renderLoopId = null;
         let lastCaptureTime = 0;
 
-        // --- DOM ELEMENTS: ANALYZE ---
         const upload1 = document.getElementById('upload1');
         const upload2 = document.getElementById('upload2');
         const video1 = document.getElementById('video1');
@@ -398,7 +599,6 @@
         const opacityVal = document.getElementById('opacityVal');
         let analyzeLoopId = null;
 
-        // --- CALIBRATION INTERFACE ELEMENTS ---
         const v1ScaleSlider = document.getElementById('v1ScaleSlider');
         const v1ScaleVal = document.getElementById('v1ScaleVal');
         const v1XSlider = document.getElementById('v1XSlider');
@@ -419,502 +619,36 @@
         const v2TrimVal = document.getElementById('v2TrimVal');
         const btnResetV2 = document.getElementById('btnResetV2');
 
-        // --- MANUAL PROTRACTOR BTNS ---
         const btnManualProt1 = document.getElementById('btnManualProt1');
         const btnManualProt2 = document.getElementById('btnManualProt2');
+        const btnLockV1 = document.getElementById('btnLockV1');
+        const btnLockV2 = document.getElementById('btnLockV2');
+        const iconLockV1 = document.getElementById('iconLockV1');
+        const iconLockV2 = document.getElementById('iconLockV2');
         const btnClearManual = document.getElementById('btnClearManual');
 
-        async function init() {
-            tabBtnLive.addEventListener('click', () => switchTab('live'));
-            tabBtnAnalyze.addEventListener('click', () => switchTab('analyze'));
+        // AI Elements
+        const providerSelect = document.getElementById('providerSelect');
+        const apiKeyContainer = document.getElementById('apiKeyContainer');
+        const modelContainer = document.getElementById('modelContainer');
+        const aiApiKeyInput = document.getElementById('aiApiKeyInput');
+        const modelSelect = document.getElementById('modelSelect');
+        const btnGenerateAiReport = document.getElementById('btnGenerateAiReport');
+        const aiBtnIcon = document.getElementById('aiBtnIcon');
+        const aiBtnText = document.getElementById('aiBtnText');
+        const aiLoadingContainer = document.getElementById('aiLoadingContainer');
+        const aiLoadingProgressBar = document.getElementById('aiLoadingProgressBar');
+        const aiLoadingProgressVal = document.getElementById('aiLoadingProgressVal');
+        const aiLoadingStatus = document.getElementById('aiLoadingStatus');
+        const aiReportContainer = document.getElementById('aiReportContainer');
+        const aiErrorContainer = document.getElementById('aiErrorContainer');
+        const aiErrorMessage = document.getElementById('aiErrorMessage');
+        const btnCopyReport = document.getElementById('btnCopyReport');
 
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoInputs = devices.filter(d => d.kind === 'videoinput');
-                selCamera.innerHTML = videoInputs.length ? '' : '<option value="">No cameras found</option>';
-                videoInputs.forEach((d, i) => {
-                    const opt = document.createElement('option');
-                    opt.value = d.deviceId; opt.text = d.label || `Camera ${i + 1}`;
-                    selCamera.appendChild(opt);
-                });
-            } catch (err) { selCamera.innerHTML = '<option value="">Permission denied</option>'; }
 
-            btnToggle.addEventListener('click', toggleStream);
-            sldDelay.addEventListener('input', (e) => {
-                state.delayMs = parseFloat(e.target.value) * 1000;
-                txtDelayBadge.textContent = `${e.target.value}s`;
-            });
-
-            upload1.addEventListener('change', (e) => handleUpload(e, video1, canvas1));
-            upload2.addEventListener('change', (e) => handleUpload(e, video2, canvas2));
-            
-            video1.addEventListener('timeupdate', onVideoFrameUpdate);
-            video1.addEventListener('seeked', onVideoFrameUpdate);
-            video2.addEventListener('timeupdate', onVideoFrameUpdate);
-            video2.addEventListener('seeked', onVideoFrameUpdate);
-
-            btnSyncPlay.addEventListener('click', toggleSyncPlay);
-
-            opacitySlider.addEventListener('input', (e) => {
-                const opacity = parseFloat(e.target.value);
-                state.overlayOpacity = opacity;
-                opacityVal.textContent = `${Math.round(opacity * 100)}%`;
-                video2.style.opacity = opacity;
-                canvas2.style.opacity = opacity;
-                
-                // Update opacity on interaction layer canvas representation
-                drawManualProtractors();
-            });
-
-            // --- SPATIAL & TEMPORAL CALIBRATION ---
-            v1ScaleSlider.addEventListener('input', (e) => {
-                transformState.v1Scale = parseFloat(e.target.value);
-                v1ScaleVal.textContent = `${Math.round(transformState.v1Scale * 100)}%`;
-                applyTransforms();
-            });
-            v1XSlider.addEventListener('input', (e) => {
-                transformState.v1X = parseInt(e.target.value);
-                v1XVal.textContent = `${transformState.v1X > 0 ? '+' : ''}${transformState.v1X}%`;
-                applyTransforms();
-            });
-            v1YSlider.addEventListener('input', (e) => {
-                transformState.v1Y = parseInt(e.target.value);
-                v1YVal.textContent = `${transformState.v1Y > 0 ? '+' : ''}${transformState.v1Y}%`;
-                applyTransforms();
-            });
-            v1TrimSlider.addEventListener('input', (e) => {
-                timingState.v1Start = parseFloat(e.target.value);
-                v1TrimVal.textContent = `${timingState.v1Start.toFixed(2)}s`;
-                if (!state.isVideoPlaying && isFinite(timingState.v1Start)) {
-                    try { video1.currentTime = timingState.v1Start; } catch (err) {}
-                }
-            });
-            btnResetV1.addEventListener('click', () => {
-                v1ScaleSlider.value = 1.0; transformState.v1Scale = 1.0; v1ScaleVal.textContent = "100%";
-                v1XSlider.value = 0; transformState.v1X = 0; v1XVal.textContent = "0%";
-                v1YSlider.value = 0; transformState.v1Y = 0; v1YVal.textContent = "0%";
-                v1TrimSlider.value = 0; timingState.v1Start = 0; v1TrimVal.textContent = "0.00s";
-                if (!state.isVideoPlaying) {
-                    try { video1.currentTime = 0; } catch (err) {}
-                }
-                applyTransforms();
-            });
-
-            v2ScaleSlider.addEventListener('input', (e) => {
-                transformState.v2Scale = parseFloat(e.target.value);
-                v2ScaleVal.textContent = `${Math.round(transformState.v2Scale * 100)}%`;
-                applyTransforms();
-            });
-            v2XSlider.addEventListener('input', (e) => {
-                transformState.v2X = parseInt(e.target.value);
-                v2XVal.textContent = `${transformState.v2X > 0 ? '+' : ''}${transformState.v2X}%`;
-                applyTransforms();
-            });
-            v2YSlider.addEventListener('input', (e) => {
-                transformState.v2Y = parseInt(e.target.value);
-                v2YVal.textContent = `${transformState.v2Y > 0 ? '+' : ''}${transformState.v2Y}%`;
-                applyTransforms();
-            });
-            v2TrimSlider.addEventListener('input', (e) => {
-                timingState.v2Start = parseFloat(e.target.value);
-                v2TrimVal.textContent = `${timingState.v2Start.toFixed(2)}s`;
-                if (!state.isVideoPlaying && isFinite(timingState.v2Start)) {
-                    try { video2.currentTime = timingState.v2Start; } catch (err) {}
-                }
-            });
-            btnResetV2.addEventListener('click', () => {
-                v2ScaleSlider.value = 1.0; transformState.v2Scale = 1.0; v2ScaleVal.textContent = "100%";
-                v2XSlider.value = 0; transformState.v2X = 0; v2XVal.textContent = "0%";
-                v2YSlider.value = 0; transformState.v2Y = 0; v2YVal.textContent = "0%";
-                v2TrimSlider.value = 0; timingState.v2Start = 0; v2TrimVal.textContent = "0.00s";
-                if (!state.isVideoPlaying) {
-                    try { video2.currentTime = 0; } catch (err) {}
-                }
-                applyTransforms();
-            });
-
-            // --- MANUAL PROTRACTOR CONSOLE HANDLERS ---
-            btnManualProt1.addEventListener('click', () => toggleManualProtTrack(1));
-            btnManualProt2.addEventListener('click', () => toggleManualProtTrack(2));
-            btnClearManual.addEventListener('click', clearManualProtPoints);
-
-            interactionCanvas.addEventListener('mousedown', onInteractionMouseDown);
-            interactionCanvas.addEventListener('mousemove', onInteractionMouseMove);
-            window.addEventListener('mouseup', onInteractionMouseUp);
-            
-            // Right-click listener to delete individual points dynamically
-            interactionCanvas.addEventListener('contextmenu', onInteractionContextMenu);
-
-            // AI Toggles (Live tab)
-            chkAiLive.addEventListener('change', async (e) => {
-                state.showSkeletonLive = e.target.checked;
-                if (e.target.checked) await loadAIModel(aiIconLive, aiTextLive);
-            });
-            chkAnglesLive.addEventListener('change', (e) => {
-                state.showAnglesLive = e.target.checked;
-            });
-        }
-
-        // --- SPATIAL TRANSFORM APPLIER ---
-        function applyTransforms() {
-            const t1 = `scale(${transformState.v1Scale}) translate(${transformState.v1X}%, ${transformState.v1Y}%)`;
-            video1.style.transform = t1;
-            canvas1.style.transform = t1;
-
-            const t2 = `scale(${transformState.v2Scale}) translate(${transformState.v2X}%, ${transformState.v2Y}%)`;
-            video2.style.transform = t2;
-            canvas2.style.transform = t2;
-        }
-
-        function onVideoFrameUpdate() {
-            if (state.activeTab === 'analyze' && !state.isVideoPlaying) {
-                analyzeLoop();
-            }
-        }
-
-        function switchTab(target) {
-            state.activeTab = target;
-            if (target === 'live') {
-                tabBtnLive.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
-                tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
-                tabLive.classList.remove('hidden'); tabAnalyze.classList.add('hidden');
-            } else {
-                tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
-                tabBtnLive.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
-                tabAnalyze.classList.remove('hidden'); tabLive.classList.add('hidden');
-                if(state.isStreaming) stopStream();
-                
-                // Adjust overlay canvas properties to align with view container bounds
-                setTimeout(resizeInteractionCanvas, 100);
-            }
-        }
-
-        function resizeInteractionCanvas() {
-            const rect = interactionCanvas.getBoundingClientRect();
-            interactionCanvas.width = interactionCanvas.clientWidth;
-            interactionCanvas.height = interactionCanvas.clientHeight;
-            drawManualProtractors();
-        }
-
-        // --- AI MODEL LOADING (Live camera) ---
-        async function loadAIModel(iconEl, textEl) {
-            if (poseLandmarker || isModelLoading) return;
-            isModelLoading = true;
-            iconEl.className = "ph ph-spinner-gap text-lg animate-spin text-indigo-400";
-            textEl.textContent = "Loading AI...";
-            
-            try {
-                const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs');
-                const visionResolver = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
-                
-                poseLandmarker = await vision.PoseLandmarker.createFromOptions(visionResolver, {
-                    baseOptions: {
-                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
-                        delegate: "CPU"
-                    },
-                    runningMode: "IMAGE", 
-                    numPoses: 1
-                });
-                iconEl.className = "ph ph-person-simple-walk text-lg text-emerald-400";
-                textEl.textContent = "AI Ready";
-            } catch (err) {
-                console.error(err);
-                iconEl.className = "ph ph-warning-circle text-lg text-rose-400";
-                textEl.textContent = "AI Failed";
-                chkAiLive.checked = false;
-            }
-            isModelLoading = false;
-        }
-
-        function handleUpload(event, videoElement, canvasElement) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const url = URL.createObjectURL(file);
-            videoElement.src = url;
-            vidPlaceholder.classList.add('hidden');
-            
-            videoElement.onloadedmetadata = () => {
-                canvasElement.width = videoElement.videoWidth; 
-                canvasElement.height = videoElement.videoHeight;
-                
-                if (videoElement.id === 'video1') {
-                    v1TrimSlider.max = videoElement.duration;
-                } else {
-                    v2TrimSlider.max = videoElement.duration;
-                }
-
-                analyzeLoop();
-                resizeInteractionCanvas();
-            };
-        }
-
-        function toggleSyncPlay() {
-            if (state.isVideoPlaying) {
-                video1.pause(); video2.pause();
-                syncPlayIcon.className = "ph-fill ph-play text-xl";
-                state.isVideoPlaying = false;
-                cancelAnimationFrame(analyzeLoopId); analyzeLoopId = null;
-            } else {
-                if (isFinite(timingState.v1Start) && isFinite(video1.currentTime)) {
-                    try { video1.currentTime = Math.max(timingState.v1Start, video1.currentTime); } catch (e) {}
-                }
-                if (isFinite(timingState.v2Start) && isFinite(video2.currentTime)) {
-                    try { video2.currentTime = Math.max(timingState.v2Start, video2.currentTime); } catch (e) {}
-                }
-                
-                // Play and robustly capture promises to catch and silence interrupt/abort errors
-                const p1 = video1.play();
-                if (p1 !== undefined) p1.catch(() => {});
-                const p2 = video2.play();
-                if (p2 !== undefined) p2.catch(() => {});
-
-                syncPlayIcon.className = "ph-fill ph-pause text-xl";
-                state.isVideoPlaying = true;
-                if (!analyzeLoopId) analyzeLoopId = requestAnimationFrame(analyzeLoop);
-            }
-        }
-
-        function analyzeLoop() {
-            if (state.activeTab !== 'analyze') return;
-
-            // Enforce temporal sync lock between the two video clips while playing (with finite check guards)
-            if (state.isVideoPlaying) {
-                if (isFinite(video1.currentTime) && isFinite(timingState.v1Start) && isFinite(timingState.v2Start) && isFinite(video2.currentTime) && isFinite(video2.duration)) {
-                    const elapsedV1 = video1.currentTime - timingState.v1Start;
-                    const expectedV2 = timingState.v2Start + elapsedV1;
-                    
-                    // If drift exceeds 150ms, perform micro-seek correction
-                    if (isFinite(expectedV2) && Math.abs(video2.currentTime - expectedV2) > 0.15) {
-                        try {
-                            video2.currentTime = Math.max(0, Math.min(video2.duration, expectedV2));
-                        } catch (e) {}
-                    }
-                }
-
-                // Auto reset if loop limits are exceeded
-                if (video1.ended || video2.ended) {
-                    video1.pause(); video2.pause();
-                    if (isFinite(timingState.v1Start)) {
-                        try { video1.currentTime = timingState.v1Start; } catch (e) {}
-                    }
-                    if (isFinite(timingState.v2Start)) {
-                        try { video2.currentTime = timingState.v2Start; } catch (e) {}
-                    }
-                    syncPlayIcon.className = "ph-fill ph-play text-xl";
-                    state.isVideoPlaying = false;
-                }
-            }
-
-            // Always update the manual digitizer visual lines in sync with playback frames
-            drawManualProtractors();
-
-            if (state.isVideoPlaying) {
-                analyzeLoopId = requestAnimationFrame(analyzeLoop);
-            }
-        }
-
-        // --- MANUAL PROTRACTOR CONSOLE CONTROLLER LOGIC ---
-        function toggleManualProtTrack(trackId) {
-            if (manualProtState.activeTrack === trackId) {
-                manualProtState.activeTrack = null;
-                deactivateProtButtons();
-            } else {
-                manualProtState.activeTrack = trackId;
-                deactivateProtButtons();
-                if (trackId === 1) {
-                    btnManualProt1.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25 flex items-center justify-center gap-1";
-                } else {
-                    btnManualProt2.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-pink-500 text-slate-950 shadow-md shadow-pink-500/25 flex items-center justify-center gap-1";
-                }
-            }
-        }
-
-        function deactivateProtButtons() {
-            btnManualProt1.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1";
-            btnManualProt2.className = "text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1";
-        }
-
-        function clearManualProtPoints() {
-            manualProtState.v1Points = [];
-            manualProtState.v2Points = [];
-            manualProtState.activeTrack = null;
-            deactivateProtButtons();
-            drawManualProtractors();
-        }
-
-        function getMousePos(canvasElement, evt) {
-            const rect = canvasElement.getBoundingClientRect();
-            return {
-                x: evt.clientX - rect.left,
-                y: evt.clientY - rect.top
-            };
-        }
-
-        // --- EVENTS ---
-        function onInteractionMouseDown(e) {
-            if (e.button === 2) return; // Ignore right-clicks here (handled by contextmenu)
-            
-            const pos = getMousePos(interactionCanvas, e);
-            const clickTolerance = 15; // px boundary around circles to drag
-
-            // 1. Check if user is clicking to DRAG an existing point
-            // Check Video 1 points
-            for (let i = 0; i < manualProtState.v1Points.length; i++) {
-                const pt = manualProtState.v1Points[i];
-                const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
-                if (d < clickTolerance) {
-                    manualProtState.draggingTrack = 1;
-                    manualProtState.draggingPointIdx = i;
-                    return;
-                }
-            }
-            // Check Video 2 points
-            for (let i = 0; i < manualProtState.v2Points.length; i++) {
-                const pt = manualProtState.v2Points[i];
-                const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
-                if (d < clickTolerance) {
-                    manualProtState.draggingTrack = 2;
-                    manualProtState.draggingPointIdx = i;
-                    return;
-                }
-            }
-
-            // 2. If not dragging, and a track calibration is active, ADD a new manual point (unlimited allowed)
-            if (manualProtState.activeTrack === 1) {
-                manualProtState.v1Points.push(pos);
-                drawManualProtractors();
-            } else if (manualProtState.activeTrack === 2) {
-                manualProtState.v2Points.push(pos);
-                drawManualProtractors();
-            }
-        }
-
-        function onInteractionMouseMove(e) {
-            if (manualProtState.draggingTrack !== null && manualProtState.draggingPointIdx !== -1) {
-                const pos = getMousePos(interactionCanvas, e);
-                const track = manualProtState.draggingTrack;
-                const idx = manualProtState.draggingPointIdx;
-
-                if (track === 1) {
-                    manualProtState.v1Points[idx] = pos;
-                } else if (track === 2) {
-                    manualProtState.v2Points[idx] = pos;
-                }
-                drawManualProtractors();
-            }
-        }
-
-        function onInteractionMouseUp() {
-            manualProtState.draggingTrack = null;
-            manualProtState.draggingPointIdx = -1;
-        }
-
-        // Context menu handler to delete individual points on right-click
-        function onInteractionContextMenu(e) {
-            e.preventDefault();
-            const pos = getMousePos(interactionCanvas, e);
-            const clickTolerance = 15; // px click tolerance
-
-            // Search and delete from Base Video (V1)
-            for (let i = 0; i < manualProtState.v1Points.length; i++) {
-                const pt = manualProtState.v1Points[i];
-                if (Math.hypot(pt.x - pos.x, pt.y - pos.y) < clickTolerance) {
-                    manualProtState.v1Points.splice(i, 1);
-                    drawManualProtractors();
-                    return;
-                }
-            }
-
-            // Search and delete from Overlay Video (V2)
-            for (let i = 0; i < manualProtState.v2Points.length; i++) {
-                const pt = manualProtState.v2Points[i];
-                if (Math.hypot(pt.x - pos.x, pt.y - pos.y) < clickTolerance) {
-                    manualProtState.v2Points.splice(i, 1);
-                    drawManualProtractors();
-                    return;
-                }
-            }
-        }
-
-        function drawManualProtractors() {
-            const ctx = interactionCanvas.getContext('2d');
-            ctx.clearRect(0, 0, interactionCanvas.width, interactionCanvas.height);
-
-            // Draw Video 1 manual skeleton/angle lines
-            if (manualProtState.v1Points.length > 0) {
-                drawManualOverlayLines(ctx, manualProtState.v1Points, '#10b981', 'Video 1 (Base)');
-            }
-
-            // Draw Video 2 manual skeleton/angle lines (respecting dynamic slider opacity)
-            if (manualProtState.v2Points.length > 0) {
-                ctx.save();
-                ctx.globalAlpha = state.overlayOpacity;
-                drawManualOverlayLines(ctx, manualProtState.v2Points, '#ec4899', 'Video 2 (Overlay)');
-                ctx.restore();
-            }
-        }
-
-        function drawManualOverlayLines(ctx, points, color, label) {
-            ctx.save();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = color;
-            ctx.fillStyle = '#ffffff';
-
-            // Connect lines sequentially
-            if (points.length >= 2) {
-                ctx.beginPath();
-                ctx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < points.length; i++) {
-                    ctx.lineTo(points[i].x, points[i].y);
-                }
-                ctx.stroke();
-            }
-
-            // Draw joint nodes
-            points.forEach((pt, idx) => {
-                ctx.beginPath();
-                ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);
-                ctx.fillStyle = color;
-                ctx.fill();
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Draw index identifier
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '10px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(idx + 1, pt.x, pt.y);
-            });
-
-            // Calculate & draw angles at every intersection where we have 3 sequential points
-            if (points.length >= 3) {
-                for (let i = 1; i < points.length - 1; i++) {
-                    const angle = calculateAngle(points[i - 1], points[i], points[i + 1], 1);
-                    const vertex = points[i];
-                    
-                    ctx.shadowColor = "black";
-                    ctx.shadowBlur = 4;
-                    ctx.font = 'bold 15px system-ui';
-                    ctx.textAlign = 'left';
-                    
-                    // Draw text label backdrop
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#000000';
-                    ctx.strokeText(`${angle}°`, vertex.x + 14, vertex.y);
-                    
-                    ctx.shadowBlur = 0;
-                    ctx.fillStyle = '#fde047'; // bright yellow
-                    ctx.fillText(`${angle}°`, vertex.x + 14, vertex.y);
-                }
-            }
-            ctx.restore();
-        }
-
-        // --- TAB 1: LIVE STREAM LOGIC ---
-        async function toggleStream() { state.isStreaming ? stopStream() : startStream(); }
-
+        // ---------------------------------------------------------
+        // STREAM CONTROL FUNCTIONS (Must be hoisted)
+        // ---------------------------------------------------------
         async function startStream() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selCamera.value }});
@@ -937,6 +671,8 @@
             inactiveOverlay.classList.remove('hidden'); pipContainer.classList.add('hidden');
             btnToggleText.textContent = "Start Camera"; btnToggle.classList.replace('bg-rose-500', 'bg-indigo-500');
         }
+
+        function toggleStream() { state.isStreaming ? stopStream() : startStream(); }
 
         function liveRenderLoop(now) {
             if (!state.isStreaming) return;
@@ -979,14 +715,12 @@
             renderLoopId = requestAnimationFrame(liveRenderLoop);
         }
 
-        // --- GLOBAL DRAW FUNCTION (AI Overlay for Live camera) ---
         function drawSkeleton(ctx, landmarks, w, h, showAngles = false, skeletonColor = '#10b981') {
-            const aspect = w / h; // Get aspect ratio directly from the canvas parameters
+            const aspect = w / h;
             ctx.save(); ctx.lineWidth = 4; ctx.strokeStyle = skeletonColor; ctx.fillStyle = '#ffffff';
             POSE_CONNECTIONS.forEach(([i, j]) => {
                 const p1 = landmarks[i], p2 = landmarks[j];
                 const v1 = p1?.visibility ?? 1, v2 = p2?.visibility ?? 1;
-                // Use user customized confidence threshold
                 if (p1 && p2 && v1 > state.minConfidence && v2 > state.minConfidence) {
                     ctx.beginPath(); ctx.moveTo(p1.x * w, p1.y * h); ctx.lineTo(p2.x * w, p2.y * h); ctx.stroke();
                 }
@@ -1010,7 +744,6 @@
                     const v2 = b?.visibility ?? 1;
                     const v3 = c?.visibility ?? 1;
 
-                    // Angle indicators also filter based on confidence threshold dynamically
                     if (a && b && c && v1 > state.minConfidence && v2 > state.minConfidence && v3 > state.minConfidence) {
                         const angle = calculateAngle(a, b, c, aspect);
                         const x = b.x * w + 12;
@@ -1032,7 +765,793 @@
             ctx.restore();
         }
 
-        init();
+        // ---------------------------------------------------------
+        // INITIALIZATION
+        // ---------------------------------------------------------
+        async function init() {
+            tabBtnLive.addEventListener('click', () => switchTab('live'));
+            tabBtnAnalyze.addEventListener('click', () => switchTab('analyze'));
+
+            providerSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'openai') {
+                    apiKeyContainer.classList.remove('hidden');
+                    modelContainer.classList.remove('hidden');
+                } else {
+                    apiKeyContainer.classList.add('hidden');
+                    modelContainer.classList.add('hidden');
+                }
+            });
+
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoInputs = devices.filter(d => d.kind === 'videoinput');
+                selCamera.innerHTML = videoInputs.length ? '' : '<option value="">No cameras found</option>';
+                videoInputs.forEach((d, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = d.deviceId; opt.text = d.label || `Camera ${i + 1}`;
+                    selCamera.appendChild(opt);
+                });
+            } catch (err) { selCamera.innerHTML = '<option value="">Permission denied</option>'; }
+
+            // MUST ATTACH HOISTED toggleStream HERE
+            btnToggle.addEventListener('click', toggleStream);
+            
+            sldDelay.addEventListener('input', (e) => {
+                state.delayMs = parseFloat(e.target.value) * 1000;
+                txtDelayBadge.textContent = `${e.target.value}s`;
+            });
+
+            upload1.addEventListener('change', (e) => handleUpload(e, video1, canvas1));
+            upload2.addEventListener('change', (e) => handleUpload(e, video2, canvas2));
+            
+            video1.addEventListener('timeupdate', onVideoFrameUpdate);
+            video1.addEventListener('seeked', onVideoFrameUpdate);
+            video2.addEventListener('timeupdate', onVideoFrameUpdate);
+            video2.addEventListener('seeked', onVideoFrameUpdate);
+
+            btnSyncPlay.addEventListener('click', toggleSyncPlay);
+
+            opacitySlider.addEventListener('input', (e) => {
+                const opacity = parseFloat(e.target.value);
+                state.overlayOpacity = opacity;
+                opacityVal.textContent = `${Math.round(opacity * 100)}%`;
+                video2.style.opacity = opacity;
+                canvas2.style.opacity = opacity;
+                drawManualProtractors();
+            });
+
+            // Calibrations
+            v1ScaleSlider.addEventListener('input', (e) => {
+                transformState.v1Scale = parseFloat(e.target.value);
+                v1ScaleVal.textContent = `${Math.round(transformState.v1Scale * 100)}%`;
+                applyTransforms();
+            });
+            v1XSlider.addEventListener('input', (e) => {
+                transformState.v1X = parseInt(e.target.value);
+                v1XVal.textContent = `${transformState.v1X > 0 ? '+' : ''}${transformState.v1X}%`;
+                applyTransforms();
+            });
+            v1YSlider.addEventListener('input', (e) => {
+                transformState.v1Y = parseInt(e.target.value);
+                v1YVal.textContent = `${transformState.v1Y > 0 ? '+' : ''}${transformState.v1Y}%`;
+                applyTransforms();
+            });
+            v1TrimSlider.addEventListener('input', (e) => {
+                timingState.v1Start = parseFloat(e.target.value);
+                v1TrimVal.textContent = `${timingState.v1Start.toFixed(2)}s`;
+                if (!state.isVideoPlaying && isFinite(timingState.v1Start)) {
+                    try { video1.currentTime = timingState.v1Start; } catch (err) {}
+                }
+            });
+            btnResetV1.addEventListener('click', () => {
+                v1ScaleSlider.value = 1.0; transformState.v1Scale = 1.0; v1ScaleVal.textContent = "100%";
+                v1XSlider.value = 0; transformState.v1X = 0; v1XVal.textContent = "0%";
+                v1YSlider.value = 0; transformState.v1Y = 0; v1YVal.textContent = "0%";
+                v1TrimSlider.value = 0; timingState.v1Start = 0; v1TrimVal.textContent = "0.00s";
+                if (!state.isVideoPlaying) { try { video1.currentTime = 0; } catch (err) {} }
+                applyTransforms();
+            });
+
+            v2ScaleSlider.addEventListener('input', (e) => {
+                transformState.v2Scale = parseFloat(e.target.value);
+                v2ScaleVal.textContent = `${Math.round(transformState.v2Scale * 100)}%`;
+                applyTransforms();
+            });
+            v2XSlider.addEventListener('input', (e) => {
+                transformState.v2X = parseInt(e.target.value);
+                v2XVal.textContent = `${transformState.v2X > 0 ? '+' : ''}${transformState.v2X}%`;
+                applyTransforms();
+            });
+            v2YSlider.addEventListener('input', (e) => {
+                transformState.v2Y = parseInt(e.target.value);
+                v2YVal.textContent = `${transformState.v2Y > 0 ? '+' : ''}${transformState.v2Y}%`;
+                applyTransforms();
+            });
+            v2TrimSlider.addEventListener('input', (e) => {
+                timingState.v2Start = parseFloat(e.target.value);
+                v2TrimVal.textContent = `${timingState.v2Start.toFixed(2)}s`;
+                if (!state.isVideoPlaying && isFinite(timingState.v2Start)) {
+                    try { video2.currentTime = timingState.v2Start; } catch (err) {}
+                }
+            });
+            btnResetV2.addEventListener('click', () => {
+                v2ScaleSlider.value = 1.0; transformState.v2Scale = 1.0; v2ScaleVal.textContent = "100%";
+                v2XSlider.value = 0; transformState.v2X = 0; v2XVal.textContent = "0%";
+                v2YSlider.value = 0; transformState.v2Y = 0; v2YVal.textContent = "0%";
+                v2TrimSlider.value = 0; timingState.v2Start = 0; v2TrimVal.textContent = "0.00s";
+                if (!state.isVideoPlaying) { try { video2.currentTime = 0; } catch (err) {} }
+                applyTransforms();
+            });
+
+            // Protractor Locks & Handlers
+            btnLockV1.addEventListener('click', () => {
+                manualProtState.v1Locked = !manualProtState.v1Locked;
+                iconLockV1.className = manualProtState.v1Locked ? "ph-fill ph-lock" : "ph ph-lock-open";
+                btnLockV1.className = manualProtState.v1Locked 
+                    ? "px-3 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all flex items-center justify-center" 
+                    : "px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center";
+                
+                if (manualProtState.v1Locked) {
+                    btnManualProt1.classList.add('opacity-50', 'cursor-not-allowed');
+                    if (manualProtState.activeTrack === 1) toggleManualProtTrack(1); 
+                } else {
+                    btnManualProt1.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            btnLockV2.addEventListener('click', () => {
+                manualProtState.v2Locked = !manualProtState.v2Locked;
+                iconLockV2.className = manualProtState.v2Locked ? "ph-fill ph-lock" : "ph ph-lock-open";
+                btnLockV2.className = manualProtState.v2Locked 
+                    ? "px-3 rounded-md bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 transition-all flex items-center justify-center" 
+                    : "px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center";
+                
+                if (manualProtState.v2Locked) {
+                    btnManualProt2.classList.add('opacity-50', 'cursor-not-allowed');
+                    if (manualProtState.activeTrack === 2) toggleManualProtTrack(2); 
+                } else {
+                    btnManualProt2.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            btnManualProt1.addEventListener('click', () => toggleManualProtTrack(1));
+            btnManualProt2.addEventListener('click', () => toggleManualProtTrack(2));
+            btnClearManual.addEventListener('click', clearManualProtPoints);
+
+            interactionCanvas.addEventListener('mousedown', onInteractionMouseDown);
+            interactionCanvas.addEventListener('mousemove', onInteractionMouseMove);
+            window.addEventListener('mouseup', onInteractionMouseUp);
+            interactionCanvas.addEventListener('contextmenu', onInteractionContextMenu);
+
+            // AI Coach (Must be explicitly bound to functions)
+            btnGenerateAiReport.addEventListener('click', generateAIVisionReport);
+            btnCopyReport.addEventListener('click', copyReportJSON);
+
+            // AI Skeleton overlay toggles for live camera
+            chkAiLive.addEventListener('change', async (e) => {
+                state.showSkeletonLive = e.target.checked;
+                if (e.target.checked) await loadAIModel(aiIconLive, aiTextLive);
+            });
+            chkAnglesLive.addEventListener('change', (e) => {
+                state.showAnglesLive = e.target.checked;
+            });
+        }
+
+        // ---------------------------------------------------------
+        // UI MANIPULATION
+        // ---------------------------------------------------------
+        function applyTransforms() {
+            const t1 = `scale(${transformState.v1Scale}) translate(${transformState.v1X}%, ${transformState.v1Y}%)`;
+            video1.style.transform = t1;
+            canvas1.style.transform = t1;
+
+            const t2 = `scale(${transformState.v2Scale}) translate(${transformState.v2X}%, ${transformState.v2Y}%)`;
+            video2.style.transform = t2;
+            canvas2.style.transform = t2;
+        }
+
+        function onVideoFrameUpdate() {
+            if (state.activeTab === 'analyze' && !state.isVideoPlaying) {
+                analyzeLoop();
+            }
+        }
+
+        function switchTab(target) {
+            state.activeTab = target;
+            if (target === 'live') {
+                tabBtnLive.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
+                tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
+                tabLive.classList.remove('hidden'); tabAnalyze.classList.add('hidden');
+            } else {
+                tabBtnAnalyze.className = "px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors";
+                tabBtnLive.className = "px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors";
+                tabAnalyze.classList.remove('hidden'); tabLive.classList.add('hidden');
+                if(state.isStreaming) stopStream();
+                setTimeout(resizeInteractionCanvas, 100);
+            }
+        }
+
+        function resizeInteractionCanvas() {
+            interactionCanvas.width = interactionCanvas.clientWidth;
+            interactionCanvas.height = interactionCanvas.clientHeight;
+            drawManualProtractors();
+        }
+
+        async function loadAIModel(iconEl, textEl) {
+            if (poseLandmarker || isModelLoading) return;
+            isModelLoading = true;
+            iconEl.className = "ph ph-spinner-gap text-lg animate-spin text-indigo-400";
+            textEl.textContent = "Loading AI...";
+            
+            try {
+                const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs');
+                const visionResolver = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
+                
+                poseLandmarker = await vision.PoseLandmarker.createFromOptions(visionResolver, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+                        delegate: "CPU"
+                    },
+                    runningMode: "IMAGE", 
+                    numPoses: 1
+                });
+                iconEl.className = "ph ph-person-simple-walk text-lg text-emerald-400";
+                textEl.textContent = "AI Ready";
+            } catch (err) {
+                console.error(err);
+                iconEl.className = "ph ph-warning-circle text-lg text-rose-400";
+                textEl.textContent = "AI Failed";
+                chkAiLive.checked = false;
+            }
+            isModelLoading = false;
+        }
+
+        function handleUpload(event, videoElement, canvasElement) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            videoElement.src = url;
+            vidPlaceholder.classList.add('hidden');
+            
+            videoElement.onloadedmetadata = () => {
+                canvasElement.width = videoElement.videoWidth; 
+                canvasElement.height = videoElement.videoHeight;
+                if (videoElement.id === 'video1') v1TrimSlider.max = videoElement.duration;
+                else v2TrimSlider.max = videoElement.duration;
+                analyzeLoop();
+                resizeInteractionCanvas();
+            };
+        }
+
+        function toggleSyncPlay() {
+            if (state.isVideoPlaying) {
+                video1.pause(); video2.pause();
+                syncPlayIcon.className = "ph-fill ph-play text-xl";
+                state.isVideoPlaying = false;
+                cancelAnimationFrame(analyzeLoopId); analyzeLoopId = null;
+            } else {
+                if (isFinite(timingState.v1Start) && isFinite(video1.currentTime)) {
+                    try { video1.currentTime = Math.max(timingState.v1Start, video1.currentTime); } catch (e) {}
+                }
+                if (isFinite(timingState.v2Start) && isFinite(video2.currentTime)) {
+                    try { video2.currentTime = Math.max(timingState.v2Start, video2.currentTime); } catch (e) {}
+                }
+                
+                const p1 = video1.play();
+                if (p1 !== undefined) p1.catch(() => {});
+                const p2 = video2.play();
+                if (p2 !== undefined) p2.catch(() => {});
+
+                syncPlayIcon.className = "ph-fill ph-pause text-xl";
+                state.isVideoPlaying = true;
+                if (!analyzeLoopId) analyzeLoopId = requestAnimationFrame(analyzeLoop);
+            }
+        }
+
+        function analyzeLoop() {
+            if (state.activeTab !== 'analyze') return;
+            if (state.isVideoPlaying) {
+                if (isFinite(video1.currentTime) && isFinite(timingState.v1Start) && isFinite(timingState.v2Start) && isFinite(video2.currentTime) && isFinite(video2.duration)) {
+                    const elapsedV1 = video1.currentTime - timingState.v1Start;
+                    const expectedV2 = timingState.v2Start + elapsedV1;
+                    if (isFinite(expectedV2) && Math.abs(video2.currentTime - expectedV2) > 0.15) {
+                        try { video2.currentTime = Math.max(0, Math.min(video2.duration, expectedV2)); } catch (e) {}
+                    }
+                }
+                if (video1.ended || video2.ended) {
+                    video1.pause(); video2.pause();
+                    if (isFinite(timingState.v1Start)) { try { video1.currentTime = timingState.v1Start; } catch (e) {} }
+                    if (isFinite(timingState.v2Start)) { try { video2.currentTime = timingState.v2Start; } catch (e) {} }
+                    syncPlayIcon.className = "ph-fill ph-play text-xl";
+                    state.isVideoPlaying = false;
+                }
+            }
+            drawManualProtractors();
+            if (state.isVideoPlaying) {
+                analyzeLoopId = requestAnimationFrame(analyzeLoop);
+            }
+        }
+
+        // ---------------------------------------------------------
+        // MANUAL PROTRACTOR LOGIC
+        // ---------------------------------------------------------
+        function toggleManualProtTrack(trackId) {
+            if (trackId === 1 && manualProtState.v1Locked) return;
+            if (trackId === 2 && manualProtState.v2Locked) return;
+
+            if (manualProtState.activeTrack === trackId) {
+                manualProtState.activeTrack = null;
+                deactivateProtButtons();
+            } else {
+                manualProtState.activeTrack = trackId;
+                deactivateProtButtons();
+                if (trackId === 1) {
+                    btnManualProt1.className = "flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25 flex items-center justify-center gap-1";
+                } else {
+                    btnManualProt2.className = "flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-pink-500 text-slate-950 shadow-md shadow-pink-500/25 flex items-center justify-center gap-1";
+                }
+            }
+        }
+
+        function deactivateProtButtons() {
+            if (!manualProtState.v1Locked) {
+                btnManualProt1.className = "flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1";
+            }
+            if (!manualProtState.v2Locked) {
+                btnManualProt2.className = "flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1";
+            }
+        }
+
+        function clearManualProtPoints() {
+            if (!manualProtState.v1Locked) manualProtState.v1Points = [];
+            if (!manualProtState.v2Locked) manualProtState.v2Points = [];
+            manualProtState.activeTrack = null;
+            deactivateProtButtons();
+            drawManualProtractors();
+        }
+
+        function getMousePos(canvasElement, evt) {
+            const rect = canvasElement.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+
+        function onInteractionMouseDown(e) {
+            if (e.button === 2) return; 
+            
+            const pos = getMousePos(interactionCanvas, e);
+            const clickTolerance = 15; 
+
+            if (!manualProtState.v1Locked) {
+                for (let i = 0; i < manualProtState.v1Points.length; i++) {
+                    const pt = manualProtState.v1Points[i];
+                    const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
+                    if (d < clickTolerance) {
+                        manualProtState.draggingTrack = 1;
+                        manualProtState.draggingPointIdx = i;
+                        return;
+                    }
+                }
+            }
+            if (!manualProtState.v2Locked) {
+                for (let i = 0; i < manualProtState.v2Points.length; i++) {
+                    const pt = manualProtState.v2Points[i];
+                    const d = Math.hypot(pt.x - pos.x, pt.y - pos.y);
+                    if (d < clickTolerance) {
+                        manualProtState.draggingTrack = 2;
+                        manualProtState.draggingPointIdx = i;
+                        return;
+                    }
+                }
+            }
+            if (manualProtState.activeTrack === 1 && !manualProtState.v1Locked) {
+                manualProtState.v1Points.push(pos);
+                drawManualProtractors();
+            } else if (manualProtState.activeTrack === 2 && !manualProtState.v2Locked) {
+                manualProtState.v2Points.push(pos);
+                drawManualProtractors();
+            }
+        }
+
+        function onInteractionMouseMove(e) {
+            if (manualProtState.draggingTrack !== null && manualProtState.draggingPointIdx !== -1) {
+                const pos = getMousePos(interactionCanvas, e);
+                const track = manualProtState.draggingTrack;
+                const idx = manualProtState.draggingPointIdx;
+
+                if (track === 1 && !manualProtState.v1Locked) {
+                    manualProtState.v1Points[idx] = pos;
+                } else if (track === 2 && !manualProtState.v2Locked) {
+                    manualProtState.v2Points[idx] = pos;
+                }
+                drawManualProtractors();
+            }
+        }
+
+        function onInteractionMouseUp() {
+            manualProtState.draggingTrack = null;
+            manualProtState.draggingPointIdx = -1;
+        }
+
+        function onInteractionContextMenu(e) {
+            e.preventDefault();
+            const pos = getMousePos(interactionCanvas, e);
+            const clickTolerance = 15; 
+            if (!manualProtState.v1Locked) {
+                for (let i = 0; i < manualProtState.v1Points.length; i++) {
+                    const pt = manualProtState.v1Points[i];
+                    if (Math.hypot(pt.x - pos.x, pt.y - pos.y) < clickTolerance) {
+                        manualProtState.v1Points.splice(i, 1);
+                        drawManualProtractors();
+                        return;
+                    }
+                }
+            }
+            if (!manualProtState.v2Locked) {
+                for (let i = 0; i < manualProtState.v2Points.length; i++) {
+                    const pt = manualProtState.v2Points[i];
+                    if (Math.hypot(pt.x - pos.x, pt.y - pos.y) < clickTolerance) {
+                        manualProtState.v2Points.splice(i, 1);
+                        drawManualProtractors();
+                        return;
+                    }
+                }
+            }
+        }
+
+        function drawManualProtractors() {
+            const ctx = interactionCanvas.getContext('2d');
+            ctx.clearRect(0, 0, interactionCanvas.width, interactionCanvas.height);
+            if (manualProtState.v1Points.length > 0) {
+                drawManualOverlayLines(ctx, manualProtState.v1Points, '#10b981', 'Video 1 (Base)');
+            }
+            if (manualProtState.v2Points.length > 0) {
+                ctx.save();
+                ctx.globalAlpha = state.overlayOpacity;
+                drawManualOverlayLines(ctx, manualProtState.v2Points, '#ec4899', 'Video 2 (Overlay)');
+                ctx.restore();
+            }
+        }
+
+        function drawManualOverlayLines(ctx, points, color, label) {
+            ctx.save();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = color;
+            ctx.fillStyle = '#ffffff';
+
+            if (points.length >= 2) {
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+                ctx.stroke();
+            }
+
+            points.forEach((pt, idx) => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(idx + 1, pt.x, pt.y);
+            });
+
+            if (points.length >= 3) {
+                for (let i = 1; i < points.length - 1; i++) {
+                    const angle = calculateAngle(points[i - 1], points[i], points[i + 1], 1);
+                    const vertex = points[i];
+                    
+                    ctx.shadowColor = "black";
+                    ctx.shadowBlur = 4;
+                    ctx.font = 'bold 15px system-ui';
+                    ctx.textAlign = 'left';
+                    
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#000000';
+                    ctx.strokeText(`${angle}°`, vertex.x + 14, vertex.y);
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#fde047'; 
+                    ctx.fillText(`${angle}°`, vertex.x + 14, vertex.y);
+                }
+            }
+            ctx.restore();
+        }
+
+        // ---------------------------------------------------------
+        // AI VISION COACH INTEGRATION
+        // ---------------------------------------------------------
+        async function captureVideoFrameAsBase64(videoElement) {
+            if (!videoElement.videoWidth) return null;
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            return dataUrl.split(',')[1]; 
+        }
+
+        // Must be hoisted
+        function copyReportJSON() {
+            if (!aiReportCache) return;
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = aiReportCache;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            
+            const prevText = btnCopyReport.innerHTML;
+            btnCopyReport.innerHTML = `<i class="ph ph-check text-emerald-400"></i> Copied!`;
+            setTimeout(() => btnCopyReport.innerHTML = prevText, 2000);
+        }
+
+        // Must be hoisted
+        async function generateAIVisionReport() {
+            const provider = providerSelect.value;
+            let url = "";
+            let payload = {};
+            let headers = { 'Content-Type': 'application/json' };
+
+            if (!video1.src || !video2.src || video1.readyState < 2 || video2.readyState < 2) {
+                showAIError("Please upload both Video 1 and Video 2 to proceed.");
+                return;
+            }
+
+            if (provider === 'openai') {
+                const apiKey = aiApiKeyInput.value.trim();
+                if (!apiKey) {
+                    showAIError("Please enter a valid OpenAI API Key to generate the report.");
+                    return;
+                }
+                url = "https://api.openai.com/v1/chat/completions";
+                headers['Authorization'] = `Bearer ${apiKey}`;
+            } else {
+                 // 使用您的專屬 Cloudflare Worker Proxy！
+                 url = `https://my-api-proxy.edithlyt0801.workers.dev/v1beta/models/gemini-1.5-flash:generateContent`;
+            }
+
+            const base64Img1 = await captureVideoFrameAsBase64(video1);
+            const base64Img2 = await captureVideoFrameAsBase64(video2);
+
+            if (!base64Img1 || !base64Img2) {
+                showAIError("Failed to extract frames from videos. Please ensure videos are loaded.");
+                return;
+            }
+
+            aiErrorContainer.classList.add('hidden');
+            aiReportContainer.classList.add('hidden');
+            aiLoadingContainer.classList.remove('hidden');
+            btnGenerateAiReport.disabled = true;
+            aiBtnIcon.className = "ph-bold ph-spinner-gap animate-spin text-lg";
+            aiBtnText.textContent = "Analyzing...";
+
+            let progress = 0;
+            aiLoadingProgressBar.style.width = '0%';
+            aiLoadingProgressVal.textContent = '0%';
+            const statusUpdates = [
+                { limit: 20, text: "Uploading frames to Vision AI..." },
+                { limit: 40, text: "Cross-referencing technique rubric..." },
+                { limit: 60, text: "Evaluating pose alignment & similarity..." },
+                { limit: 80, text: "Synthesizing coaching recommendations..." },
+                { limit: 95, text: "Formatting JSON report data..." }
+            ];
+
+            const progressInterval = setInterval(() => {
+                if (progress < 95) {
+                    progress += Math.floor(Math.random() * 3) + 1;
+                    if (progress > 95) progress = 95;
+                    aiLoadingProgressBar.style.width = `${progress}%`;
+                    aiLoadingProgressVal.textContent = `${progress}%`;
+
+                    const update = statusUpdates.find(u => progress <= u.limit);
+                    if (update) {
+                        aiLoadingStatus.innerHTML = `<i class="ph ph-sparkle text-emerald-400 animate-spin"></i><span>${update.text}</span>`;
+                    }
+                }
+            }, 150);
+
+            try {
+                if (provider === 'openai') {
+                    payload = {
+                        model: modelSelect.value,
+                        response_format: { type: "json_object" },
+                        messages: [
+                            { role: "system", content: AI_SYSTEM_PROMPT },
+                            { role: "user", content: [
+                                { type: "text", text: "Analyze these two frames. Image 1 is Video A (current), Image 2 is Video B (reference)." },
+                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img1}` } },
+                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img2}` } }
+                            ]}
+                        ]
+                    };
+                } else {
+                     payload = {
+                        systemInstruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
+                        contents: [{
+                            parts: [
+                                { text: "Analyze these two frames. Image 1 is Video A (current), Image 2 is Video B (reference)." },
+                                { inlineData: { mimeType: "image/jpeg", data: base64Img1 } },
+                                { inlineData: { mimeType: "image/jpeg", data: base64Img2 } }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    };
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errBody = await response.text();
+                    // Catch invalid API Key error gracefully
+                    if (response.status === 400 && errBody.includes("API_KEY_INVALID")) {
+                        throw new Error("Invalid API key. Please double-check your API configuration.");
+                    }
+                    throw new Error(`API Error ${response.status}: ${errBody}`);
+                }
+
+                const data = await response.json();
+                let jsonStr = "";
+                
+                if (provider === 'openai') {
+                     jsonStr = data.choices?.[0]?.message?.content;
+                } else {
+                     jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                }
+                
+                if (!jsonStr) throw new Error("No output received from AI.");
+                
+                let reportData;
+                try {
+                    // Extract JSON from markdown block if AI includes it
+                    const cleanStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+                    reportData = JSON.parse(cleanStr);
+                } catch(e) {
+                    throw new Error("Failed to parse JSON output from AI.");
+                }
+
+                clearInterval(progressInterval);
+                aiLoadingProgressBar.style.width = '100%';
+                aiLoadingProgressVal.textContent = '100%';
+                aiLoadingStatus.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-400"></i><span>Analysis Complete!</span>`;
+                
+                setTimeout(() => {
+                    renderAIReport(reportData);
+                    aiReportCache = jsonStr;
+                }, 500);
+
+            } catch (err) {
+                clearInterval(progressInterval);
+                showAIError(err.message || "An unknown error occurred during analysis.");
+            } finally {
+                btnGenerateAiReport.disabled = false;
+                aiBtnIcon.className = "ph-bold ph-magic-wand text-lg";
+                aiBtnText.textContent = "Generate Report";
+            }
+        }
+
+        function showAIError(msg) {
+            aiLoadingContainer.classList.add('hidden');
+            aiErrorContainer.classList.remove('hidden');
+            aiErrorMessage.textContent = msg;
+        }
+
+        function renderAIReport(data) {
+            aiLoadingContainer.classList.add('hidden');
+            aiReportContainer.classList.remove('hidden');
+
+            document.getElementById('repTitle').textContent = data.report_title || "Archery Analysis Report";
+            
+            const scoreNum = data.overall_similarity_score || (data.score_table?.overall_similarity?.score) || 0;
+            const scoreEl = document.getElementById('repOverallScore');
+            scoreEl.textContent = `${scoreNum}/100`;
+            scoreEl.className = `text-4xl font-black ${getScoreColor(scoreNum)}`;
+            
+            document.getElementById('repCoachSummary').textContent = data.coach_summary || "N/A";
+
+            const renderList = (id, items) => {
+                const el = document.getElementById(id);
+                el.innerHTML = '';
+                if(Array.isArray(items) && items.length > 0) {
+                    items.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        el.appendChild(li);
+                    });
+                } else {
+                    el.innerHTML = '<li class="text-slate-500 italic">None identified.</li>';
+                }
+            };
+            renderList('repStrengths', data.main_strengths);
+            renderList('repWeaknesses', data.main_weaknesses);
+
+            const phaseContainer = document.getElementById('phaseAnalysisContainer');
+            phaseContainer.innerHTML = '';
+            
+            const phases = [
+                { id: 'phase_1_raise_to_anchor', title: 'Phase 1: 舉弓至 Anchor' },
+                { id: 'phase_2_anchor_to_clicker', title: 'Phase 2: Anchor 至 Clicker' },
+                { id: 'phase_3_release_follow_through', title: 'Phase 3: Release 與 Follow Through' }
+            ];
+
+            phases.forEach(phase => {
+                if (data[phase.id] && Array.isArray(data[phase.id])) {
+                    const phaseDiv = document.createElement('div');
+                    phaseDiv.className = 'bg-slate-950 border border-slate-800 rounded-xl overflow-hidden';
+                    
+                    const phaseScore = data.score_table?.[phase.id]?.score || 0;
+                    
+                    phaseDiv.innerHTML = `
+                        <div class="bg-slate-900 px-4 py-3 flex justify-between items-center border-b border-slate-800">
+                            <h4 class="font-bold text-slate-200">${phase.title}</h4>
+                            <span class="text-sm font-bold ${getScoreColor(phaseScore)} bg-slate-800 px-2 py-1 rounded">Score: ${phaseScore}</span>
+                        </div>
+                        <div class="divide-y divide-slate-800/50">
+                            ${data[phase.id].map(item => `
+                                <div class="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div class="md:col-span-1">
+                                        <div class="font-semibold text-slate-300 text-sm mb-1">${item.display_name}</div>
+                                        <div class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded inline-block bg-slate-800 text-slate-400">Score: <span class="${getScoreColor(item.similarity_score)}">${item.similarity_score}</span></div>
+                                    </div>
+                                    <div class="md:col-span-3 space-y-2 text-xs">
+                                        <div><span class="text-slate-500 font-semibold">Observation:</span> <span class="text-slate-300">${item.observation}</span></div>
+                                        <div><span class="text-slate-500 font-semibold">Comparison:</span> <span class="text-slate-300">${item.comparison}</span></div>
+                                        <div><span class="text-rose-400/80 font-semibold">Impact:</span> <span class="text-slate-300">${item.impact}</span></div>
+                                        <div><span class="text-emerald-400/80 font-semibold">Recommendation:</span> <span class="text-slate-300">${item.recommendation}</span></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    phaseContainer.appendChild(phaseDiv);
+                }
+            });
+
+            const prioritiesContainer = document.getElementById('repPriorities');
+            prioritiesContainer.innerHTML = '';
+            if (data.top_3_priorities && Array.isArray(data.top_3_priorities)) {
+                data.top_3_priorities.forEach(p => {
+                    prioritiesContainer.innerHTML += `
+                        <div class="bg-slate-950 border border-indigo-500/20 rounded-xl p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-indigo-500 text-white font-black text-xs w-5 h-5 rounded-full flex items-center justify-center">${p.priority}</span>
+                                <span class="font-bold text-slate-200 text-sm">${p.title}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-2"><strong class="text-slate-500">Why:</strong> ${p.reason}</p>
+                            <p class="text-xs text-indigo-300"><strong class="text-indigo-400">Drill:</strong> ${p.suggested_drill}</p>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function getScoreColor(score) {
+            if (score >= 90) return 'text-emerald-400';
+            if (score >= 80) return 'text-teal-400';
+            if (score >= 70) return 'text-yellow-400';
+            if (score >= 60) return 'text-orange-400';
+            return 'text-rose-500';
+        }
+
+        // Initialize when DOM is fully parsed
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
