@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,19 +27,19 @@
                         <img src="https://raw.githubusercontent.com/edithlyt0801/TeachingTool/refs/heads/main/logo.png" alt="Teaching Tool Logo" class="h-12 w-auto object-contain rounded-lg">
                         <div>
                             <h1 class="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                                Motion Analysis Lab
+                                動作分析實驗室
                             </h1>
-                            <p class="text-sm text-slate-400 font-medium">Live Delay & Posture Comparison</p>
+                            <p class="text-sm text-slate-400 font-medium">即時延遲攝影與姿勢對比</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex space-x-4 border-b border-slate-800">
                     <button id="tabBtnLive" class="px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 font-medium transition-colors">
-                        <i class="ph ph-camera mr-2"></i>Live Camera
+                        <i class="ph ph-camera mr-2"></i>即時攝影
                     </button>
                     <button id="tabBtnAnalyze" class="px-4 py-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium transition-colors">
-                        <i class="ph ph-film-strip mr-2"></i>Video Analysis
+                        <i class="ph ph-film-strip mr-2"></i>影片分析
                     </button>
                 </div>
             </header>
@@ -52,8 +52,8 @@
                     <div class="relative aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl ring-1 ring-white/5">
                         <div id="inactiveOverlay" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10">
                             <i class="ph ph-monitor-play text-6xl mb-4 opacity-50"></i>
-                            <p class="text-lg font-medium">Camera is inactive</p>
-                            <p class="text-sm text-center px-4">If embedded on Google Sites, the camera may be blocked by your browser.<br>Use the "Video Analysis" tab instead.</p>
+                            <p class="text-lg font-medium">相機尚未啟用</p>
+                            <p class="text-sm text-center px-4">若您在 Google Sites 使用，瀏覽器可能會阻擋攝影機權限。<br>請改用「影片分析」功能。</p>
                         </div>
                         <canvas id="mainCanvas" class="w-full h-full object-contain absolute inset-0 z-0"></canvas>
                         <div id="pipContainer" class="hidden absolute bottom-4 right-4 w-32 aspect-video bg-black rounded-lg overflow-hidden border-2 border-indigo-500/50 shadow-lg z-20">
@@ -67,17 +67,17 @@
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
                         <button id="toggleBtn" class="w-full mb-6 py-3 px-4 rounded-xl flex items-center justify-center space-x-2 font-bold bg-indigo-500 hover:bg-indigo-600 text-white transition-all">
                             <i id="toggleBtnIcon" class="ph-fill ph-camera text-xl"></i>
-                            <span id="toggleBtnText">Start Camera</span>
+                            <span id="toggleBtnText">啟動相機</span>
                         </button>
 
                         <div class="space-y-5">
                             <div class="space-y-3">
-                                <label class="text-sm font-medium text-slate-300">Time Delay: <span id="delayBadge" class="text-indigo-400">3s</span></label>
+                                <label class="text-sm font-medium text-slate-300">時間延遲 (Time Delay): <span id="delayBadge" class="text-indigo-400">3s</span></label>
                                 <input type="range" id="delaySlider" min="0" max="15" step="0.5" value="3" class="w-full accent-indigo-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
                             </div>
                             
                             <div class="space-y-2">
-                                <label class="text-sm font-medium text-slate-300">Camera</label>
+                                <label class="text-sm font-medium text-slate-300">選擇相機</label>
                                 <select id="cameraSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none"></select>
                             </div>
 
@@ -86,7 +86,7 @@
                                 <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
                                 <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
                                     <i id="aiIconLive" class="ph ph-person-simple-walk text-lg"></i>
-                                    <span id="aiTextLive">AI Skeleton Overlay</span>
+                                    <span id="aiTextLive">啟用 AI 骨架追蹤</span>
                                 </div>
                             </label>
                             
@@ -95,7 +95,7 @@
                                 <div class="relative w-11 h-6 bg-slate-700 peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
                                 <div class="ms-3 flex items-center space-x-2 text-sm font-medium text-slate-300">
                                     <i class="ph ph-protractor text-lg"></i>
-                                    <span>Show Joint Angles</span>
+                                    <span>顯示關節角度</span>
                                 </div>
                             </label>
                         </div>
@@ -113,11 +113,11 @@
                     <!-- Upload controls -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
                         <div class="space-y-1">
-                            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Video 1 (Base / 目前動作)</label>
+                            <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider">影片 1 (底層 - 綠色關節線)</label>
                             <input type="file" id="upload1" accept="video/mp4,video/webm,video/quicktime" class="block w-full text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer"/>
                         </div>
                         <div class="space-y-1">
-                            <label class="text-xs font-bold text-pink-400 uppercase tracking-wider">Video 2 (Overlay / 參考目標)</label>
+                            <label class="text-xs font-bold text-pink-400 uppercase tracking-wider">影片 2 (疊加 - 粉色關節線)</label>
                             <input type="file" id="upload2" accept="video/mp4,video/webm,video/quicktime" class="block w-full text-sm text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-500/10 file:text-pink-400 hover:file:bg-pink-500/20 cursor-pointer"/>
                         </div>
                     </div>
@@ -127,7 +127,7 @@
                         
                         <p id="vidPlaceholder" class="text-slate-500 text-sm flex flex-col items-center space-y-2 z-10">
                             <i class="ph ph-upload-simple text-4xl opacity-50"></i>
-                            <span>Upload videos above to begin superimposed overlay analysis</span>
+                            <span>請上傳上方兩段影片以進行重疊分析</span>
                         </p>
 
                         <!-- Base Video Layer -->
@@ -149,15 +149,15 @@
                                 <i id="syncPlayIcon" class="ph-fill ph-play text-xl"></i>
                             </button>
                             <div>
-                                <h3 class="font-bold text-slate-200">Synchronized Playback</h3>
-                                <p class="text-sm text-slate-400">Plays both videos concurrently in overlay mode</p>
+                                <h3 class="font-bold text-slate-200">同步播放控制</h3>
+                                <p class="text-sm text-slate-400">同時播放兩段影片並維持時間差</p>
                             </div>
                         </div>
 
                         <!-- Overlay Opacity Control Slider -->
                         <div class="flex-1 max-w-xs w-full space-y-1">
                             <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
-                                <span>Overlay Opacity (Video 2)</span>
+                                <span>透明度調整 (影片 2)</span>
                                 <span id="opacityVal">50%</span>
                             </div>
                             <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.5" class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
@@ -170,24 +170,37 @@
                             <div>
                                 <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400 flex items-center space-x-2">
                                     <i class="ph-fill ph-robot text-emerald-400 text-2xl mr-1"></i>
-                                    AI Archery Vision Coach
+                                    AI 射箭視覺教練
                                 </h3>
-                                <p class="text-xs text-slate-400 mt-1">Extracts current frames and analyzes archery biomechanics via Cloudflare proxy based on professional coaching rubrics.</p>
+                                <p class="text-xs text-slate-400 mt-1">透過 Cloudflare 代理提取影片關鍵幀，並依照專業射箭技術評分表產生報告。</p>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
                             <div class="space-y-1.5">
-                                <label class="text-xs font-semibold text-slate-300">AI Provider</label>
+                                <label class="text-xs font-semibold text-slate-300">AI 分析模型提供者</label>
                                 <select id="providerSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 outline-none focus:border-indigo-500">
-                                    <option value="cloudflare_gemini" selected>Cloudflare Proxy (Gemini AI)</option>
-                                    <option value="cloudflare_openai">Cloudflare Proxy (OpenAI)</option>
+                                    <option value="cloudflare_gemini" selected>內建代理 (Gemini AI - 無需金鑰)</option>
+                                    <option value="cloudflare_openai">使用自己的 OpenAI API Key</option>
                                 </select>
                             </div>
-                            <div class="flex items-end col-span-1 md:col-span-2">
+                            <div id="apiKeyContainer" class="hidden space-y-1.5 col-span-1 md:col-span-2">
+                                <label class="text-xs font-semibold text-slate-300">OpenAI API Key (若選擇 OpenAI 則必填)</label>
+                                <div class="relative">
+                                    <input type="password" id="aiApiKeyInput" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-emerald-500 transition-colors">
+                                </div>
+                            </div>
+                            <div id="modelContainer" class="hidden space-y-1.5 col-span-1 md:col-span-3">
+                                <label class="text-xs font-semibold text-slate-300">選擇 OpenAI 模型</label>
+                                <select id="modelSelect" class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 outline-none focus:border-indigo-500">
+                                    <option value="gpt-4o-mini" selected>GPT-4o Mini (速度快、有效率)</option>
+                                    <option value="gpt-4o">GPT-4o (深度高精度分析)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end col-span-1 md:col-span-3">
                                 <button id="btnGenerateAiReport" class="w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <i id="aiBtnIcon" class="ph-bold ph-magic-wand text-lg"></i>
-                                    <span id="aiBtnText">Generate Report</span>
+                                    <span id="aiBtnText">產生 AI 動作分析報告</span>
                                 </button>
                             </div>
                         </div>
@@ -197,14 +210,14 @@
                             <div class="flex justify-between items-center text-sm font-semibold text-slate-300">
                                 <span id="aiLoadingStatus" class="flex items-center gap-2">
                                     <i class="ph ph-spinner-gap animate-spin text-emerald-400 text-lg"></i>
-                                    <span>Extracting frames & sending to Cloudflare...</span>
+                                    <span>正在擷取畫面並傳送至 Cloudflare 代理伺服器...</span>
                                 </span>
                                 <span id="aiLoadingProgressVal" class="text-emerald-400">0%</span>
                             </div>
                             <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800">
                                 <div id="aiLoadingProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300" style="width: 0%"></div>
                             </div>
-                            <p class="text-xs text-slate-500">The AI is cross-referencing your posture against the Archery Technique Scoring Rubric.</p>
+                            <p class="text-xs text-slate-500">AI 正在嚴格比對射箭技術評分表，這可能需要幾秒鐘的時間...</p>
                         </div>
 
                         <!-- AI Report Output Container -->
@@ -212,29 +225,29 @@
                             <div class="flex justify-between items-center">
                                 <h2 id="repTitle" class="text-2xl font-black text-white">射箭動作對比分析報告</h2>
                                 <button id="btnCopyReport" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-md transition-all flex items-center gap-1">
-                                    <i class="ph ph-copy"></i> Copy JSON
+                                    <i class="ph ph-copy"></i> 複製 JSON
                                 </button>
                             </div>
 
                             <!-- Dashboard Cards Row -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center text-center">
-                                    <span class="text-xs text-slate-400 font-bold uppercase mb-1">Overall Similarity</span>
+                                    <span class="text-xs text-slate-400 font-bold uppercase mb-1">整體動作相似度</span>
                                     <div class="text-4xl font-black text-emerald-400" id="repOverallScore">-</div>
                                 </div>
                                 <div class="col-span-1 md:col-span-2 bg-slate-950 border border-slate-800 p-4 rounded-xl">
-                                    <span class="text-xs text-slate-400 font-bold uppercase mb-1 block">Coach Summary</span>
+                                    <span class="text-xs text-slate-400 font-bold uppercase mb-1 block">教練總結</span>
                                     <p class="text-sm text-slate-200" id="repCoachSummary">-</p>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="bg-slate-950 border border-emerald-500/20 p-4 rounded-xl">
-                                    <span class="text-xs text-emerald-400 font-bold uppercase mb-2 flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Main Strengths</span>
+                                    <span class="text-xs text-emerald-400 font-bold uppercase mb-2 flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> 主要優點</span>
                                     <ul id="repStrengths" class="list-disc list-inside text-sm text-slate-300 space-y-1 ml-2"></ul>
                                 </div>
                                 <div class="bg-slate-950 border border-rose-500/20 p-4 rounded-xl">
-                                    <span class="text-xs text-rose-400 font-bold uppercase mb-2 flex items-center gap-1"><i class="ph-fill ph-warning-circle"></i> Main Weaknesses</span>
+                                    <span class="text-xs text-rose-400 font-bold uppercase mb-2 flex items-center gap-1"><i class="ph-fill ph-warning-circle"></i> 主要缺點</span>
                                     <ul id="repWeaknesses" class="list-disc list-inside text-sm text-slate-300 space-y-1 ml-2"></ul>
                                 </div>
                             </div>
@@ -246,7 +259,7 @@
 
                             <!-- Top Priorities -->
                             <div>
-                                <h3 class="text-lg font-bold text-slate-200 border-b border-slate-800 pb-2 mb-4">Top 3 Improvement Priorities</h3>
+                                <h3 class="text-lg font-bold text-slate-200 border-b border-slate-800 pb-2 mb-4">最優先改善項目 (Top 3)</h3>
                                 <div id="repPriorities" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
                             </div>
                         </div>
@@ -264,52 +277,52 @@
                         <div class="border-b border-slate-800 pb-3">
                             <h3 class="text-base font-bold text-slate-200 flex items-center space-x-2">
                                 <i class="ph ph-sliders-horizontal text-indigo-400 text-lg"></i>
-                                <span>Calibrations & Tools</span>
+                                <span>空間校正與手動工具</span>
                             </h3>
                         </div>
 
                         <!-- Manual Kinematic Chain Activation -->
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60 space-y-3 font-sans">
                             <div class="flex flex-col">
-                                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Kinematic Chain</span>
-                                <span class="text-[10px] text-slate-500 leading-tight mt-0.5">Left-click to add nodes. Right-click to delete. Drag to refine.</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">手動關節角度測量</span>
+                                <span class="text-[10px] text-slate-500 leading-tight mt-0.5">滑鼠左鍵點擊新增節點，右鍵刪除。可拖曳微調位置。</span>
                             </div>
                             
                             <div class="space-y-2">
                                 <!-- V1 Setup -->
                                 <div class="flex gap-2">
                                     <button id="btnManualProt1" class="flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
-                                        <i class="ph ph-crosshair"></i> Edit V1 (Green)
+                                        <i class="ph ph-crosshair"></i> 編輯 V1 (綠色)
                                     </button>
-                                    <button id="btnLockV1" class="px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center" title="Lock V1 Nodes">
+                                    <button id="btnLockV1" class="px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center" title="鎖定 V1 節點">
                                         <i id="iconLockV1" class="ph ph-lock-open text-base"></i>
                                     </button>
                                 </div>
                                 <!-- V2 Setup -->
                                 <div class="flex gap-2">
                                     <button id="btnManualProt2" class="flex-1 text-xs py-2 px-3 rounded-md font-bold transition-all bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center gap-1">
-                                        <i class="ph ph-crosshair"></i> Edit V2 (Pink)
+                                        <i class="ph ph-crosshair"></i> 編輯 V2 (粉色)
                                     </button>
-                                    <button id="btnLockV2" class="px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center" title="Lock V2 Nodes">
+                                    <button id="btnLockV2" class="px-3 rounded-md bg-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center" title="鎖定 V2 節點">
                                         <i id="iconLockV2" class="ph ph-lock-open text-base"></i>
                                     </button>
                                 </div>
                             </div>
                             <button id="btnClearManual" class="w-full text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 py-2 rounded-md font-semibold transition-all border border-rose-500/20 mt-2">
-                                Clear Kinematic Chains
+                                清除所有測量線
                             </button>
                         </div>
 
                         <!-- Video 1 Calibration (Base Video) -->
                         <div class="space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800/60">
                             <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Video 1 (Base) Config</span>
-                                <button id="btnResetV1" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">Reset</button>
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">影片 1 (底層) 校正</span>
+                                <button id="btnResetV1" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">重置</button>
                             </div>
                             
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Scale (Zoom Factor)</span>
+                                    <span>放大縮小 (Scale)</span>
                                     <span id="v1ScaleVal">100%</span>
                                 </div>
                                 <input type="range" id="v1ScaleSlider" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
@@ -317,7 +330,7 @@
 
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset X (Pan Horiz)</span>
+                                    <span>水平平移 (Pan X)</span>
                                     <span id="v1XVal">0%</span>
                                 </div>
                                 <input type="range" id="v1XSlider" min="-50" max="50" step="1" value="0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
@@ -325,7 +338,7 @@
 
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset Y (Pan Vert)</span>
+                                    <span>垂直平移 (Pan Y)</span>
                                     <span id="v1YVal">0%</span>
                                 </div>
                                 <input type="range" id="v1YSlider" min="-50" max="50" step="1" value="0" class="w-full accent-emerald-400 h-1 bg-slate-800 rounded">
@@ -333,7 +346,7 @@
 
                             <div class="space-y-1.5 pt-2 border-t border-slate-800/40">
                                 <div class="flex justify-between text-xs text-slate-300 font-semibold">
-                                    <span>Trim Start (Time Lock)</span>
+                                    <span>時間鎖定 (Trim Start)</span>
                                     <span id="v1TrimVal" class="text-emerald-400">0.00s</span>
                                 </div>
                                 <input type="range" id="v1TrimSlider" min="0" max="30" step="0.1" value="0" class="w-full accent-emerald-500 h-1.5 bg-slate-800 rounded">
@@ -343,13 +356,13 @@
                         <!-- Video 2 Calibration (Overlay Video) -->
                         <div class="space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800/60">
                             <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-pink-400">Video 2 (Overlay) Config</span>
-                                <button id="btnResetV2" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">Reset</button>
+                                <span class="text-xs font-bold uppercase tracking-wider text-pink-400">影片 2 (疊加) 校正</span>
+                                <button id="btnResetV2" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded transition-colors">重置</button>
                             </div>
                             
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Scale (Zoom Factor)</span>
+                                    <span>放大縮小 (Scale)</span>
                                     <span id="v2ScaleVal">100%</span>
                                 </div>
                                 <input type="range" id="v2ScaleSlider" min="0.5" max="2.5" step="0.05" value="1.0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
@@ -357,7 +370,7 @@
 
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset X (Pan Horiz)</span>
+                                    <span>水平平移 (Pan X)</span>
                                     <span id="v2XVal">0%</span>
                                 </div>
                                 <input type="range" id="v2XSlider" min="-50" max="50" step="1" value="0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
@@ -365,7 +378,7 @@
 
                             <div class="space-y-1.5">
                                 <div class="flex justify-between text-xs text-slate-400">
-                                    <span>Offset Y (Pan Vert)</span>
+                                    <span>垂直平移 (Pan Y)</span>
                                     <span id="v2YVal">0%</span>
                                 </div>
                                 <input type="range" id="v2YSlider" min="-50" max="50" step="1" value="0" class="w-full accent-pink-400 h-1 bg-slate-800 rounded">
@@ -373,7 +386,7 @@
 
                             <div class="space-y-1.5 pt-2 border-t border-slate-800/40">
                                 <div class="flex justify-between text-xs text-slate-300 font-semibold">
-                                    <span>Trim Start (Time Lock)</span>
+                                    <span>時間鎖定 (Trim Start)</span>
                                     <span id="v2TrimVal" class="text-pink-400">0.00s</span>
                                 </div>
                                 <input type="range" id="v2TrimSlider" min="0" max="30" step="0.1" value="0" class="w-full accent-pink-500 h-1.5 bg-slate-800 rounded">
@@ -476,27 +489,8 @@ Phase 3: Release 與 Follow Through
 }
 `;
 
-        const POSE_CONNECTIONS = [
-            [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
-            [9, 10], [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
-            [17, 19], [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
-            [11, 23], [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28],
-            [27, 29], [28, 30], [29, 31], [30, 32], [27, 31], [28, 32]
-        ];
-
-        const ANGLES_TO_DRAW = [
-            { name: "Left Elbow", p1: 11, p2: 13, p3: 15 },
-            { name: "Right Elbow", p1: 12, p2: 14, p3: 16 },
-            { name: "Left Knee", p1: 23, p2: 25, p3: 27 },
-            { name: "Right Knee", p1: 24, p2: 26, p3: 28 },
-            { name: "Left Hip", p1: 11, p2: 23, p3: 25 },
-            { name: "Right Hip", p1: 12, p2: 24, p3: 26 },
-            { name: "Left Shoulder", p1: 23, p2: 11, p3: 13 },
-            { name: "Right Shoulder", p1: 24, p2: 12, p3: 14 }
-        ];
-
         // ---------------------------------------------------------
-        // STATE MANAGEMENT
+        // STATE MANAGEMENT & GEOMETRY
         // ---------------------------------------------------------
         function calculateAngle(a, b, c, aspect = 1) {
             const ax = a.x * aspect;
@@ -509,15 +503,8 @@ Phase 3: Release 與 Follow Through
             return Math.round(angle);
         }
 
-        let transformState = {
-            v1Scale: 1.0, v1X: 0, v1Y: 0,
-            v2Scale: 1.0, v2X: 0, v2Y: 0
-        };
-
-        let timingState = {
-            v1Start: 0,
-            v2Start: 0
-        };
+        let transformState = { v1Scale: 1.0, v1X: 0, v1Y: 0, v2Scale: 1.0, v2X: 0, v2Y: 0 };
+        let timingState = { v1Start: 0, v2Start: 0 };
 
         let state = {
             activeTab: 'live',
@@ -525,9 +512,6 @@ Phase 3: Release 與 Follow Through
             delayMs: 3000,
             isVideoPlaying: false,
             overlayOpacity: 0.5,
-            showSkeletonLive: false,
-            showAnglesLive: false,
-            minConfidence: 0.3
         };
 
         let manualProtState = {
@@ -542,17 +526,16 @@ Phase 3: Release 與 Follow Through
         
         let aiReportCache = null;
 
-        let poseLandmarker = null;
-        let isModelLoading = false;
-
         // ---------------------------------------------------------
         // DOM ELEMENTS
         // ---------------------------------------------------------
+        // Tabs
         const tabBtnLive = document.getElementById('tabBtnLive');
         const tabBtnAnalyze = document.getElementById('tabBtnAnalyze');
         const tabLive = document.getElementById('tabLive');
         const tabAnalyze = document.getElementById('tabAnalyze');
 
+        // Live Camera
         let hiddenVideo = document.createElement('video');
         hiddenVideo.autoplay = true; hiddenVideo.playsInline = true; hiddenVideo.muted = true;
         const mainCanvas = document.getElementById('mainCanvas');
@@ -564,14 +547,11 @@ Phase 3: Release 與 Follow Through
         const sldDelay = document.getElementById('delaySlider');
         const txtDelayBadge = document.getElementById('delayBadge');
         const selCamera = document.getElementById('cameraSelect');
-        const chkAiLive = document.getElementById('aiToggleLive');
-        const chkAnglesLive = document.getElementById('anglesToggleLive');
-        const aiIconLive = document.getElementById('aiIconLive');
-        const aiTextLive = document.getElementById('aiTextLive');
         let frameBuffer = [];
         let renderLoopId = null;
         let lastCaptureTime = 0;
 
+        // Analyze Tab
         const upload1 = document.getElementById('upload1');
         const upload2 = document.getElementById('upload2');
         const video1 = document.getElementById('video1');
@@ -586,6 +566,7 @@ Phase 3: Release 與 Follow Through
         const opacityVal = document.getElementById('opacityVal');
         let analyzeLoopId = null;
 
+        // Calibrations
         const v1ScaleSlider = document.getElementById('v1ScaleSlider');
         const v1ScaleVal = document.getElementById('v1ScaleVal');
         const v1XSlider = document.getElementById('v1XSlider');
@@ -606,6 +587,7 @@ Phase 3: Release 與 Follow Through
         const v2TrimVal = document.getElementById('v2TrimVal');
         const btnResetV2 = document.getElementById('btnResetV2');
 
+        // Protractors
         const btnManualProt1 = document.getElementById('btnManualProt1');
         const btnManualProt2 = document.getElementById('btnManualProt2');
         const btnLockV1 = document.getElementById('btnLockV1');
@@ -616,6 +598,10 @@ Phase 3: Release 與 Follow Through
 
         // AI Elements
         const providerSelect = document.getElementById('providerSelect');
+        const apiKeyContainer = document.getElementById('apiKeyContainer');
+        const modelContainer = document.getElementById('modelContainer');
+        const aiApiKeyInput = document.getElementById('aiApiKeyInput');
+        const modelSelect = document.getElementById('modelSelect');
         const btnGenerateAiReport = document.getElementById('btnGenerateAiReport');
         const aiBtnIcon = document.getElementById('aiBtnIcon');
         const aiBtnText = document.getElementById('aiBtnText');
@@ -628,9 +614,8 @@ Phase 3: Release 與 Follow Through
         const aiErrorMessage = document.getElementById('aiErrorMessage');
         const btnCopyReport = document.getElementById('btnCopyReport');
 
-
         // ---------------------------------------------------------
-        // STREAM CONTROL FUNCTIONS (Must be hoisted)
+        // STREAM CONTROL FUNCTIONS 
         // ---------------------------------------------------------
         async function startStream() {
             try {
@@ -640,9 +625,9 @@ Phase 3: Release 與 Follow Through
                 await hiddenVideo.play();
                 state.isStreaming = true; frameBuffer = []; lastCaptureTime = performance.now();
                 inactiveOverlay.classList.add('hidden'); pipContainer.classList.remove('hidden');
-                btnToggleText.textContent = "Stop Camera"; btnToggle.classList.replace('bg-indigo-500', 'bg-rose-500');
+                btnToggleText.textContent = "停止相機"; btnToggle.classList.replace('bg-indigo-500', 'bg-rose-500');
                 renderLoopId = requestAnimationFrame(liveRenderLoop);
-            } catch (err) { alert("Camera blocked or unavailable."); }
+            } catch (err) { alert("相機權限遭拒或設備無法使用。"); }
         }
 
         function stopStream() {
@@ -652,7 +637,7 @@ Phase 3: Release 與 Follow Through
             frameBuffer.forEach(f => { if (f && f.bitmap) f.bitmap.close() });
             mainCanvas.getContext('2d').clearRect(0, 0, mainCanvas.width, mainCanvas.height);
             inactiveOverlay.classList.remove('hidden'); pipContainer.classList.add('hidden');
-            btnToggleText.textContent = "Start Camera"; btnToggle.classList.replace('bg-rose-500', 'bg-indigo-500');
+            btnToggleText.textContent = "啟動相機"; btnToggle.classList.replace('bg-rose-500', 'bg-indigo-500');
         }
 
         function toggleStream() { state.isStreaming ? stopStream() : startStream(); }
@@ -683,82 +668,36 @@ Phase 3: Release 與 Follow Through
                 ctx.save(); ctx.scale(-1, 1); ctx.translate(-mainCanvas.width, 0);
                 ctx.drawImage(frameToDraw.bitmap, 0, 0, mainCanvas.width, mainCanvas.height);
                 ctx.restore();
-                
-                if (state.showSkeletonLive && poseLandmarker) {
-                    try {
-                        const results = poseLandmarker.detect(mainCanvas);
-                        if (results?.landmarks?.length) {
-                            drawSkeleton(ctx, results.landmarks[0], mainCanvas.width, mainCanvas.height, state.showAnglesLive, '#10b981');
-                        }
-                    } catch (e) {}
-                }
                 frameToDraw.bitmap.close();
             }
 
             renderLoopId = requestAnimationFrame(liveRenderLoop);
         }
 
-        function drawSkeleton(ctx, landmarks, w, h, showAngles = false, skeletonColor = '#10b981') {
-            const aspect = w / h;
-            ctx.save(); ctx.lineWidth = 4; ctx.strokeStyle = skeletonColor; ctx.fillStyle = '#ffffff';
-            POSE_CONNECTIONS.forEach(([i, j]) => {
-                const p1 = landmarks[i], p2 = landmarks[j];
-                const v1 = p1?.visibility ?? 1, v2 = p2?.visibility ?? 1;
-                if (p1 && p2 && v1 > state.minConfidence && v2 > state.minConfidence) {
-                    ctx.beginPath(); ctx.moveTo(p1.x * w, p1.y * h); ctx.lineTo(p2.x * w, p2.y * h); ctx.stroke();
-                }
-            });
-            landmarks.forEach(p => {
-                if (p && (p.visibility ?? 1) > state.minConfidence) {
-                    ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 5, 0, 2 * Math.PI); ctx.fill();
-                }
-            });
-
-            if (showAngles) {
-                ctx.font = 'bold 16px system-ui';
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'middle';
-                
-                ANGLES_TO_DRAW.forEach(joint => {
-                    const a = landmarks[joint.p1];
-                    const b = landmarks[joint.p2];
-                    const c = landmarks[joint.p3];
-                    const v1 = a?.visibility ?? 1;
-                    const v2 = b?.visibility ?? 1;
-                    const v3 = c?.visibility ?? 1;
-
-                    if (a && b && c && v1 > state.minConfidence && v2 > state.minConfidence && v3 > state.minConfidence) {
-                        const angle = calculateAngle(a, b, c, aspect);
-                        const x = b.x * w + 12;
-                        const y = b.y * h;
-                        
-                        ctx.shadowColor = "black";
-                        ctx.shadowBlur = 4;
-                        ctx.lineWidth = 3;
-                        ctx.strokeStyle = "black";
-                        ctx.strokeText(`${angle}°`, x, y);
-                        
-                        ctx.shadowBlur = 0;
-                        ctx.fillStyle = '#fde047';
-                        ctx.fillText(`${angle}°`, x, y);
-                    }
-                });
-            }
-
-            ctx.restore();
-        }
-
         // ---------------------------------------------------------
         // INITIALIZATION
         // ---------------------------------------------------------
         async function init() {
+            // Tab switching
             tabBtnLive.addEventListener('click', () => switchTab('live'));
             tabBtnAnalyze.addEventListener('click', () => switchTab('analyze'));
 
+            // Provider Selection
+            providerSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'cloudflare_openai') {
+                    apiKeyContainer.classList.remove('hidden');
+                    modelContainer.classList.remove('hidden');
+                } else {
+                    apiKeyContainer.classList.add('hidden');
+                    modelContainer.classList.add('hidden');
+                }
+            });
+
+            // Camera Setup
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoInputs = devices.filter(d => d.kind === 'videoinput');
-                selCamera.innerHTML = videoInputs.length ? '' : '<option value="">No cameras found</option>';
+                selCamera.innerHTML = videoInputs.length ? '' : '<option value="">找不到相機</option>';
                 videoInputs.forEach((d, i) => {
                     const opt = document.createElement('option');
                     opt.value = d.deviceId; opt.text = d.label || `Camera ${i + 1}`;
@@ -766,14 +705,14 @@ Phase 3: Release 與 Follow Through
                 });
             } catch (err) { selCamera.innerHTML = '<option value="">Permission denied</option>'; }
 
-            // MUST ATTACH HOISTED toggleStream HERE
+            // Live Cam listeners
             btnToggle.addEventListener('click', toggleStream);
-            
             sldDelay.addEventListener('input', (e) => {
                 state.delayMs = parseFloat(e.target.value) * 1000;
                 txtDelayBadge.textContent = `${e.target.value}s`;
             });
 
+            // Video Analyze listeners
             upload1.addEventListener('change', (e) => handleUpload(e, video1, canvas1));
             upload2.addEventListener('change', (e) => handleUpload(e, video2, canvas2));
             
@@ -896,18 +835,9 @@ Phase 3: Release 與 Follow Through
             window.addEventListener('mouseup', onInteractionMouseUp);
             interactionCanvas.addEventListener('contextmenu', onInteractionContextMenu);
 
-            // AI Coach
+            // ⚠️ DIRECT BINDING FOR AI REPORT BUTTONS
             btnGenerateAiReport.addEventListener('click', generateAIVisionReport);
             btnCopyReport.addEventListener('click', copyReportJSON);
-
-            // AI Skeleton overlay toggles for live camera
-            chkAiLive.addEventListener('change', async (e) => {
-                state.showSkeletonLive = e.target.checked;
-                if (e.target.checked) await loadAIModel(aiIconLive, aiTextLive);
-            });
-            chkAnglesLive.addEventListener('change', (e) => {
-                state.showAnglesLive = e.target.checked;
-            });
         }
 
         // ---------------------------------------------------------
@@ -950,35 +880,6 @@ Phase 3: Release 與 Follow Through
             drawManualProtractors();
         }
 
-        async function loadAIModel(iconEl, textEl) {
-            if (poseLandmarker || isModelLoading) return;
-            isModelLoading = true;
-            iconEl.className = "ph ph-spinner-gap text-lg animate-spin text-indigo-400";
-            textEl.textContent = "Loading AI...";
-            
-            try {
-                const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/vision_bundle.mjs');
-                const visionResolver = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
-                
-                poseLandmarker = await vision.PoseLandmarker.createFromOptions(visionResolver, {
-                    baseOptions: {
-                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
-                        delegate: "CPU"
-                    },
-                    runningMode: "IMAGE", 
-                    numPoses: 1
-                });
-                iconEl.className = "ph ph-person-simple-walk text-lg text-emerald-400";
-                textEl.textContent = "AI Ready";
-            } catch (err) {
-                console.error(err);
-                iconEl.className = "ph ph-warning-circle text-lg text-rose-400";
-                textEl.textContent = "AI Failed";
-                chkAiLive.checked = false;
-            }
-            isModelLoading = false;
-        }
-
         function handleUpload(event, videoElement, canvasElement) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1001,7 +902,10 @@ Phase 3: Release 與 Follow Through
                 video1.pause(); video2.pause();
                 syncPlayIcon.className = "ph-fill ph-play text-xl";
                 state.isVideoPlaying = false;
-                cancelAnimationFrame(analyzeLoopId); analyzeLoopId = null;
+                if(analyzeLoopId) {
+                    cancelAnimationFrame(analyzeLoopId); 
+                    analyzeLoopId = null;
+                }
             } else {
                 if (isFinite(timingState.v1Start) && isFinite(video1.currentTime)) {
                     try { video1.currentTime = Math.max(timingState.v1Start, video1.currentTime); } catch (e) {}
@@ -1255,7 +1159,6 @@ Phase 3: Release 與 Follow Through
             return dataUrl.split(',')[1]; 
         }
 
-        // Must be hoisted
         function copyReportJSON() {
             if (!aiReportCache) return;
             const dummy = document.createElement("textarea");
@@ -1266,29 +1169,27 @@ Phase 3: Release 與 Follow Through
             document.body.removeChild(dummy);
             
             const prevText = btnCopyReport.innerHTML;
-            btnCopyReport.innerHTML = `<i class="ph ph-check text-emerald-400"></i> Copied!`;
+            btnCopyReport.innerHTML = `<i class="ph ph-check text-emerald-400"></i> 已複製!`;
             setTimeout(() => btnCopyReport.innerHTML = prevText, 2000);
         }
 
-        // Must be hoisted
         async function generateAIVisionReport() {
             const provider = providerSelect.value;
-            let url = "";
             let payload = {};
 
             if (!video1.src || !video2.src || video1.readyState < 2 || video2.readyState < 2) {
-                showAIError("Please upload both Video 1 and Video 2 to proceed.");
+                showAIError("請先上傳影片 1 及影片 2。");
                 return;
             }
 
-            // --- CLOUDFLARE WORKER PROXY URL ---
-            url = "https://my-api-proxy.edithlyt0801.workers.dev/";
+            // ⚠️ 專屬 Cloudflare Worker URL
+            const workerUrl = "https://my-api-proxy.edithlyt0801.workers.dev/";
 
             const base64Img1 = await captureVideoFrameAsBase64(video1);
             const base64Img2 = await captureVideoFrameAsBase64(video2);
 
             if (!base64Img1 || !base64Img2) {
-                showAIError("Failed to extract frames from videos. Please ensure videos are loaded.");
+                showAIError("擷取影片畫面失敗，請確認影片已正確載入。");
                 return;
             }
 
@@ -1297,17 +1198,17 @@ Phase 3: Release 與 Follow Through
             aiLoadingContainer.classList.remove('hidden');
             btnGenerateAiReport.disabled = true;
             aiBtnIcon.className = "ph-bold ph-spinner-gap animate-spin text-lg";
-            aiBtnText.textContent = "Analyzing...";
+            aiBtnText.textContent = "AI 分析中...";
 
             let progress = 0;
             aiLoadingProgressBar.style.width = '0%';
             aiLoadingProgressVal.textContent = '0%';
             const statusUpdates = [
-                { limit: 20, text: "Uploading frames to Worker Proxy..." },
-                { limit: 40, text: "Proxying request to OpenAI..." },
-                { limit: 60, text: "Evaluating pose alignment & similarity..." },
-                { limit: 80, text: "Synthesizing coaching recommendations..." },
-                { limit: 95, text: "Formatting JSON report data..." }
+                { limit: 20, text: "正在透過 Worker 代理傳送畫面..." },
+                { limit: 40, text: "呼叫目標 AI 模型處理中..." },
+                { limit: 60, text: "AI 正在比對射箭技術準則..." },
+                { limit: 80, text: "生成教練反饋與建議..." },
+                { limit: 95, text: "格式化 JSON 報告..." }
             ];
 
             const progressInterval = setInterval(() => {
@@ -1325,21 +1226,47 @@ Phase 3: Release 與 Follow Through
             }, 150);
 
             try {
-                // OpenAI payload format
-                payload = {
-                    model: "gpt-4o", // Or you can make this configurable
-                    response_format: { type: "json_object" },
-                    messages: [
-                        { role: "system", content: AI_SYSTEM_PROMPT },
-                        { role: "user", content: [
-                            { type: "text", text: "Analyze these two frames. Image 1 is Video A (current), Image 2 is Video B (reference)." },
-                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img1}` } },
-                            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img2}` } }
-                        ]}
-                    ]
-                };
+                if (provider === 'cloudflare_openai') {
+                    const apiKey = aiApiKeyInput.value.trim();
+                    if (!apiKey) {
+                        throw new Error("請輸入有效的 OpenAI API Key。");
+                    }
+                    
+                    // 符合 OpenAI 格式，但發送給 Worker
+                    payload = {
+                        provider: "openai",
+                        apiKey: apiKey, // 讓 Worker 幫忙加上這把鑰匙
+                        model: modelSelect.value,
+                        response_format: { type: "json_object" },
+                        messages: [
+                            { role: "system", content: AI_SYSTEM_PROMPT },
+                            { role: "user", content: [
+                                { type: "text", text: "請分析這兩個畫面。Image 1 是目前動作(Video A)，Image 2 是參考動作(Video B)。" },
+                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img1}` } },
+                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Img2}` } }
+                            ]}
+                        ]
+                    };
+                } else {
+                     // Gemini 透過 Worker，Worker 會自動補上隱藏的 Gemini API Key
+                     payload = {
+                        provider: "gemini",
+                        systemInstruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
+                        contents: [{
+                            parts: [
+                                { text: "請分析這兩個畫面。Image 1 是目前動作(Video A)，Image 2 是參考動作(Video B)。" },
+                                { inlineData: { mimeType: "image/jpeg", data: base64Img1 } },
+                                { inlineData: { mimeType: "image/jpeg", data: base64Img2 } }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    };
+                }
 
-                const response = await fetch(url, {
+                // 呼叫 Cloudflare Worker
+                const response = await fetch(workerUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1347,27 +1274,33 @@ Phase 3: Release 與 Follow Through
 
                 if (!response.ok) {
                     const errBody = await response.text();
-                    throw new Error(`API Error ${response.status}: ${errBody}`);
+                    throw new Error(`伺服器或 API 錯誤 (${response.status}): ${errBody}`);
                 }
 
                 const data = await response.json();
-                let jsonStr = data.choices?.[0]?.message?.content;
+                let jsonStr = "";
                 
-                if (!jsonStr) throw new Error("No output received from AI.");
+                // 根據 Provider 解析不同的回傳格式
+                if (provider === 'cloudflare_openai') {
+                     jsonStr = data.choices?.[0]?.message?.content;
+                } else {
+                     jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                }
+                
+                if (!jsonStr) throw new Error("AI 未回傳任何內容。");
                 
                 let reportData;
                 try {
-                    // Extract JSON from markdown block if AI includes it
                     const cleanStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
                     reportData = JSON.parse(cleanStr);
                 } catch(e) {
-                    throw new Error("Failed to parse JSON output from AI.");
+                    throw new Error("無法解析 AI 回傳的 JSON 資料。");
                 }
 
                 clearInterval(progressInterval);
                 aiLoadingProgressBar.style.width = '100%';
                 aiLoadingProgressVal.textContent = '100%';
-                aiLoadingStatus.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-400"></i><span>Analysis Complete!</span>`;
+                aiLoadingStatus.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-400"></i><span>分析完成！</span>`;
                 
                 setTimeout(() => {
                     renderAIReport(reportData);
@@ -1376,11 +1309,11 @@ Phase 3: Release 與 Follow Through
 
             } catch (err) {
                 clearInterval(progressInterval);
-                showAIError(err.message || "An unknown error occurred during analysis.");
+                showAIError(err.message || "發生未知錯誤。");
             } finally {
                 btnGenerateAiReport.disabled = false;
                 aiBtnIcon.className = "ph-bold ph-magic-wand text-lg";
-                aiBtnText.textContent = "Generate Report";
+                aiBtnText.textContent = "產生 AI 動作分析報告";
             }
         }
 
@@ -1413,7 +1346,7 @@ Phase 3: Release 與 Follow Through
                         el.appendChild(li);
                     });
                 } else {
-                    el.innerHTML = '<li class="text-slate-500 italic">None identified.</li>';
+                    el.innerHTML = '<li class="text-slate-500 italic">無。</li>';
                 }
             };
             renderList('repStrengths', data.main_strengths);
