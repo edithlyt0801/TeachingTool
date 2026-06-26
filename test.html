@@ -1,757 +1,1055 @@
-
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Artemis: Archery posture analysis lab</title>
-    <!-- Tailwind CSS for styling -->
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- MediaPipe Pose (預留供AI骨架辨識使用) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        theme: {
+                            bg: '#050507', 
+                            panel: 'rgba(20, 20, 24, 0.65)', 
+                            pink: '#FF33A1', 
+                            yellow: '#FFD100',
+                        }
+                    },
+                    boxShadow: {
+                        'glow-pink': '0 0 25px rgba(255, 51, 161, 0.3)',
+                        'glow-yellow': '0 0 25px rgba(255, 209, 0, 0.3)',
+                        'glass': '0 10px 40px -10px rgba(0, 0, 0, 0.8)'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- MediaPipe Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        /* 客製化樣式與玻璃擬態 */
         body {
-            background-color: #0f172a; /* 深色背景 */
-            color: #f8fafc;
+            background-color: #050507;
+            color: #F3F4F6;
+            background-image: 
+                radial-gradient(circle at 15% 30%, rgba(255, 51, 161, 0.04), transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(255, 209, 0, 0.04), transparent 40%);
+            background-attachment: fixed;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: 0.02em;
         }
-        
+
         .glass-panel {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            background: var(--tw-colors-theme-panel);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .neon-yellow { color: #FACC15; text-shadow: 0 0 5px rgba(250, 204, 21, 0.5); }
-        .neon-pink { color: #F472B6; text-shadow: 0 0 5px rgba(244, 114, 182, 0.5); }
-        .bg-neon-yellow { background-color: #FACC15; }
-        .bg-neon-pink { background-color: #F472B6; }
-        .border-neon-yellow { border-color: #FACC15; }
-        .border-neon-pink { border-color: #F472B6; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #33333A; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4A4A52; }
 
-        /* 影片容器：確保重疊 */
-        .video-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background-color: #000;
-            overflow: hidden;
-            border-radius: 0.75rem;
-        }
-
-        .video-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            transform-origin: center center;
-            transition: opacity 0.1s;
-        }
-
-        #drawCanvas, #liveCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            cursor: crosshair;
-            touch-action: none; /* 讓手勢不會觸發網頁捲動，方便畫圖 */
-        }
-
-        /* 隱藏預設卷軸 */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
-        /* Range Input Styling */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
+            outline: none;
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 16px; width: 16px;
+            height: 16px;
+            width: 16px;
             border-radius: 50%;
-            background: #ffffff;
+            background: #fff;
             cursor: pointer;
             margin-top: -6px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        input[type=range].yellow-range::-webkit-slider-thumb { background: #FACC15; }
-        input[type=range].pink-range::-webkit-slider-thumb { background: #F472B6; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px;
+            width: 100%;
+            height: 4px;
             cursor: pointer;
-            background: #475569;
+            background: rgba(255,255,255,0.1);
             border-radius: 2px;
         }
+        .slider-yellow::-webkit-slider-thumb { background: #FFD100; box-shadow: 0 0 15px rgba(255, 209, 0, 0.7); border: 2px solid #fff; }
+        .slider-yellow::-webkit-slider-runnable-track { background: rgba(255, 209, 0, 0.15); }
+        .slider-pink::-webkit-slider-thumb { background: #FF33A1; box-shadow: 0 0 15px rgba(255, 51, 161, 0.7); border: 2px solid #fff; }
+        .slider-pink::-webkit-slider-runnable-track { background: rgba(255, 51, 161, 0.15); }
+
+        .tab-active {
+            border-bottom: 3px solid #FFD100;
+            color: #FFD100;
+            text-shadow: 0 0 20px rgba(255, 209, 0, 0.5);
+            font-weight: 700;
+        }
+
+        input:checked ~ .dot { transform: translateX(120%); background-color: #FFD100; box-shadow: 0 0 10px rgba(255,209,0,0.6); }
+        input:checked ~ .bg-track { background-color: rgba(255,209,0,0.2); border-color: rgba(255,209,0,0.4); }
+        input.pink-toggle:checked ~ .dot { background-color: #FF33A1; box-shadow: 0 0 10px rgba(255,51,161,0.6); }
+        input.pink-toggle:checked ~ .bg-track { background-color: rgba(255,51,161,0.2); border-color: rgba(255,51,161,0.4); }
+        input.cyan-toggle:checked ~ .dot { background-color: #00E5FF; box-shadow: 0 0 10px rgba(0,229,255,0.6); }
+        input.cyan-toggle:checked ~ .bg-track { background-color: rgba(0,229,255,0.2); border-color: rgba(0,229,255,0.4); }
+        
+        .editing-mode #analysis-canvas { cursor: crosshair; }
+
+        .btn-upload {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+        }
+        .btn-upload:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
+        
+        /* For Recording Overlay */
+        @keyframes pulse-border {
+            0% { border-color: rgba(239, 68, 68, 0.3); }
+            50% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+            100% { border-color: rgba(239, 68, 68, 0.3); }
+        }
+        .recording-active { animation: pulse-border 2s infinite; border: 2px solid red !important; }
+
+        /* Hide Number Input Arrows */
+        .hide-arrows::-webkit-inner-spin-button, .hide-arrows::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .hide-arrows { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- Header (不固定，隨頁面捲動) -->
-    <header class="w-full p-4 flex justify-between items-center bg-gray-900 border-b border-gray-800">
-        <div class="flex items-center gap-3">
-            <!-- Logo Icon (採用主題色) -->
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 border-2 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]">
-                <i class="fa-solid fa-bow-arrow neon-pink text-xl"></i>
-            </div>
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold tracking-wider" style="background: linear-gradient(90deg, #FACC15, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Artemis</h1>
-                <p class="text-xs text-gray-400" id="txt-subtitle">Archery posture analysis lab</p>
+    <!-- Header -->
+    <header class="w-full py-2 px-4 md:px-8 flex flex-col md:flex-row items-center justify-between z-50 bg-black/50 backdrop-blur-xl border-b border-white/5 sticky top-0">
+        <div class="flex items-center gap-4">
+            <img src="https://raw.githubusercontent.com/edithlyt0801/TeachingTool/refs/heads/main/logo.png" alt="Artemis Logo" class="h-10 md:h-12 w-auto object-contain">
+            <div class="flex flex-col justify-center">
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#FFD100] via-[#FF8050] to-[#FF33A1]">
+                    Artemis
+                </h1>
+                <span class="text-[9px] md:text-[10px] text-gray-400 tracking-[0.25em] uppercase font-medium" data-i18n="subtitle">Archery posture analysis lab</span>
             </div>
         </div>
-        <button id="langToggleBtn" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-sm transition-colors">
-            English / 中文
-        </button>
+        
+        <div class="flex gap-4 items-center mt-2 md:mt-0">
+            <button id="lang-toggle" class="btn-upload px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-gray-300 hover:text-white">
+                <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+                <span>EN / 中文</span>
+            </button>
+        </div>
     </header>
 
-    <!-- 主內容區 -->
-    <main class="flex-grow p-2 md:p-4 w-full max-w-7xl mx-auto space-y-4">
-        
-        <!-- 分頁切換按鈕 -->
-        <div class="flex gap-2 glass-panel p-1 rounded-xl">
-            <button id="tab-live-btn" class="flex-1 py-3 text-center rounded-lg font-bold transition-all bg-blue-600 text-white shadow-lg" onclick="switchTab('live')">
-                <i class="fa-solid fa-video mr-2"></i><span id="txt-tab-live">即時攝影</span>
-            </button>
-            <button id="tab-analysis-btn" class="flex-1 py-3 text-center rounded-lg font-bold transition-all hover:bg-gray-700 text-gray-400" onclick="switchTab('analysis')">
-                <i class="fa-solid fa-film mr-2"></i><span id="txt-tab-analysis">影片分析</span>
-            </button>
+    <!-- Navigation Tabs -->
+    <nav class="w-full pt-4 pb-4 flex justify-center relative">
+        <div class="flex gap-10 relative z-10">
+            <button onclick="switchTab('camera')" id="tab-btn-camera" class="tab-active pb-2 px-3 text-base transition-all" data-i18n="tab_camera">即時攝影</button>
+            <button onclick="switchTab('analysis')" id="tab-btn-analysis" class="pb-2 px-3 text-base text-gray-500 hover:text-gray-300 transition-all font-medium" data-i18n="tab_analysis">影片分析</button>
         </div>
+    </nav>
 
-        <!-- ==================== 即時攝影模式 (Live Camera) ==================== -->
-        <div id="view-live" class="space-y-4">
-            <!-- 影像區域 (置於上方) -->
-            <div class="glass-panel p-2 rounded-xl">
-                <div class="video-container rounded-lg border border-gray-700 shadow-inner">
-                    <video id="liveVideo" class="video-layer" autoplay playsinline muted></video>
-                    <canvas id="liveCanvas"></canvas>
-                    <div id="liveStatus" class="absolute inset-0 flex items-center justify-center text-gray-500">
-                        <p id="txt-cam-status"><i class="fa-solid fa-camera-slash mr-2"></i>攝影機未啟動</p>
+    <!-- Main Content Area -->
+    <main class="flex-grow px-4 md:px-8 pb-8 flex flex-col items-center w-full max-w-[1440px] mx-auto relative z-10">
+
+        <!-- ==================== TAB 1: Real-time Camera ==================== -->
+        <section id="view-camera" class="w-full flex flex-col lg:flex-row gap-6 animate-fade-in">
+            
+            <!-- Viewport (Left) -->
+            <div class="flex-grow flex flex-col gap-5 lg:w-3/5 xl:w-[65%]">
+                <div class="glass-panel w-full aspect-video relative overflow-hidden border border-white/5 flex items-center justify-center bg-black shadow-glow-yellow" id="camera-container">
+                    <video id="live-video" class="hidden" autoplay playsinline></video>
+                    <canvas id="live-canvas" class="w-full h-full object-contain"></canvas>
+                    
+                    <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-[#0A0A0B] transition-opacity duration-300">
+                        <i data-lucide="camera-off" class="w-12 h-12 mb-4 opacity-40 text-gray-400"></i>
+                        <p class="text-xs tracking-widest uppercase font-medium" data-i18n="camera_off_msg">攝影機未啟動 (請點擊啟動)</p>
+                    </div>
+
+                    <div id="ai-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-20 hidden">
+                        <div class="w-10 h-10 border-[3px] border-[#FFD100]/20 border-t-[#FF33A1] rounded-full animate-spin mb-4"></div>
+                        <p class="text-[#FFD100] text-xs font-bold tracking-[0.15em] mb-3" data-i18n="loading_ai">AI 模型載入中</p>
+                        <div class="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div id="ai-progress-bar" class="h-full bg-gradient-to-r from-[#FFD100] to-[#FF33A1] transition-all duration-300 shadow-[0_0_10px_#FF33A1]" style="width: 0%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 控制台 (置於下方) -->
-            <div class="glass-panel p-4 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-4">
-                    <h3 class="font-bold text-lg border-b border-gray-700 pb-2"><i class="fa-solid fa-sliders mr-2"></i><span id="txt-cam-ctrl">攝影機控制</span></h3>
-                    
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1" id="txt-sel-cam">選擇攝影機</label>
-                        <select id="cameraSelect" class="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-yellow-400">
-                            <option value="">載入中...</option>
+            <!-- Controls (Right) -->
+            <div class="flex flex-col gap-5 lg:w-2/5 xl:w-[35%] max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div class="glass-panel p-6 flex flex-col gap-6">
+                    <h3 class="font-bold text-sm tracking-widest text-gray-300 uppercase flex items-center gap-2.5 border-b border-white/5 pb-3">
+                        <i data-lucide="camera" class="w-4.5 h-4.5 text-[#FFD100]"></i>
+                        <span data-i18n="camera_settings">攝影機設定</span>
+                    </h3>
+
+                    <div class="flex flex-col gap-2.5">
+                        <label class="text-[11px] font-bold text-gray-400 tracking-widest uppercase" data-i18n="select_camera">攝影機來源</label>
+                        <select id="camera-select" class="bg-[#18181B] border border-white/10 rounded-xl py-2.5 px-4 text-xs text-gray-200 focus:outline-none focus:border-[#FFD100] transition-colors appearance-none font-medium">
+                            <option value="default" data-i18n="loading_cameras">請先啟動攝影機...</option>
                         </select>
                     </div>
 
-                    <button id="btn-start-cam" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold transition-colors shadow-lg">
-                        <i class="fa-solid fa-play mr-2"></i><span id="txt-start-cam">啟動攝影機</span>
-                    </button>
-                    
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1 flex justify-between">
-                            <span id="txt-delay-time">延遲時間 (秒)</span>
-                            <span id="delayValDisplay" class="text-white">0</span>
-                        </label>
-                        <input type="range" id="delaySlider" min="0" max="10" step="0.5" value="0" class="yellow-range">
-                        <p class="text-xs text-gray-500 mt-1" id="txt-delay-desc">* 僅供參考框架，實際延遲需配合緩衝演算法</p>
+                    <div class="flex flex-col gap-2.5">
+                        <label class="text-[11px] font-bold text-gray-400 tracking-widest uppercase" data-i18n="resolution">解析度</label>
+                        <select id="camera-resolution" class="bg-[#18181B] border border-white/10 rounded-xl py-2.5 px-4 text-xs text-gray-200 focus:outline-none focus:border-[#FFD100] transition-colors appearance-none font-medium">
+                            <option value="auto" data-i18n="res_auto">自動 (Auto)</option>
+                            <option value="720p">720p (HD)</option>
+                            <option value="1080p">1080p (FHD)</option>
+                            <option value="4k">4K (UHD)</option>
+                        </select>
                     </div>
-                </div>
 
-                <div class="space-y-4">
-                    <h3 class="font-bold text-lg border-b border-gray-700 pb-2"><i class="fa-solid fa-brain mr-2"></i><span id="txt-ai-ctrl">AI 分析設定</span></h3>
-                    
-                    <label class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-gray-500 transition-colors">
-                        <input type="checkbox" id="aiSkeletonToggle" class="w-5 h-5 accent-yellow-400">
-                        <span id="txt-ai-skel" class="font-medium">AI 骨架疊加 (MediaPipe)</span>
-                    </label>
+                    <div class="h-px w-full bg-white/5"></div>
 
-                    <label class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-gray-500 transition-colors">
-                        <input type="checkbox" id="showAngleToggle" class="w-5 h-5 accent-yellow-400">
-                        <span id="txt-show-angle" class="font-medium">顯示關節角度</span>
-                    </label>
+                    <div class="flex flex-col gap-4">
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative flex items-center">
+                                <input type="checkbox" id="ai-skeleton-toggle" class="sr-only">
+                                <div class="bg-track block bg-white/10 w-10 h-5 rounded-full transition-all border border-white/5"></div>
+                                <div class="dot absolute left-1 bg-gray-400 w-3 h-3 rounded-full transition-transform transform group-hover:bg-white shadow-sm"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors" data-i18n="ai_skeleton">AI 骨架疊加</span>
+                        </label>
+                        
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative flex items-center">
+                                <input type="checkbox" id="joint-angle-toggle" class="sr-only pink-toggle">
+                                <div class="bg-track block bg-white/10 w-10 h-5 rounded-full transition-all border border-white/5"></div>
+                                <div class="dot absolute left-1 bg-gray-400 w-3 h-3 rounded-full transition-transform transform group-hover:bg-white shadow-sm"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors" data-i18n="show_angles">顯示關節角度</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative flex items-center">
+                                <input type="checkbox" id="mirror-toggle" class="sr-only" checked>
+                                <div class="bg-track block bg-white/10 w-10 h-5 rounded-full transition-all border border-white/5"></div>
+                                <div class="dot absolute left-1 bg-gray-400 w-3 h-3 rounded-full transition-transform transform group-hover:bg-white shadow-sm"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors" data-i18n="mirror_view">鏡像畫面 (Mirror)</span>
+                        </label>
+                    </div>
+
+                    <div class="h-px w-full bg-white/5"></div>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-end">
+                            <label class="text-[11px] font-bold text-gray-400 tracking-widest uppercase" data-i18n="delay_time">延遲時間 (秒)</label>
+                            <span id="delay-val" class="text-[#FFD100] font-mono text-xs font-bold bg-[#FFD100]/10 px-2 py-0.5 rounded">0.0s</span>
+                        </div>
+                        <input type="range" id="delay-slider" min="0" max="5" step="0.5" value="0" class="slider-yellow mt-1">
+                    </div>
+
+                    <button id="btn-toggle-camera" class="w-full mt-2 px-5 py-3.5 rounded-xl font-bold bg-[#FFD100] text-black hover:bg-[#FFC000] transition-all shadow-[0_0_20px_rgba(255,209,0,0.2)] hover:shadow-[0_0_30px_rgba(255,209,0,0.4)] flex justify-center items-center gap-2 text-sm">
+                        <i data-lucide="video" class="w-4 h-4"></i>
+                        <span data-i18n="start_camera">啟動攝影機</span>
+                    </button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- ==================== 影片分析模式 (Video Analysis) ==================== -->
-        <div id="view-analysis" class="space-y-4 hidden">
-            <!-- 影像區域 (置於上方) -->
-            <div class="glass-panel p-2 rounded-xl">
-                <div class="video-container rounded-lg border border-gray-700 bg-gray-950" id="analysisVideoContainer">
-                    <!-- 影片一 (基準) -->
-                    <video id="video1" class="video-layer" playsinline muted></video>
-                    <!-- 影片二 (比對) -->
-                    <video id="video2" class="video-layer mix-blend-screen" playsinline muted style="opacity: 0.5;"></video>
-                    <!-- 手動標記畫布 -->
-                    <canvas id="drawCanvas"></canvas>
-                    
-                    <div id="analysisStatus" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 pointer-events-none">
-                        <i class="fa-solid fa-upload text-4xl mb-2"></i>
-                        <p id="txt-upload-hint">請於下方上傳影片以進行比對</p>
+        <!-- ==================== TAB 2: Video Analysis ==================== -->
+        <section id="view-analysis" class="w-full hidden animate-fade-in">
+            <div class="flex flex-col lg:flex-row gap-6 w-full">
+                
+                <!-- Left: Video Player Area -->
+                <div class="flex-grow flex flex-col gap-4 lg:w-3/5 xl:w-[65%]">
+                    <div class="glass-panel w-full aspect-video relative overflow-hidden bg-black flex items-center justify-center shadow-glow-pink" id="analysis-container">
+                        
+                        <div class="absolute inset-0 overflow-hidden" id="video-workspace">
+                            <video id="video-1" class="absolute top-0 left-0 w-full h-full object-contain origin-center pointer-events-none" playsinline muted></video>
+                            <video id="video-2" class="absolute top-0 left-0 w-full h-full object-contain origin-center pointer-events-none opacity-50" playsinline muted></video>
+                        </div>
+                        
+                        <canvas id="analysis-canvas" class="absolute top-0 left-0 w-full h-full z-10"></canvas>
+
+                        <!-- Recording Overlay -->
+                        <div id="recording-overlay" class="absolute inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
+                            <div class="w-10 h-10 border-[3px] border-[#00E5FF]/20 border-t-[#00E5FF] rounded-full animate-spin mb-4"></div>
+                            <p class="text-[#00E5FF] font-bold tracking-widest text-sm animate-pulse" data-i18n="recording_msg">影片匯出錄製中...</p>
+                            <p class="text-gray-400 text-[10px] mt-2" data-i18n="recording_warn">請勿切換分頁或關閉瀏覽器</p>
+                        </div>
+
+                        <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none z-0 bg-[#0A0A0B]">
+                            <i data-lucide="film" class="w-12 h-12 mb-4 opacity-40 text-gray-400"></i>
+                            <p class="text-xs tracking-widest uppercase font-medium" data-i18n="upload_to_start">請上傳影片以開始分析</p>
+                        </div>
                     </div>
 
-                    <!-- 同步播放控制器懸浮於影片右下角 -->
-                    <div class="absolute bottom-4 right-4 flex gap-2 z-20">
-                        <button id="btn-sync-play" class="w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full border border-white/20 flex items-center justify-center transition-colors">
-                            <i class="fa-solid fa-play text-white"></i>
+                    <!-- Playback Controls -->
+                    <div class="glass-panel px-6 py-4 flex items-center gap-5 border border-white/5">
+                        <button id="btn-play-pause" class="w-10 h-10 rounded-full bg-[#FF33A1]/10 hover:bg-[#FF33A1]/20 flex items-center justify-center transition-all border border-[#FF33A1]/30 disabled:opacity-30 disabled:border-white/10 disabled:bg-white/5" disabled>
+                            <i data-lucide="play" class="w-4 h-4 ml-0.5 text-[#FF33A1]"></i>
                         </button>
+                        <span id="time-display" class="font-mono text-sm w-20 text-center text-[#FF33A1] font-bold bg-[#FF33A1]/10 px-2 py-0.5 rounded">00:00.0</span>
+                        <input type="range" id="video-timeline" min="0" max="100" value="0" step="0.1" class="slider-pink flex-grow disabled:opacity-30" disabled>
                     </div>
                 </div>
-                
-                <!-- 疊加透明度 -->
-                <div class="mt-4 px-2">
-                    <label class="block text-sm text-gray-400 mb-1 flex justify-between">
-                        <span id="txt-opacity">疊加透明度 (影片二)</span>
-                        <span id="opacityValDisplay" class="neon-pink">50%</span>
-                    </label>
-                    <input type="range" id="opacitySlider" min="0" max="1" step="0.01" value="0.5" class="pink-range">
-                </div>
-            </div>
 
-            <!-- 工具與校準控制台 (置於下方) -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                
-                <!-- 影片一控制 (黃色) -->
-                <div class="glass-panel p-4 rounded-xl border-t-4 border-yellow-400">
-                    <h3 class="font-bold text-lg mb-3 neon-yellow"><i class="fa-solid fa-file-video mr-2"></i><span id="txt-v1-title">影片一 (基準)</span></h3>
+                <!-- Right: Tools & Calibration -->
+                <div class="flex flex-col gap-5 lg:w-2/5 xl:w-[35%] max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
                     
-                    <div class="mb-4">
-                        <label class="block w-full text-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-yellow-500/50 rounded-lg cursor-pointer transition-colors text-sm">
-                            <i class="fa-solid fa-folder-open mr-2"></i><span id="txt-v1-btn">選擇檔案</span>
-                            <input type="file" id="uploadV1" accept="video/*" class="hidden">
-                        </label>
-                        <p id="fileNameV1" class="text-xs text-gray-400 mt-1 truncate">未選擇任何檔案</p>
+                    <!-- Uploads & Global Settings -->
+                    <div class="glass-panel p-6 flex flex-col gap-5">
+                        <h3 class="font-bold text-xs tracking-widest text-gray-300 uppercase flex items-center gap-2 mb-1">
+                            <i data-lucide="upload-cloud" class="w-4 h-4 text-[#FF33A1]"></i>
+                            <span data-i18n="video_sources">影片來源設定</span>
+                        </h3>
+                        
+                        <div class="flex flex-col gap-2.5">
+                            <label class="text-[11px] font-bold text-[#FFD100] flex items-center gap-2 tracking-wider">
+                                <div class="w-2.5 h-2.5 rounded-full bg-[#FFD100] shadow-[0_0_8px_rgba(255,209,0,0.8)]"></div>
+                                <span data-i18n="video_1_label">基準影片 (黃色)</span>
+                            </label>
+                            <div class="flex gap-3 items-center">
+                                <input type="file" id="upload-v1" accept="video/*" class="hidden">
+                                <button onclick="document.getElementById('upload-v1').click()" class="btn-upload text-[11px] px-4 py-2 rounded-lg text-white font-semibold flex-shrink-0" data-i18n="choose_file">選擇檔案</button>
+                                <span id="name-v1" class="text-[11px] text-gray-500 truncate" data-i18n="no_file">未選擇檔案</span>
+                            </div>
+                        </div>
+
+                        <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+                        <div class="flex flex-col gap-2.5">
+                            <label class="text-[11px] font-bold text-[#FF33A1] flex items-center gap-2 tracking-wider">
+                                <div class="w-2.5 h-2.5 rounded-full bg-[#FF33A1] shadow-[0_0_8px_rgba(255,51,161,0.8)]"></div>
+                                <span data-i18n="video_2_label">疊加影片 (粉紅)</span>
+                            </label>
+                            <div class="flex gap-3 items-center">
+                                <input type="file" id="upload-v2" accept="video/*" class="hidden">
+                                <button onclick="document.getElementById('upload-v2').click()" class="btn-upload text-[11px] px-4 py-2 rounded-lg text-white font-semibold flex-shrink-0" data-i18n="choose_file">選擇檔案</button>
+                                <span id="name-v2" class="text-[11px] text-gray-500 truncate" data-i18n="no_file">未選擇檔案</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-black/40 p-4 rounded-xl border border-white/5 mt-2 shadow-inner">
+                            <div class="flex justify-between text-[11px] font-bold mb-3 uppercase tracking-wider items-center">
+                                <span class="text-gray-400" data-i18n="overlay_opacity">疊加透明度 (影片二)</span>
+                                <div class="flex items-center bg-[#FF33A1]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FF33A1]">
+                                    <input type="number" id="opacity-num" value="50" min="0" max="100" class="w-8 bg-transparent text-[#FF33A1] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                    <span class="text-[#FF33A1] text-[10px] ml-0.5">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="opacity-slider" min="0" max="100" value="50" class="slider-pink">
+                        </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium" id="txt-v1-calib">影像校準</span>
-                            <button class="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600" onclick="resetCalib(1)" id="txt-v1-reset">重設</button>
+                    <!-- Kinematic Chain Tools -->
+                    <div class="glass-panel p-6 flex flex-col gap-4">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                            <h3 class="font-bold text-xs tracking-widest text-gray-300 uppercase flex items-center gap-2">
+                                <i data-lucide="git-commit" class="w-4 h-4 text-[#FFD100]"></i>
+                                <span data-i18n="kinematic_chain">運動鏈標註</span>
+                            </h3>
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <div class="relative flex items-center">
+                                    <input type="checkbox" id="edit-mode-toggle" class="sr-only">
+                                    <div class="bg-track block bg-white/10 w-8 h-4 rounded-full transition-colors border border-white/5"></div>
+                                    <div class="dot absolute left-1 bg-gray-400 w-2.5 h-2.5 rounded-full transition transform group-hover:bg-white shadow-sm"></div>
+                                </div>
+                                <span class="text-[10px] font-bold text-gray-400 group-hover:text-white transition-colors tracking-wide uppercase" data-i18n="enable_edit">啟用編輯</span>
+                            </label>
                         </div>
                         
-                        <!-- V1 Scale -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v1-scale">縮放比例</span><span id="v1-scale-val">100%</span>
+                        <div class="flex justify-between items-center mt-1">
+                            <div class="flex gap-6">
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="radio" name="node-target" value="v1" checked class="text-[#FFD100] focus:ring-[#FFD100] bg-black/50 border-white/20">
+                                    <span class="text-xs font-bold text-gray-300 group-hover:text-[#FFD100]" data-i18n="edit_v1">編輯 V1</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="radio" name="node-target" value="v2" class="text-[#FF33A1] focus:ring-[#FF33A1] bg-black/50 border-white/20">
+                                    <span class="text-xs font-bold text-gray-300 group-hover:text-[#FF33A1]" data-i18n="edit_v2">編輯 V2</span>
+                                </label>
                             </div>
-                            <input type="range" id="v1-scale" min="0.5" max="2" step="0.01" value="1" class="yellow-range" oninput="updateCalib(1)">
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="show-nodes-v1" checked class="rounded text-[#FFD100] focus:ring-[#FFD100] bg-black/50 border-white/20">
+                                    <span class="text-[10px] font-semibold text-gray-400" data-i18n="show_v1_nodes">顯示 V1</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="show-nodes-v2" checked class="rounded text-[#FF33A1] focus:ring-[#FF33A1] bg-black/50 border-white/20">
+                                    <span class="text-[10px] font-semibold text-gray-400" data-i18n="show_v2_nodes">顯示 V2</span>
+                                </label>
+                            </div>
                         </div>
-                        <!-- V1 X -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v1-x">水平平移</span><span id="v1-x-val">0%</span>
-                            </div>
-                            <input type="range" id="v1-x" min="-50" max="50" step="1" value="0" class="yellow-range" oninput="updateCalib(1)">
-                        </div>
-                        <!-- V1 Y -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v1-y">垂直平移</span><span id="v1-y-val">0%</span>
-                            </div>
-                            <input type="range" id="v1-y" min="-50" max="50" step="1" value="0" class="yellow-range" oninput="updateCalib(1)">
-                        </div>
-                        <!-- V1 Time -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v1-time">開始時間 (秒)</span><span id="v1-time-val">0.00</span>
-                            </div>
-                            <input type="range" id="v1-time" min="0" max="10" step="0.05" value="0" class="yellow-range" oninput="updateCalib(1)">
+                        <div class="flex justify-end mt-1">
+                            <button id="btn-clear-nodes" class="text-[9px] font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded uppercase tracking-widest transition-colors border border-red-500/20" data-i18n="clear_all">清除全部節點</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- 影片二控制 (粉紅) -->
-                <div class="glass-panel p-4 rounded-xl border-t-4 border-pink-400">
-                    <h3 class="font-bold text-lg mb-3 neon-pink"><i class="fa-solid fa-file-video mr-2"></i><span id="txt-v2-title">影片二 (疊加)</span></h3>
-                    
-                    <div class="mb-4">
-                        <label class="block w-full text-center px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-pink-500/50 rounded-lg cursor-pointer transition-colors text-sm">
-                            <i class="fa-solid fa-folder-open mr-2"></i><span id="txt-v2-btn">選擇檔案</span>
-                            <input type="file" id="uploadV2" accept="video/*" class="hidden">
-                        </label>
-                        <p id="fileNameV2" class="text-xs text-gray-400 mt-1 truncate">未選擇任何檔案</p>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium" id="txt-v2-calib">影像校準</span>
-                            <button class="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600" onclick="resetCalib(2)" id="txt-v2-reset">重設</button>
+                    <!-- EXPORT TOOLS -->
+                    <div class="glass-panel p-6 flex flex-col gap-4">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                            <h3 class="font-bold text-xs tracking-widest text-gray-300 uppercase flex items-center gap-2">
+                                <i data-lucide="download" class="w-4 h-4 text-[#00E5FF]"></i>
+                                <span data-i18n="export_tools">輸出與存檔</span>
+                            </h3>
                         </div>
                         
-                        <!-- V2 Scale -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v2-scale">縮放比例</span><span id="v2-scale-val">100%</span>
+                        <label class="flex items-center gap-2.5 cursor-pointer group mb-1">
+                            <div class="relative flex items-center">
+                                <input type="checkbox" id="export-nodes-toggle" checked class="sr-only cyan-toggle">
+                                <div class="bg-track block bg-white/10 w-8 h-4 rounded-full transition-colors border border-white/5"></div>
+                                <div class="dot absolute left-1 bg-gray-400 w-2.5 h-2.5 rounded-full transition transform group-hover:bg-white shadow-sm"></div>
                             </div>
-                            <input type="range" id="v2-scale" min="0.5" max="2" step="0.01" value="1" class="pink-range" oninput="updateCalib(2)">
-                        </div>
-                        <!-- V2 X -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v2-x">水平平移</span><span id="v2-x-val">0%</span>
-                            </div>
-                            <input type="range" id="v2-x" min="-50" max="50" step="1" value="0" class="pink-range" oninput="updateCalib(2)">
-                        </div>
-                        <!-- V2 Y -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v2-y">垂直平移</span><span id="v2-y-val">0%</span>
-                            </div>
-                            <input type="range" id="v2-y" min="-50" max="50" step="1" value="0" class="pink-range" oninput="updateCalib(2)">
-                        </div>
-                        <!-- V2 Time -->
-                        <div>
-                            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                                <span id="txt-v2-time">開始時間 (秒)</span><span id="v2-time-val">0.00</span>
-                            </div>
-                            <input type="range" id="v2-time" min="0" max="10" step="0.05" value="0" class="pink-range" oninput="updateCalib(2)">
+                            <span class="text-[11px] font-bold text-gray-400 group-hover:text-white transition-colors tracking-wide" data-i18n="export_include_nodes">匯出包含運動鏈標註</span>
+                        </label>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="btn-export-image" class="btn-upload text-[11px] px-3 py-2.5 rounded-xl text-white font-semibold flex items-center justify-center gap-1.5 hover:text-[#00E5FF] hover:border-[#00E5FF]/50 transition-all">
+                                <i data-lucide="image" class="w-3.5 h-3.5"></i> <span data-i18n="export_image">匯出畫面</span>
+                            </button>
+                            <button id="btn-export-video" class="btn-upload text-[11px] px-3 py-2.5 rounded-xl text-white font-semibold flex items-center justify-center gap-1.5 hover:text-[#00E5FF] hover:border-[#00E5FF]/50 transition-all">
+                                <i data-lucide="video" class="w-3.5 h-3.5"></i> <span data-i18n="export_video">匯出整段影片</span>
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- 運動鏈工具 (Kinematic Chain) -->
-                <div class="glass-panel p-4 rounded-xl border-t-4 border-gray-400 flex flex-col">
-                    <h3 class="font-bold text-lg mb-3"><i class="fa-solid fa-pen-nodes mr-2"></i><span id="txt-chain-title">運動鏈工具</span></h3>
-                    <p class="text-xs text-gray-400 mb-4" id="txt-chain-desc">在影片上點擊左鍵新增節點，右鍵刪除，拖曳移動位置。</p>
-                    
-                    <div class="space-y-3 flex-grow">
-                        <label class="flex items-center gap-3 p-2 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-yellow-500 transition-colors">
-                            <input type="radio" name="chainTarget" value="1" checked class="w-4 h-4 accent-yellow-400">
-                            <span class="font-medium text-sm neon-yellow" id="txt-chain-v1">編輯 V1 (黃色骨架)</span>
-                        </label>
-                        <label class="flex items-center gap-3 p-2 bg-gray-800/50 rounded-lg cursor-pointer border border-gray-700 hover:border-pink-500 transition-colors">
-                            <input type="radio" name="chainTarget" value="2" class="w-4 h-4 accent-pink-400">
-                            <span class="font-medium text-sm neon-pink" id="txt-chain-v2">編輯 V2 (粉紅骨架)</span>
-                        </label>
+                    <!-- Calibration Areas -->
+                    <div class="glass-panel p-6 flex flex-col gap-6">
+                        
+                        <!-- V1 Calibration Area -->
+                        <div class="flex flex-col gap-4">
+                            <div class="flex justify-between items-center border-l-[3px] border-[#FFD100] pl-2 mb-1">
+                                <h4 class="font-bold text-xs text-[#FFD100] tracking-wider" data-i18n="cal_v1_title">基準影片 (V1) 校準</h4>
+                                <button id="btn-reset-v1" class="text-[10px] font-bold text-gray-500 hover:text-white transition flex items-center gap-1 uppercase tracking-wider" data-i18n="reset_cal">
+                                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 重設
+                                </button>
+                            </div>
+                            <div class="flex flex-col gap-5 bg-black/30 p-4 rounded-xl border border-white/5">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="scale">縮放比例</span>
+                                        <div class="flex items-center bg-[#FFD100]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FFD100]">
+                                            <input type="number" id="v1-scale-num" value="100" class="w-10 bg-transparent text-[#FFD100] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FFD100] text-[10px] ml-0.5">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v1-scale" min="50" max="200" value="100" class="slider-yellow">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="start_time">剪輯開始時間</span>
+                                        <div class="flex items-center bg-[#FFD100]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FFD100]">
+                                            <input type="number" id="v1-time-num" value="0.00" step="0.05" class="w-10 bg-transparent text-[#FFD100] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FFD100] text-[10px] ml-0.5">s</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v1-time" min="0" max="10" value="0" step="0.05" class="slider-yellow">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="pan_x">水平平移 (X)</span>
+                                        <div class="flex items-center bg-[#FFD100]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FFD100]">
+                                            <input type="number" id="v1-x-num" value="0" class="w-10 bg-transparent text-[#FFD100] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FFD100] text-[10px] ml-0.5">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v1-x" min="-50" max="50" value="0" step="0.5" class="slider-yellow">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="pan_y">垂直平移 (Y)</span>
+                                        <div class="flex items-center bg-[#FFD100]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FFD100]">
+                                            <input type="number" id="v1-y-num" value="0" class="w-10 bg-transparent text-[#FFD100] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FFD100] text-[10px] ml-0.5">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v1-y" min="-50" max="50" value="0" step="0.5" class="slider-yellow">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- V2 Calibration Area -->
+                        <div class="flex flex-col gap-4">
+                            <div class="flex justify-between items-center border-l-[3px] border-[#FF33A1] pl-2 mb-1">
+                                <h4 class="font-bold text-xs text-[#FF33A1] tracking-wider" data-i18n="cal_v2_title">疊加影片 (V2) 校準</h4>
+                                <button id="btn-reset-v2" class="text-[10px] font-bold text-gray-500 hover:text-white transition flex items-center gap-1 uppercase tracking-wider" data-i18n="reset_cal">
+                                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 重設
+                                </button>
+                            </div>
+                            <div class="flex flex-col gap-5 bg-black/30 p-4 rounded-xl border border-white/5">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="scale">縮放比例</span>
+                                        <div class="flex items-center bg-[#FF33A1]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FF33A1]">
+                                            <input type="number" id="v2-scale-num" value="100" class="w-10 bg-transparent text-[#FF33A1] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FF33A1] text-[10px] ml-0.5">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v2-scale" min="50" max="200" value="100" class="slider-pink">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="start_time">剪輯開始時間</span>
+                                        <div class="flex items-center bg-[#FF33A1]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FF33A1]">
+                                            <input type="number" id="v2-time-num" value="0.00" step="0.05" class="w-10 bg-transparent text-[#FF33A1] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FF33A1] text-[10px] ml-0.5">s</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v2-time" min="0" max="10" value="0" step="0.05" class="slider-pink">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="pan_x">水平平移 (X)</span>
+                                        <div class="flex items-center bg-[#FF33A1]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FF33A1]">
+                                            <input type="number" id="v2-x-num" value="0" class="w-10 bg-transparent text-[#FF33A1] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FF33A1] text-[10px] ml-0.5">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v2-x" min="-50" max="50" value="0" step="0.5" class="slider-pink">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" data-i18n="pan_y">垂直平移 (Y)</span>
+                                        <div class="flex items-center bg-[#FF33A1]/10 rounded px-1.5 focus-within:ring-1 focus-within:ring-[#FF33A1]">
+                                            <input type="number" id="v2-y-num" value="0" class="w-10 bg-transparent text-[#FF33A1] text-right font-mono text-[11px] outline-none hide-arrows font-bold">
+                                            <span class="text-[#FF33A1] text-[10px] ml-0.5">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="v2-y" min="-50" max="50" value="0" step="0.5" class="slider-pink">
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-
-                    <button class="w-full mt-4 py-2 bg-red-900/50 hover:bg-red-800/80 text-red-200 border border-red-700 rounded-lg text-sm transition-colors" onclick="clearChains()" id="txt-chain-clear">
-                        <i class="fa-solid fa-trash-can mr-2"></i>清除所有運動鏈
-                    </button>
                 </div>
             </div>
-        </div>
+        </section>
 
     </main>
 
-    <footer class="text-center p-4 text-xs text-gray-600 mt-auto">
-        &copy; 2026 Artemis Archery posture analysis lab. All rights reserved.
-    </footer>
-
-    <!-- JavaScript 邏輯 -->
     <script>
-        // --- 1. 語系切換 (i18n) ---
-        const i18n = {
-            zh: {
-                subtitle: "Archery posture analysis lab",
-                tabLive: "即時攝影", tabAnalysis: "影片分析",
-                camStatusNo: "攝影機未啟動", camCtrl: "攝影機控制", selCam: "選擇攝影機",
-                startCam: "啟動攝影機", stopCam: "停止攝影機",
-                delayTime: "延遲時間 (秒)", delayDesc: "* 僅供參考框架，實際延遲需配合緩衝演算法",
-                aiCtrl: "AI 分析設定", aiSkel: "AI 骨架疊加 (MediaPipe)", showAngle: "顯示關節角度",
-                uploadHint: "請於下方上傳影片以進行比對", opacity: "疊加透明度 (影片二)",
-                v1Title: "影片一 (基準)", v1Btn: "選擇檔案", v1Calib: "影像校準", v1Reset: "重設",
-                scale: "縮放比例", xShift: "水平平移", yShift: "垂直平移", startTime: "開始時間 (秒)",
-                v2Title: "影片二 (疊加比對)", v2Btn: "選擇檔案", v2Calib: "影像校準", v2Reset: "重設",
-                chainTitle: "運動鏈工具", chainDesc: "在影片上點擊左鍵新增節點，右鍵刪除，拖曳移動位置。",
-                chainV1: "編輯 V1 (黃色骨架)", chainV2: "編輯 V2 (粉紅骨架)", chainClear: "清除所有運動鏈",
-                noFile: "未選擇任何檔案"
+        // ==========================================
+        // 1. Initialization & State Management
+        // ==========================================
+        lucide.createIcons();
+
+        const APP_STATE = {
+            lang: 'zh',
+            activeTab: 'camera',
+            camera: {
+                stream: null, delaySeconds: 0, showSkeleton: false, showAngles: false,
+                isMirrored: true, isRunning: false, aiReady: false, frameBuffer: []
             },
-            en: {
-                subtitle: "Archery posture analysis lab",
-                tabLive: "Live Camera", tabAnalysis: "Video Analysis",
-                camStatusNo: "Camera not started", camCtrl: "Camera Controls", selCam: "Select Camera",
-                startCam: "Start Camera", stopCam: "Stop Camera",
-                delayTime: "Delay Time (sec)", delayDesc: "* UI framework only, actual delay needs buffer logic",
-                aiCtrl: "AI Analysis Settings", aiSkel: "AI Skeleton Overlay (MediaPipe)", showAngle: "Show Joint Angles",
-                uploadHint: "Please upload videos below to compare", opacity: "Overlay Opacity (Video 2)",
-                v1Title: "Video 1 (Base)", v1Btn: "Choose File", v1Calib: "Calibration", v1Reset: "Reset",
-                scale: "Scale", xShift: "X Translate", yShift: "Y Translate", startTime: "Start Time (sec)",
-                v2Title: "Video 2 (Compare)", v2Btn: "Choose File", v2Calib: "Calibration", v2Reset: "Reset",
-                chainTitle: "Kinematic Chain", chainDesc: "Left click to add nodes, right click to delete, drag to move.",
-                chainV1: "Edit V1 (Yellow Skeleton)", chainV2: "Edit V2 (Pink Skeleton)", chainClear: "Clear All Chains",
-                noFile: "No file selected"
+            analysis: {
+                isPlaying: false, editModeEnabled: false, nodes: { v1: [], v2: [] }, draggingNode: null,
+                v1: { file: null, scale: 100, x: 0, y: 0, start: 0, duration: 0 },
+                v2: { file: null, scale: 100, x: 0, y: 0, start: 0, duration: 0 },
+                opacity: 50
             }
         };
 
-        let currentLang = 'zh';
-        const langToggleBtn = document.getElementById('langToggleBtn');
+        const DICTIONARY = {
+            zh: {
+                subtitle: "射箭姿勢分析實驗室", tab_camera: "即時攝影", tab_analysis: "影片分析",
+                camera_off_msg: "攝影機未啟動 (請點擊啟動)", loading_ai: "AI 模型載入中...",
+                camera_settings: "攝影機設定", select_camera: "攝影機來源", resolution: "解析度",
+                res_auto: "自動 (Auto)", delay_time: "延遲時間 (秒)", ai_skeleton: "AI 骨架疊加",
+                show_angles: "顯示關節角度", mirror_view: "鏡像畫面 (Mirror)", start_camera: "啟動攝影機",
+                stop_camera: "關閉攝影機", upload_to_start: "請上傳影片以開始分析", video_sources: "影片來源設定",
+                video_1_label: "基準影片 (黃色)", video_2_label: "疊加影片 (粉紅)", choose_file: "選擇檔案",
+                no_file: "未選擇檔案", overlay_opacity: "疊加透明度 (影片二)", kinematic_chain: "運動鏈標註",
+                enable_edit: "啟用編輯", clear_all: "清除全部節點",
+                node_instructions: "啟用編輯模式後：在畫面上左鍵新增節點，右鍵刪除，拖曳微調。系統將自動計算三個連續節點之夾角。",
+                edit_v1: "編輯 V1", edit_v2: "編輯 V2", show_v1_nodes: "顯示 V1", show_v2_nodes: "顯示 V2",
+                cal_v1_title: "基準影片 (V1) 校準", cal_v2_title: "疊加影片 (V2) 校準", reset_cal: "重設",
+                scale: "縮放比例", pan_x: "水平平移 (X)", pan_y: "垂直平移 (Y)", start_time: "剪輯開始時間",
+                export_tools: "輸出與存檔", export_include_nodes: "匯出包含運動鏈標註", export_image: "匯出畫面",
+                export_video: "匯出整段影片", recording_msg: "影片匯出錄製中...", recording_warn: "請勿切換分頁或關閉瀏覽器"
+            },
+            en: {
+                subtitle: "Archery Posture Analysis Lab", tab_camera: "Real-time Camera", tab_analysis: "Video Analysis",
+                camera_off_msg: "Camera Offline (Click Start)", loading_ai: "Loading AI Model...",
+                camera_settings: "Camera Settings", select_camera: "Camera Source", resolution: "Resolution",
+                res_auto: "Auto", delay_time: "Delay (Sec)", ai_skeleton: "AI Skeleton",
+                show_angles: "Show Joint Angles", mirror_view: "Mirror View", start_camera: "Start Camera",
+                stop_camera: "Stop Camera", upload_to_start: "Upload videos to begin", video_sources: "Video Source Settings",
+                video_1_label: "Base Video (Yellow)", video_2_label: "Overlay Video (Pink)", choose_file: "Choose File",
+                no_file: "No file chosen", overlay_opacity: "Overlay Opacity (V2)", kinematic_chain: "Kinematic Chain",
+                enable_edit: "Enable Edit", clear_all: "Clear All Nodes",
+                node_instructions: "When enabled: Left click to add, right click to delete, drag to adjust. Angles are calculated automatically.",
+                edit_v1: "Edit V1", edit_v2: "Edit V2", show_v1_nodes: "Show V1", show_v2_nodes: "Show V2",
+                cal_v1_title: "Base Video (V1) Calib.", cal_v2_title: "Overlay Video (V2) Calib.", reset_cal: "Reset",
+                scale: "Scale", pan_x: "Pan X", pan_y: "Pan Y", start_time: "Trim Start Time",
+                export_tools: "Export Tools", export_include_nodes: "Include Kinematic Chain", export_image: "Export Image",
+                export_video: "Export Video", recording_msg: "Recording export video...", recording_warn: "Do not close or switch tabs"
+            }
+        };
 
-        function updateTexts() {
-            const t = i18n[currentLang];
-            document.getElementById('txt-subtitle').innerText = t.subtitle;
-            document.getElementById('txt-tab-live').innerText = t.tabLive;
-            document.getElementById('txt-tab-analysis').innerText = t.tabAnalysis;
-            if(!isStreaming) document.getElementById('txt-cam-status').innerHTML = `<i class="fa-solid fa-camera-slash mr-2"></i>${t.camStatusNo}`;
-            document.getElementById('txt-cam-ctrl').innerText = t.camCtrl;
-            document.getElementById('txt-sel-cam').innerText = t.selCam;
-            document.getElementById('txt-start-cam').innerText = isStreaming ? t.stopCam : t.startCam;
-            document.getElementById('txt-delay-time').innerText = t.delayTime;
-            document.getElementById('txt-delay-desc').innerText = t.delayDesc;
-            document.getElementById('txt-ai-ctrl').innerText = t.aiCtrl;
-            document.getElementById('txt-ai-skel').innerText = t.aiSkel;
-            document.getElementById('txt-show-angle').innerText = t.showAngle;
-            document.getElementById('txt-upload-hint').innerText = t.uploadHint;
-            document.getElementById('txt-opacity').innerText = t.opacity;
-            
-            document.getElementById('txt-v1-title').innerText = t.v1Title;
-            document.getElementById('txt-v1-btn').innerText = t.v1Btn;
-            document.getElementById('txt-v1-calib').innerText = t.v1Calib;
-            document.getElementById('txt-v1-reset').innerText = t.v1Reset;
-            document.getElementById('txt-v1-scale').innerText = t.scale;
-            document.getElementById('txt-v1-x').innerText = t.xShift;
-            document.getElementById('txt-v1-y').innerText = t.yShift;
-            document.getElementById('txt-v1-time').innerText = t.startTime;
-            
-            document.getElementById('txt-v2-title').innerText = t.v2Title;
-            document.getElementById('txt-v2-btn').innerText = t.v2Btn;
-            document.getElementById('txt-v2-calib').innerText = t.v2Calib;
-            document.getElementById('txt-v2-reset').innerText = t.v2Reset;
-            document.getElementById('txt-v2-scale').innerText = t.scale;
-            document.getElementById('txt-v2-x').innerText = t.xShift;
-            document.getElementById('txt-v2-y').innerText = t.yShift;
-            document.getElementById('txt-v2-time').innerText = t.startTime;
-
-            document.getElementById('txt-chain-title').innerText = t.chainTitle;
-            document.getElementById('txt-chain-desc').innerText = t.chainDesc;
-            document.getElementById('txt-chain-v1').innerText = t.chainV1;
-            document.getElementById('txt-chain-v2').innerText = t.chainV2;
-            document.getElementById('txt-chain-clear').innerHTML = `<i class="fa-solid fa-trash-can mr-2"></i>${t.chainClear}`;
-
-            if(document.getElementById('uploadV1').files.length === 0) document.getElementById('fileNameV1').innerText = t.noFile;
-            if(document.getElementById('uploadV2').files.length === 0) document.getElementById('fileNameV2').innerText = t.noFile;
+        function toggleLanguage() {
+            APP_STATE.lang = APP_STATE.lang === 'zh' ? 'en' : 'zh';
+            const dict = DICTIONARY[APP_STATE.lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    if (el.tagName === 'INPUT' && el.type === 'button') el.value = dict[key];
+                    else el.textContent = dict[key];
+                }
+            });
+            if (APP_STATE.activeTab === 'camera') {
+                const btnSpan = document.querySelector('#btn-toggle-camera span');
+                btnSpan.textContent = APP_STATE.camera.isRunning ? dict.stop_camera : dict.start_camera;
+            }
         }
+        document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
 
-        langToggleBtn.addEventListener('click', () => {
-            currentLang = currentLang === 'zh' ? 'en' : 'zh';
-            updateTexts();
-        });
-
-        // --- 2. 分頁切換 (Tabs) ---
         function switchTab(tabId) {
-            const viewLive = document.getElementById('view-live');
-            const viewAnalysis = document.getElementById('view-analysis');
-            const btnLive = document.getElementById('tab-live-btn');
-            const btnAnalysis = document.getElementById('tab-analysis-btn');
+            APP_STATE.activeTab = tabId;
+            const btnCam = document.getElementById('tab-btn-camera'), btnAna = document.getElementById('tab-btn-analysis');
+            const viewCam = document.getElementById('view-camera'), viewAna = document.getElementById('view-analysis');
 
-            if (tabId === 'live') {
-                viewLive.classList.remove('hidden');
-                viewAnalysis.classList.add('hidden');
-                btnLive.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all bg-blue-600 text-white shadow-lg';
-                btnAnalysis.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all hover:bg-gray-700 text-gray-400';
+            if (tabId === 'camera') {
+                btnCam.classList.add('tab-active', 'text-gray-200'); btnCam.classList.remove('text-gray-500');
+                btnAna.classList.remove('tab-active', 'text-gray-200'); btnAna.classList.add('text-gray-500');
+                viewCam.classList.remove('hidden'); viewAna.classList.add('hidden');
             } else {
-                viewLive.classList.add('hidden');
-                viewAnalysis.classList.remove('hidden');
-                btnAnalysis.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all bg-blue-600 text-white shadow-lg';
-                btnLive.className = 'flex-1 py-3 text-center rounded-lg font-bold transition-all hover:bg-gray-700 text-gray-400';
-                resizeCanvas(); // 切換到分析時確保canvas大小正確
+                btnAna.classList.add('tab-active', 'text-gray-200'); btnAna.classList.remove('text-gray-500');
+                btnCam.classList.remove('tab-active', 'text-gray-200'); btnCam.classList.add('text-gray-500');
+                viewAna.classList.remove('hidden'); viewCam.classList.add('hidden');
+                resizeAnalysisCanvas();
             }
         }
 
-        // --- 3. 即時攝影與裝置控制 ---
-        let liveStream = null;
-        let isStreaming = false;
-        const liveVideo = document.getElementById('liveVideo');
-        const cameraSelect = document.getElementById('cameraSelect');
-        const btnStartCam = document.getElementById('btn-start-cam');
-        const liveStatus = document.getElementById('liveStatus');
+        // ==========================================
+        // Camera & MediaPipe
+        // ==========================================
+        const videoLive = document.getElementById('live-video'), canvasLive = document.getElementById('live-canvas');
+        const ctxLive = canvasLive.getContext('2d', { willReadFrequently: true });
+        const camSelect = document.getElementById('camera-select');
+        let poseDetector = null, animationFrameId = null;
 
-        // 取得攝影機列表
-        async function getCameras() {
+        function showAILoading(show) {
+            const loader = document.getElementById('ai-loader'), bar = document.getElementById('ai-progress-bar');
+            if (show) { loader.classList.remove('hidden'); bar.style.width = '0%'; setTimeout(() => bar.style.width = '80%', 100); } 
+            else { bar.style.width = '100%'; setTimeout(() => loader.classList.add('hidden'), 300); }
+        }
+
+        async function initPose() {
+            if (poseDetector) return;
+            showAILoading(true);
+            poseDetector = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+            poseDetector.setOptions({ modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+            poseDetector.onResults(onPoseResults);
+            await poseDetector.initialize();
+            APP_STATE.camera.aiReady = true; showAILoading(false);
+        }
+
+        async function updateCameraList() {
             try {
-                await navigator.mediaDevices.getUserMedia({video: true}); // 請求權限
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                
-                cameraSelect.innerHTML = '';
-                videoDevices.forEach((device, index) => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    option.text = device.label || `Camera ${index + 1}`;
-                    cameraSelect.appendChild(option);
+                const devices = await navigator.mediaDevices.enumerateDevices(), videoDevices = devices.filter(d => d.kind === 'videoinput');
+                const currentTrack = APP_STATE.camera.stream && APP_STATE.camera.stream.getVideoTracks()[0];
+                const currentId = currentTrack ? currentTrack.getSettings().deviceId : null;
+
+                camSelect.innerHTML = '';
+                videoDevices.forEach((device, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = device.deviceId; opt.text = device.label || `Camera ${i + 1}`;
+                    if (currentId === device.deviceId) opt.selected = true;
+                    camSelect.appendChild(opt);
                 });
-            } catch (err) {
-                console.error("Camera access denied", err);
-                cameraSelect.innerHTML = '<option value="">No Camera Access</option>';
-            }
+            } catch (e) {}
         }
-        getCameras();
 
-        btnStartCam.addEventListener('click', async () => {
-            if (isStreaming) {
-                // 停止
-                liveStream.getTracks().forEach(track => track.stop());
-                liveVideo.srcObject = null;
-                isStreaming = false;
-                liveStatus.style.display = 'flex';
-                btnStartCam.innerHTML = `<i class="fa-solid fa-play mr-2"></i><span id="txt-start-cam">${i18n[currentLang].startCam}</span>`;
-                btnStartCam.className = 'w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-bold transition-colors shadow-lg';
-            } else {
-                // 啟動
-                const deviceId = cameraSelect.value;
-                const constraints = {
-                    video: deviceId ? { deviceId: { exact: deviceId } } : true
-                };
-                try {
-                    liveStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    liveVideo.srcObject = liveStream;
-                    isStreaming = true;
-                    liveStatus.style.display = 'none';
-                    btnStartCam.innerHTML = `<i class="fa-solid fa-stop mr-2"></i><span id="txt-start-cam">${i18n[currentLang].stopCam}</span>`;
-                    btnStartCam.className = 'w-full py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold transition-colors shadow-lg';
-                } catch (err) {
-                    alert("無法啟動攝影機: " + err.message);
+        function calculateAngle(a, b, c) {
+            const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+            let angle = Math.abs(radians * 180 / Math.PI);
+            return Math.round(angle > 180 ? 360 - angle : angle);
+        }
+
+        function onPoseResults(results) {
+            if (!APP_STATE.camera.isRunning) return;
+            ctxLive.clearRect(0, 0, canvasLive.width, canvasLive.height);
+            ctxLive.drawImage(results.image, 0, 0, canvasLive.width, canvasLive.height);
+
+            if (results.poseLandmarks && APP_STATE.camera.showSkeleton) {
+                const w = canvasLive.width, h = canvasLive.height;
+                ctxLive.save(); ctxLive.strokeStyle = '#FFD100'; ctxLive.lineWidth = 3; ctxLive.fillStyle = '#fff';
+                ctxLive.shadowColor = 'rgba(255,209,0,0.5)'; ctxLive.shadowBlur = 5;
+                for (const conn of POSE_CONNECTIONS) {
+                    const s = results.poseLandmarks[conn[0]], e = results.poseLandmarks[conn[1]];
+                    if (s.visibility > 0.5 && e.visibility > 0.5) { ctxLive.beginPath(); ctxLive.moveTo(s.x*w, s.y*h); ctxLive.lineTo(e.x*w, e.y*h); ctxLive.stroke(); }
+                }
+                ctxLive.shadowBlur = 0;
+                for (const lm of results.poseLandmarks) {
+                    if (lm.visibility > 0.5) { ctxLive.beginPath(); ctxLive.arc(lm.x*w, lm.y*h, 4, 0, 2*Math.PI); ctxLive.fill(); ctxLive.stroke(); }
+                }
+                ctxLive.restore();
+
+                if (APP_STATE.camera.showAngles) {
+                    const lm = results.poseLandmarks;
+                    const drawAng = (a,b,c) => {
+                        if(lm[a].visibility>0.5 && lm[b].visibility>0.5 && lm[c].visibility>0.5){
+                            const ang = calculateAngle(lm[a], lm[b], lm[c]);
+                            ctxLive.fillStyle = '#FF33A1'; ctxLive.font = 'bold 16px Inter';
+                            ctxLive.lineWidth = 3; ctxLive.strokeStyle = '#000';
+                            ctxLive.strokeText(`${ang}°`, lm[b].x*w+12, lm[b].y*h-12);
+                            ctxLive.fillText(`${ang}°`, lm[b].x*w+12, lm[b].y*h-12);
+                        }
+                    };
+                    drawAng(11,13,15); drawAng(12,14,16); drawAng(23,25,27); drawAng(24,26,28); 
+                    drawAng(11,23,25); drawAng(12,24,26); drawAng(13,11,23); drawAng(14,12,24);
                 }
             }
-        });
-
-        // 延遲 Slider 更新UI
-        const delaySlider = document.getElementById('delaySlider');
-        delaySlider.addEventListener('input', (e) => {
-            document.getElementById('delayValDisplay').innerText = e.target.value;
-        });
-
-        // --- 4. 影片分析: 上傳與同步播放 ---
-        const video1 = document.getElementById('video1');
-        const video2 = document.getElementById('video2');
-        const uploadV1 = document.getElementById('uploadV1');
-        const uploadV2 = document.getElementById('uploadV2');
-        const btnSyncPlay = document.getElementById('btn-sync-play');
-        let isSyncPlaying = false;
-
-        uploadV1.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                document.getElementById('fileNameV1').innerText = file.name;
-                video1.src = URL.createObjectURL(file);
-                document.getElementById('analysisStatus').style.display = 'none';
-                updateCalib(1); // 套用時間
-            }
-        });
-
-        uploadV2.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                document.getElementById('fileNameV2').innerText = file.name;
-                video2.src = URL.createObjectURL(file);
-                document.getElementById('analysisStatus').style.display = 'none';
-                updateCalib(2);
-            }
-        });
-
-        // 同步播放邏輯
-        btnSyncPlay.addEventListener('click', () => {
-            if (isSyncPlaying) {
-                video1.pause();
-                video2.pause();
-                btnSyncPlay.innerHTML = '<i class="fa-solid fa-play text-white"></i>';
-            } else {
-                // 從設定的開始時間播放
-                video1.currentTime = parseFloat(document.getElementById('v1-time').value) || 0;
-                video2.currentTime = parseFloat(document.getElementById('v2-time').value) || 0;
-                video1.play();
-                video2.play();
-                btnSyncPlay.innerHTML = '<i class="fa-solid fa-pause text-white"></i>';
-            }
-            isSyncPlaying = !isSyncPlaying;
-        });
-
-        // 透明度
-        const opacitySlider = document.getElementById('opacitySlider');
-        opacitySlider.addEventListener('input', (e) => {
-            video2.style.opacity = e.target.value;
-            document.getElementById('opacityValDisplay').innerText = Math.round(e.target.value * 100) + '%';
-        });
-
-        // --- 5. 影片校準 (Transform & Trim) ---
-        function updateCalib(v) {
-            const scale = document.getElementById(`v${v}-scale`).value;
-            const x = document.getElementById(`v${v}-x`).value;
-            const y = document.getElementById(`v${v}-y`).value;
-            const time = document.getElementById(`v${v}-time`).value;
-
-            document.getElementById(`v${v}-scale-val`).innerText = Math.round(scale * 100) + '%';
-            document.getElementById(`v${v}-x-val`).innerText = x + '%';
-            document.getElementById(`v${v}-y-val`).innerText = y + '%';
-            document.getElementById(`v${v}-time-val`).innerText = parseFloat(time).toFixed(2);
-
-            const vid = v === 1 ? video1 : video2;
-            vid.style.transform = `translate(${x}%, ${y}%) scale(${scale})`;
-            
-            // 如果暫停中，更新畫面預覽
-            if(!isSyncPlaying) {
-                vid.currentTime = time;
-            }
         }
 
-        function resetCalib(v) {
-            document.getElementById(`v${v}-scale`).value = 1;
-            document.getElementById(`v${v}-x`).value = 0;
-            document.getElementById(`v${v}-y`).value = 0;
-            document.getElementById(`v${v}-time`).value = 0;
-            updateCalib(v);
-        }
-
-        // --- 6. 運動鏈畫布 (手動骨架標記) ---
-        const canvas = document.getElementById('drawCanvas');
-        const ctx = canvas.getContext('2d');
-        let pointsV1 = []; // [{x, y}] 相對於canvas
-        let pointsV2 = [];
-        let draggingPoint = null;
-        let dragTargetArray = null;
-
-        function resizeCanvas() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-            drawChains();
-        }
-        window.addEventListener('resize', resizeCanvas);
-
-        function drawChains() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 畫 V1 (黃色)
-            ctx.strokeStyle = '#FACC15';
-            ctx.fillStyle = '#FACC15';
-            ctx.lineWidth = 3;
-            drawPointsAndLines(pointsV1);
-
-            // 畫 V2 (粉紅)
-            ctx.strokeStyle = '#F472B6';
-            ctx.fillStyle = '#F472B6';
-            drawPointsAndLines(pointsV2);
-        }
-
-        function drawPointsAndLines(pts) {
-            if(pts.length > 1) {
-                ctx.beginPath();
-                ctx.moveTo(pts[0].x * canvas.width, pts[0].y * canvas.height);
-                for(let i=1; i<pts.length; i++) {
-                    ctx.lineTo(pts[i].x * canvas.width, pts[i].y * canvas.height);
+        async function processVideoFrame() {
+            if (!APP_STATE.camera.isRunning) return;
+            if (videoLive.readyState >= 2 && videoLive.videoWidth > 0) {
+                if (canvasLive.width !== videoLive.videoWidth) { canvasLive.width = videoLive.videoWidth; canvasLive.height = videoLive.videoHeight; }
+                const offCanvas = document.createElement('canvas'); offCanvas.width = canvasLive.width; offCanvas.height = canvasLive.height;
+                const offCtx = offCanvas.getContext('2d');
+                
+                if (APP_STATE.camera.isMirrored) { offCtx.translate(offCanvas.width, 0); offCtx.scale(-1, 1); }
+                offCtx.drawImage(videoLive, 0, 0, offCanvas.width, offCanvas.height);
+                
+                APP_STATE.camera.frameBuffer.push({ time: performance.now(), image: offCanvas });
+                const tTarget = performance.now() - (APP_STATE.camera.delaySeconds * 1000);
+                while (APP_STATE.camera.frameBuffer.length > 1 && APP_STATE.camera.frameBuffer[1].time < tTarget) APP_STATE.camera.frameBuffer.shift();
+                
+                const frame = APP_STATE.camera.frameBuffer[0];
+                if (frame) {
+                    if (APP_STATE.camera.showSkeleton && APP_STATE.camera.aiReady) await poseDetector.send({image: frame.image});
+                    else { ctxLive.clearRect(0,0,canvasLive.width,canvasLive.height); ctxLive.drawImage(frame.image, 0, 0); }
                 }
-                ctx.stroke();
             }
-            pts.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x * canvas.width, p.y * canvas.height, 5, 0, 2*Math.PI);
-                ctx.fill();
-                ctx.stroke();
+            animationFrameId = requestAnimationFrame(processVideoFrame);
+        }
+
+        document.getElementById('btn-toggle-camera').addEventListener('click', async () => {
+            const dict = DICTIONARY[APP_STATE.lang];
+            if (APP_STATE.camera.isRunning) {
+                APP_STATE.camera.isRunning = false;
+                if (APP_STATE.camera.stream) APP_STATE.camera.stream.getTracks().forEach(t => t.stop());
+                cancelAnimationFrame(animationFrameId); ctxLive.clearRect(0, 0, canvasLive.width, canvasLive.height);
+                document.getElementById('camera-placeholder').classList.remove('hidden');
+                document.getElementById('btn-toggle-camera').innerHTML = `<i data-lucide="video" class="w-4 h-4"></i> <span>${dict.start_camera}</span>`;
+                document.getElementById('btn-toggle-camera').className = "w-full mt-2 px-5 py-3.5 rounded-xl font-bold bg-[#FFD100] text-black hover:bg-[#FFC000] transition-all shadow-[0_0_20px_rgba(255,209,0,0.2)] flex justify-center items-center gap-2 text-sm";
+                APP_STATE.camera.frameBuffer = []; lucide.createIcons();
+            } else {
+                const deviceId = camSelect.value, res = document.getElementById('camera-resolution').value;
+                let vConstraints = { facingMode: 'environment' };
+                if (deviceId && deviceId !== 'default') vConstraints.deviceId = { exact: deviceId };
+                if (res === '1080p') { vConstraints.width = {ideal: 1920}; vConstraints.height = {ideal: 1080}; }
+                else if (res === '720p') { vConstraints.width = {ideal: 1280}; vConstraints.height = {ideal: 720}; }
+                else if (res === '4k') { vConstraints.width = {ideal: 3840}; vConstraints.height = {ideal: 2160}; }
+                
+                try { APP_STATE.camera.stream = await navigator.mediaDevices.getUserMedia({video: vConstraints, audio: false}); } 
+                catch (err) {
+                    try { APP_STATE.camera.stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false}); } 
+                    catch (e2) { alert("Camera access denied: " + e2.message); return; }
+                }
+
+                videoLive.srcObject = APP_STATE.camera.stream; videoLive.setAttribute('playsinline', 'true'); await videoLive.play();
+                APP_STATE.camera.isRunning = true; document.getElementById('camera-placeholder').classList.add('hidden');
+                document.getElementById('btn-toggle-camera').innerHTML = `<i data-lucide="video-off" class="w-4 h-4"></i> <span>${dict.stop_camera}</span>`;
+                document.getElementById('btn-toggle-camera').className = "w-full mt-2 px-5 py-3.5 rounded-xl font-bold bg-[#FF33A1] text-white hover:bg-[#E62E91] transition-all shadow-[0_0_20px_rgba(255,51,161,0.2)] flex justify-center items-center gap-2 text-sm";
+                lucide.createIcons();
+                if (camSelect.options.length <= 1 || camSelect.value === 'default') await updateCameraList();
+                processVideoFrame();
+                if (APP_STATE.camera.showSkeleton && !APP_STATE.camera.aiReady) initPose();
+            }
+        });
+
+        document.getElementById('delay-slider').addEventListener('input', e => { APP_STATE.camera.delaySeconds = parseFloat(e.target.value); document.getElementById('delay-val').innerText = `${APP_STATE.camera.delaySeconds.toFixed(1)}s`; });
+        document.getElementById('ai-skeleton-toggle').addEventListener('change', e => { APP_STATE.camera.showSkeleton = e.target.checked; if (e.target.checked && APP_STATE.camera.isRunning && !APP_STATE.camera.aiReady) initPose(); });
+        document.getElementById('joint-angle-toggle').addEventListener('change', e => APP_STATE.camera.showAngles = e.target.checked);
+        document.getElementById('mirror-toggle').addEventListener('change', e => APP_STATE.camera.isMirrored = e.target.checked);
+
+
+        // ==========================================
+        // Video Analysis & Playback
+        // ==========================================
+        const video1 = document.getElementById('video-1'), video2 = document.getElementById('video-2');
+        const videoTimeline = document.getElementById('video-timeline'), timeDisplay = document.getElementById('time-display');
+
+        function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toFixed(1).padStart(4,'0')}`; }
+
+        function handleFileUpload(inputElemId, nameElemId, videoElem, stateKey) {
+            document.getElementById(inputElemId).addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById(nameElemId).textContent = file.name;
+                    videoElem.src = URL.createObjectURL(file); videoElem.load();
+                    APP_STATE.analysis[stateKey].file = file;
+                    document.getElementById('video-placeholder').classList.add('hidden');
+                    document.getElementById('btn-play-pause').disabled = false; videoTimeline.disabled = false;
+                    videoElem.addEventListener('loadeddata', function force() { videoElem.currentTime = 0.001; videoElem.removeEventListener('loadeddata', force); });
+                }
             });
         }
+        handleFileUpload('upload-v1', 'name-v1', video1, 'v1');
+        handleFileUpload('upload-v2', 'name-v2', video2, 'v2');
 
-        // 滑鼠事件處理
-        function getMousePos(evt) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: (evt.clientX - rect.left) / canvas.width,
-                y: (evt.clientY - rect.top) / canvas.height
-            };
-        }
-
-        function getActiveArray() {
-            const val = document.querySelector('input[name="chainTarget"]:checked').value;
-            return val === '1' ? pointsV1 : pointsV2;
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            const pos = getMousePos(e);
-            const activeArr = getActiveArray();
+        // ★ 核心修復：精準鎖定延遲影片的第一幀，防止卡頓
+        function syncVideos() {
+            if (!video1.duration) return;
+            const t = video1.currentTime, start1 = APP_STATE.analysis.v1.start, start2 = APP_STATE.analysis.v2.start;
             
-            // 右鍵刪除
-            if(e.button === 2) {
-                const idx = activeArr.findIndex(p => 
-                    Math.hypot(p.x*canvas.width - pos.x*canvas.width, p.y*canvas.height - pos.y*canvas.height) < 10
-                );
-                if(idx !== -1) {
-                    activeArr.splice(idx, 1);
-                    drawChains();
+            if(!APP_STATE.analysis.draggingTimeline) videoTimeline.value = (t / video1.duration) * 100;
+            timeDisplay.textContent = formatTime(t);
+
+            if (video2.src && video2.duration) {
+                let targetV2 = start2 + (t - start1);
+                
+                if (targetV2 <= 0) {
+                    if (!video2.paused) video2.pause();
+                    if (Math.abs(video2.currentTime - 0.001) > 0.05) video2.currentTime = 0.001;
+                } else if (targetV2 >= video2.duration) {
+                    if (!video2.paused) video2.pause();
+                } else {
+                    if (APP_STATE.analysis.isPlaying && video2.paused) {
+                        let playPromise = video2.play();
+                        if (playPromise !== undefined) playPromise.catch(e => console.warn(e));
+                    } else if (!APP_STATE.analysis.isPlaying && !video2.paused) {
+                        video2.pause();
+                    }
+                    if (Math.abs(video2.currentTime - targetV2) > 0.15) {
+                        video2.currentTime = targetV2;
+                    }
                 }
-                return;
             }
-
-            // 左鍵：檢查是否點到現有節點以準備拖曳
-            const hitIdx = activeArr.findIndex(p => 
-                Math.hypot(p.x*canvas.width - pos.x*canvas.width, p.y*canvas.height - pos.y*canvas.height) < 10
-            );
-
-            if(hitIdx !== -1) {
-                draggingPoint = activeArr[hitIdx];
-                dragTargetArray = activeArr;
-            } else {
-                // 點擊空白處新增
-                activeArr.push({x: pos.x, y: pos.y});
-                drawChains();
-            }
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if(draggingPoint) {
-                const pos = getMousePos(e);
-                draggingPoint.x = pos.x;
-                draggingPoint.y = pos.y;
-                drawChains();
-            }
-        });
-
-        canvas.addEventListener('mouseup', () => { draggingPoint = null; dragTargetArray = null; });
-        canvas.addEventListener('mouseleave', () => { draggingPoint = null; dragTargetArray = null; });
-        // 停用右鍵選單
-        canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-        // 觸控支援
-        canvas.addEventListener('touchstart', (e) => {
-            if(e.touches.length > 0) {
-                const touch = e.touches[0];
-                const mouseEvt = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    button: 0 // 手指輕觸視為左鍵新增/拖曳
-                });
-                canvas.dispatchEvent(mouseEvt);
-            }
-        });
-        canvas.addEventListener('touchmove', (e) => {
-            if(draggingPoint && e.touches.length > 0) {
-                const touch = e.touches[0];
-                const mouseEvt = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                canvas.dispatchEvent(mouseEvt);
-                e.preventDefault(); // 防止滾動
-            }
-        }, {passive: false});
-        canvas.addEventListener('touchend', () => {
-            const mouseEvt = new MouseEvent('mouseup', {});
-            canvas.dispatchEvent(mouseEvt);
-        });
-
-        function clearChains() {
-            pointsV1 = [];
-            pointsV2 = [];
-            drawChains();
         }
 
-        // 初始化
-        setTimeout(resizeCanvas, 100);
+        video1.addEventListener('timeupdate', syncVideos);
+        video1.addEventListener('loadedmetadata', () => { APP_STATE.analysis.v1.duration = video1.duration; document.getElementById('v1-time').max = video1.duration.toFixed(2); });
+        video2.addEventListener('loadedmetadata', () => { APP_STATE.analysis.v2.duration = video2.duration; document.getElementById('v2-time').max = video2.duration.toFixed(2); });
         
+        video1.addEventListener('ended', () => {
+            APP_STATE.analysis.isPlaying = false;
+            document.getElementById('btn-play-pause').innerHTML = '<i data-lucide="play" class="w-4 h-4 ml-0.5 text-[#FF33A1]"></i>';
+            lucide.createIcons();
+            if(video2.src) video2.pause();
+        });
+
+        document.getElementById('btn-play-pause').addEventListener('click', function() {
+            if (APP_STATE.analysis.isPlaying) {
+                video1.pause(); if(video2.src) video2.pause();
+                this.innerHTML = '<i data-lucide="play" class="w-4 h-4 ml-0.5 text-[#FF33A1]"></i>'; APP_STATE.analysis.isPlaying = false;
+            } else {
+                APP_STATE.analysis.isPlaying = true;
+                video1.play(); 
+                syncVideos(); 
+                this.innerHTML = '<i data-lucide="pause" class="w-4 h-4 text-[#FF33A1]"></i>'; 
+            }
+            lucide.createIcons();
+        });
+
+        videoTimeline.addEventListener('mousedown', () => APP_STATE.analysis.draggingTimeline = true);
+        videoTimeline.addEventListener('touchstart', () => APP_STATE.analysis.draggingTimeline = true);
+        videoTimeline.addEventListener('input', e => { if(video1.duration) { video1.currentTime = (e.target.value/100)*video1.duration; syncVideos(); } });
+        videoTimeline.addEventListener('mouseup', () => APP_STATE.analysis.draggingTimeline = false);
+        videoTimeline.addEventListener('touchend', () => APP_STATE.analysis.draggingTimeline = false);
+
+        // Opacity Logic
+        const opacitySlider = document.getElementById('opacity-slider');
+        const opacityNum = document.getElementById('opacity-num');
+        const updateOpacity = (val, fromSlider) => {
+            let v = parseFloat(val); if(isNaN(v)) return;
+            if(v<0) v=0; if(v>100) v=100;
+            APP_STATE.analysis.opacity = v;
+            if(fromSlider) opacityNum.value = v; else opacitySlider.value = v;
+            video2.style.opacity = v / 100;
+        };
+        opacitySlider.addEventListener('input', e => updateOpacity(e.target.value, true));
+        opacityNum.addEventListener('input', e => updateOpacity(e.target.value, false));
+
+        // ==========================================
+        // Calibration (Inputs & Sliders)
+        // ==========================================
+        function applyVideoTransforms() {
+            video1.style.transform = `scale(${APP_STATE.analysis.v1.scale/100}) translate(${APP_STATE.analysis.v1.x}%, ${APP_STATE.analysis.v1.y}%)`;
+            video2.style.transform = `scale(${APP_STATE.analysis.v2.scale/100}) translate(${APP_STATE.analysis.v2.x}%, ${APP_STATE.analysis.v2.y}%)`;
+        }
+
+        function bindCalControl(vidId, stateProp, isTime) {
+            const slider = document.getElementById(`${vidId}-${stateProp}`);
+            const numInput = document.getElementById(`${vidId}-${stateProp}-num`);
+
+            const updateState = (val, source) => {
+                let parsed = parseFloat(val); if (isNaN(parsed)) return;
+                if (isTime && parsed < 0) parsed = 0;
+
+                APP_STATE.analysis[vidId][stateProp] = parsed;
+                if (source === 'slider') numInput.value = isTime ? parsed.toFixed(2) : parsed;
+                else slider.value = parsed;
+
+                if (isTime) { APP_STATE.analysis[vidId].start = parsed; } 
+                else { applyVideoTransforms(); }
+            };
+
+            slider.addEventListener('input', e => updateState(e.target.value, 'slider'));
+            numInput.addEventListener('input', e => updateState(e.target.value, 'input'));
+            
+            if(isTime) {
+                slider.addEventListener('change', () => syncVideos());
+                numInput.addEventListener('change', () => syncVideos());
+            }
+        }
+
+        ['v1', 'v2'].forEach(vid => {
+            bindCalControl(vid, 'scale', false); bindCalControl(vid, 'x', false); bindCalControl(vid, 'y', false); bindCalControl(vid, 'time', true);
+            
+            document.getElementById(`btn-reset-${vid}`).addEventListener('click', () => {
+                APP_STATE.analysis[vid] = { ...APP_STATE.analysis[vid], scale: 100, x: 0, y: 0, start: 0, time: 0 };
+                ['scale', 'x', 'y', 'time'].forEach(p => {
+                    const val = p === 'scale' ? 100 : 0;
+                    document.getElementById(`${vid}-${p}`).value = val;
+                    document.getElementById(`${vid}-${p}-num`).value = p === 'time' ? `0.00` : val;
+                });
+                applyVideoTransforms(); syncVideos();
+            });
+        });
+
+        // ==========================================
+        // Kinematic Nodes
+        // ==========================================
+        const anaCanvas = document.getElementById('analysis-canvas'), anaCtx = anaCanvas.getContext('2d'), anaContainer = document.getElementById('analysis-container');
+        function resizeAnalysisCanvas() {
+            if (anaContainer && (anaCanvas.width !== anaContainer.clientWidth || anaCanvas.height !== anaContainer.clientHeight)) {
+                anaCanvas.width = anaContainer.clientWidth; anaCanvas.height = anaContainer.clientHeight;
+                drawAnalysisCanvas();
+            }
+        }
+        window.addEventListener('resize', resizeAnalysisCanvas); setInterval(resizeAnalysisCanvas, 500);
+
+        document.getElementById('edit-mode-toggle').addEventListener('change', e => {
+            APP_STATE.analysis.editModeEnabled = e.target.checked;
+            e.target.checked ? anaContainer.classList.add('editing-mode') : (anaContainer.classList.remove('editing-mode'), APP_STATE.analysis.draggingNode = null);
+        });
+
+        function drawAnalysisCanvas() {
+            anaCtx.clearRect(0, 0, anaCanvas.width, anaCanvas.height);
+            const drawNodes = (nodes, col, glow) => {
+                anaCtx.strokeStyle = col; anaCtx.fillStyle = col;
+                if (nodes.length > 1) {
+                    anaCtx.lineWidth = 2.5; anaCtx.shadowColor = glow; anaCtx.shadowBlur = 8;
+                    anaCtx.beginPath(); anaCtx.moveTo(nodes[0].x*anaCanvas.width, nodes[0].y*anaCanvas.height);
+                    for(let i=1; i<nodes.length; i++) anaCtx.lineTo(nodes[i].x*anaCanvas.width, nodes[i].y*anaCanvas.height);
+                    anaCtx.stroke(); anaCtx.shadowBlur = 0; 
+                }
+                if (nodes.length >= 3) {
+                    for(let i=1; i<nodes.length-1; i++) {
+                        const ang = getVisualAngle(nodes[i-1], nodes[i], nodes[i+1], anaCanvas.width, anaCanvas.height);
+                        anaCtx.font = 'bold 14px Inter'; anaCtx.lineWidth = 3; anaCtx.strokeStyle = 'rgba(10,10,11,0.8)';
+                        anaCtx.strokeText(`${ang}°`, nodes[i].x*anaCanvas.width+12, nodes[i].y*anaCanvas.height-12);
+                        anaCtx.fillText(`${ang}°`, nodes[i].x*anaCanvas.width+12, nodes[i].y*anaCanvas.height-12);
+                    }
+                }
+                nodes.forEach(n => {
+                    anaCtx.beginPath(); anaCtx.arc(n.x*anaCanvas.width, n.y*anaCanvas.height, 5, 0, 2*Math.PI); anaCtx.fill();
+                    anaCtx.lineWidth = 1.5; anaCtx.strokeStyle = '#FFF'; anaCtx.stroke();
+                });
+            };
+            if(document.getElementById('show-nodes-v1').checked) drawNodes(APP_STATE.analysis.nodes.v1, '#FFD100', 'rgba(255,209,0,0.5)'); 
+            if(document.getElementById('show-nodes-v2').checked) drawNodes(APP_STATE.analysis.nodes.v2, '#FF33A1', 'rgba(255,51,161,0.5)'); 
+        }
+        function getPointerPos(e) { const r = anaCanvas.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; return { x: (t.clientX - r.left)/anaCanvas.width, y: (t.clientY - r.top)/anaCanvas.height }; }
+        function getVisualAngle(p1,p2,p3,w,h) { let a = Math.abs((Math.atan2(p3.y*h - p2.y*h, p3.x*w - p2.x*w) - Math.atan2(p1.y*h - p2.y*h, p1.x*w - p2.x*w))*180/Math.PI); return Math.round(a>180?360-a:a); }
+        
+        anaCanvas.addEventListener('mousedown', e => {
+            if(!APP_STATE.analysis.editModeEnabled) return; e.preventDefault();
+            const pos = getPointerPos(e), target = document.querySelector('input[name="node-target"]:checked').value, nodes = APP_STATE.analysis.nodes[target];
+            let idx = nodes.findIndex(n => Math.hypot(n.x - pos.x, n.y - pos.y) < 15/anaCanvas.width);
+            if (e.button === 2) { if(idx > -1) nodes.splice(idx, 1); } 
+            else if (e.button === 0) { if(idx > -1) APP_STATE.analysis.draggingNode = {set: target, index: idx}; else nodes.push(pos); }
+            drawAnalysisCanvas();
+        });
+        anaCanvas.addEventListener('mousemove', e => { if(APP_STATE.analysis.draggingNode) { e.preventDefault(); APP_STATE.analysis.nodes[APP_STATE.analysis.draggingNode.set][APP_STATE.analysis.draggingNode.index] = getPointerPos(e); drawAnalysisCanvas(); }});
+        window.addEventListener('mouseup', () => APP_STATE.analysis.draggingNode = null);
+        anaCanvas.addEventListener('contextmenu', e => { if(APP_STATE.analysis.editModeEnabled) e.preventDefault(); });
+        ['show-nodes-v1', 'show-nodes-v2'].forEach(id => document.getElementById(id).addEventListener('change', drawAnalysisCanvas));
+        document.getElementById('btn-clear-nodes').addEventListener('click', () => { APP_STATE.analysis.nodes.v1 = []; APP_STATE.analysis.nodes.v2 = []; drawAnalysisCanvas(); });
+
+        // ==========================================
+        // Export Functions
+        // ==========================================
+        function drawSceneToTargetCanvas(targetCtx, w, h, includeNodes) {
+            targetCtx.fillStyle = '#000'; targetCtx.fillRect(0, 0, w, h);
+            const drawVid = (vid, conf, isOverlay) => {
+                if(vid.readyState >= 2) {
+                    targetCtx.save();
+                    if(isOverlay) targetCtx.globalAlpha = APP_STATE.analysis.opacity/100;
+                    targetCtx.translate(w/2, h/2); targetCtx.scale(conf.scale/100, conf.scale/100);
+                    targetCtx.translate(w*(conf.x/100), h*(conf.y/100)); targetCtx.translate(-w/2, -h/2);
+                    const scale = Math.min(w/vid.videoWidth, h/vid.videoHeight);
+                    const drawW = vid.videoWidth * scale, drawH = vid.videoHeight * scale;
+                    targetCtx.drawImage(vid, (w-drawW)/2, (h-drawH)/2, drawW, drawH);
+                    targetCtx.restore();
+                }
+            };
+            drawVid(video1, APP_STATE.analysis.v1, false); drawVid(video2, APP_STATE.analysis.v2, true);
+            if(includeNodes) targetCtx.drawImage(anaCanvas, 0, 0, w, h);
+        }
+
+        document.getElementById('btn-export-image').addEventListener('click', () => {
+            const c = document.createElement('canvas'); c.width = anaCanvas.width; c.height = anaCanvas.height;
+            drawSceneToTargetCanvas(c.getContext('2d'), c.width, c.height, document.getElementById('export-nodes-toggle').checked);
+            const a = document.createElement('a'); a.download = `Artemis_Frame_${Date.now()}.png`; a.href = c.toDataURL('image/png'); a.click();
+        });
+
+        document.getElementById('btn-export-video').addEventListener('click', async () => {
+            if(!video1.duration) return alert("請先上傳基準影片！ (Please upload base video first!)");
+            
+            const overlay = document.getElementById('recording-overlay');
+            overlay.classList.remove('hidden'); overlay.classList.add('flex');
+            document.getElementById('analysis-container').classList.add('recording-active');
+
+            const c = document.createElement('canvas'); c.width = anaCanvas.width; c.height = anaCanvas.height;
+            const ctx = c.getContext('2d'); const stream = c.captureStream(30);
+            
+            const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm' });
+            const chunks = []; recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, {type: 'video/webm'});
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Artemis_Analysis_${Date.now()}.webm`; a.click();
+                overlay.classList.add('hidden'); overlay.classList.remove('flex');
+                document.getElementById('analysis-container').classList.remove('recording-active');
+                
+                APP_STATE.analysis.isPlaying = false; 
+                document.getElementById('btn-play-pause').innerHTML = '<i data-lucide="play" class="w-4 h-4 ml-0.5 text-[#FF33A1]"></i>';
+                lucide.createIcons();
+            };
+
+            APP_STATE.analysis.isPlaying = true;
+            video1.currentTime = 0; 
+            syncVideos(); 
+            video1.play(); 
+            recorder.start();
+
+            const renderLoop = () => {
+                if(recorder.state !== 'recording') return;
+                drawSceneToTargetCanvas(ctx, c.width, c.height, document.getElementById('export-nodes-toggle').checked);
+                if(video1.ended || video1.currentTime >= video1.duration - 0.05) { 
+                    video1.pause(); if(video2.src) video2.pause(); 
+                    recorder.stop(); return; 
+                }
+                requestAnimationFrame(renderLoop);
+            };
+            requestAnimationFrame(renderLoop);
+        });
+
     </script>
 </body>
 </html>
