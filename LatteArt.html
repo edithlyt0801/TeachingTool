@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LatteRacer - 跟住條線，拉花努力練</title>
+  <title>LatteRacer - 跟住條線，拉花唔使練</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
@@ -572,7 +572,7 @@
   <header>
     <div class="brand-box">
       <h1 class="brand-name">LatteRacer</h1>
-      <p class="brand-slogan">跟住條線，拉花努力練</p>
+      <p class="brand-slogan">跟住條線，拉花唔使練</p>
     </div>
   </header>
 
@@ -820,7 +820,7 @@
         
         // 載入 MediaPipe Hands (手部捏合偵測)
         handTracker = new Hands({locateFile: (file) => {
-          return https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file};
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
         handTracker.setOptions({
           maxNumHands: 1,
@@ -1014,8 +1014,8 @@
         const headSteps = 50;
         for (let i = 0; i <= headSteps; i++) {
           const t = i / headSteps;
-          const x = Math.pow(1-t, 3)p4X + 3*Math.pow(1-t, 2)*t*cp1X + 3(1-t)*Math.pow(t, 2)*cp2X + Math.pow(t, 3)*p5X;
-          const y = Math.pow(1-t, 3)p4Y + 3*Math.pow(1-t, 2)*t*cp1Y + 3(1-t)*Math.pow(t, 2)*cp2Y + Math.pow(t, 3)*p5Y;
+          const x = Math.pow(1 - t, 3) * p4X + 3 * Math.pow(1 - t, 2) * t * cp1X + 3 * (1 - t) * Math.pow(t, 2) * cp2X + Math.pow(t, 3) * p5X;
+          const y = Math.pow(1 - t, 3) * p4Y + 3 * Math.pow(1 - t, 2) * t * cp1Y + 3 * (1 - t) * Math.pow(t, 2) * cp2Y + Math.pow(t, 3) * p5Y;
           points.push({ x, y, jump: i === 0 });
         }
       }
