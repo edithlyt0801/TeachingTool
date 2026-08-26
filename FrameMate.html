@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FrameMate - 直男求生模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-bg: #111111; /* 深黑底色 */
+            --c-black: #000000;
+            --c-yellow: #FFCC00; /* 經典像素黃 */
+            --c-yellow-dark: #B38F00;
+            --c-white: #FFFFFF;
+            --c-gray: #444444;
+            --c-red: #FF3333;
+            --c-green: #33CC33;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--c-bg);
+            color: var(--c-white);
+            font-family: 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow: hidden; 
+            touch-action: pan-x pan-y;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 搞怪字體與動畫 */
+        .font-pixel { font-family: 'Press Start 2P', cursive; text-transform: uppercase; }
+        .font-sans-bold { font-weight: 900; }
+        
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        .animate-wobble { animation: wobble 2s infinite ease-in-out; }
+        
+        @keyframes flash {
+            0%, 100% { color: var(--c-yellow); text-shadow: 2px 2px var(--c-red); }
+            50% { color: var(--c-red); text-shadow: -2px -2px var(--c-yellow); }
+        }
+        .animate-flash { animation: flash 0.8s infinite; }
+
+        /* 復古 8-bit UI 容器 */
+        .pixel-panel {
+            background-color: var(--c-black);
+            border: 4px solid var(--c-yellow);
+            box-shadow: 6px 6px 0px rgba(255, 204, 0, 0.3);
+            padding: 16px;
+        }
+
+        /* 復古按鈕 (黑黃配) */
+        .pixel-btn {
+            display: flex; justify-content: center; align-items: center; text-align: center;
+            background-color: var(--c-yellow); color: var(--c-black);
+            font-family: 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 16px;
+            padding: 16px 20px; border: 4px solid var(--c-white);
+            box-shadow: 4px 4px 0px var(--c-black), inset -4px -4px 0px var(--c-yellow-dark);
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .pixel-btn:active {
+            box-shadow: 0px 0px 0px var(--c-black), inset 4px 4px 0px var(--c-yellow-dark);
+            transform: translate(4px, 4px);
+        }
+        .pixel-btn-secondary { background-color: var(--c-gray); color: var(--c-white); border-color: var(--c-black); box-shadow: 4px 4px 0px var(--c-black), inset -4px -4px 0px #222; }
+        .pixel-btn-green { background-color: var(--c-green); color: var(--c-black); border-color: var(--c-white); }
+        .pixel-btn-red { background-color: var(--c-red); color: var(--c-white); border-color: var(--c-white); }
+
+        /* 視圖管理 */
+        .view-container {
+            display: none; width: 100vw; height: 100dvh; flex-direction: column;
+            position: absolute; top: 0; left: 0;
+            background-color: var(--c-bg);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .view-container.active { display: flex; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 40px; }
+
+        /* 頂部導航列 */
+        .top-bar {
+            background-color: var(--c-black); border-bottom: 4px solid var(--c-yellow);
+            padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10;
+        }
+
+        /* 分類網格 */
+        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .category-card {
+            background-color: var(--c-black); border: 4px solid var(--c-gray);
+            padding: 20px 10px; text-align: center; cursor: pointer; transition: all 0.2s;
+        }
+        .category-card:active { border-color: var(--c-yellow); transform: translate(2px, 2px); }
+        .cat-icon { font-size: 40px; margin-bottom: 8px; filter: drop-shadow(2px 2px 0px rgba(255,204,0,0.5)); }
+
+        /* 模板水平滑動 */
+        .template-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 15px; }
+        .template-slider::-webkit-scrollbar { display: none; }
+        .template-card {
+            scroll-snap-align: center; flex: 0 0 85%; height: 55vh;
+            border: 4px solid var(--c-yellow); background-color: var(--c-black);
+            position: relative; background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
+        .template-info-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.9); border-top: 4px solid var(--c-yellow); padding: 16px;
+        }
+
+        /* ================= 相機介面 (全螢幕 Fullscreen) ================= */
+        #cameraView { background: var(--c-black); overflow: hidden; justify-content: center; align-items: center; }
+        
+        #camera-viewport {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; overflow: hidden; z-index: 1;
+        }
+
+        #webcam {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; /* 全螢幕無黑邊 */
+            z-index: 1;
+        }
+        
+        /* 疊圖 Overlay */
+        #camera-custom-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; display: none; 
+            transform-origin: center; pointer-events: none; z-index: 2;
+            opacity: 0.4;
+        }
+
+        /* 九宮格輔助線 */
+        #camera-grid {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 3;
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+        }
+        #camera-grid.hidden { display: none; }
+        .grid-cell { border-bottom: 1px solid rgba(255,204,0,0.5); border-right: 1px solid rgba(255,204,0,0.5); }
+        .grid-cell:nth-child(3n) { border-right: none; }
+        .grid-cell:nth-child(n+7) { border-bottom: none; }
+        
+        /* 觸控熱區 */
+        #touchArea {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 4; display: none; touch-action: none;
+        }
+        
+        /* UI 浮層 (必須在最上層) */
+        .camera-ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .pointer-auto { pointer-events: auto; }
+
+        /* 危險閃爍警告 */
+        @keyframes blinkWarnError { 0%, 100% { background-color: var(--c-red); color: white; } 50% { background-color: var(--c-yellow); color: black; } }
+        .hud-warning {
+            animation: blinkWarnError 0.4s infinite;
+            border: 4px solid var(--c-black); font-size: 14px; font-weight: bold;
+            padding: 8px 16px; text-align: center; border-radius: 8px; box-shadow: 4px 4px 0px #000;
+        }
+
+        /* 畫布與下載 */
+        .allow-long-press { pointer-events: auto !important; user-select: auto !important; -webkit-user-select: auto !important; -webkit-touch-callout: default !important; }
+
+        /* 畫中畫 (PiP) 全螢幕比例版 */
+        .pip-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto 20px auto; aspect-ratio: 9/16; background: var(--c-black); border: 4px solid var(--c-yellow); box-shadow: 6px 6px 0px rgba(255,204,0,0.2); }
+        .pip-main { width: 100%; height: 100%; object-fit: cover; }
+        .pip-corner {
+            position: absolute; top: 10px; left: 10px; width: 35%; aspect-ratio: 9/16;
+            border: 4px solid var(--c-white); background-color: var(--c-black);
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.8);
+        }
+        .pip-label { position: absolute; top: -14px; left: -4px; background: var(--c-yellow); color: var(--c-black); font-size: 12px; font-weight: bold; padding: 2px 6px; border: 2px solid var(--c-black); }
+
+        /* 滑桿 (黑黃風格) */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 30px; width: 30px; border-radius: 0;
+            background: var(--c-yellow); cursor: pointer; margin-top: -10px; border: 4px solid var(--c-white); box-shadow: 2px 2px 0px #000;
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cursor: pointer; background: var(--c-gray); border: 2px solid #000; }
+    </style>
+</head>
+<body>
+
+    <!-- ================= 1. 遊戲標題畫面 ================= -->
+    <div id="introView" class="view-container active justify-center items-center p-4 relative">
+        <div class="text-center w-full max-w-sm pb-24"> <!-- pb-24 預留底部空間給按鈕 -->
+            <h1 class="font-pixel text-4xl mb-4 animate-wobble" style="color:var(--c-yellow); text-shadow: 4px 4px var(--c-black), -2px -2px var(--c-gray);">FRAME<br>MATE</h1>
+            <p class="font-sans-bold text-lg text-yellow-400 mb-8 bg-black p-2 border-2 border-yellow-400 inline-block transform -rotate-2">直男救星 x 娘娘滿意神器</p>
+            
+            <div class="pixel-panel text-left mb-10">
+                <p class="font-pixel text-[12px] text-red-500 mb-3 animate-flash">【最高級生存指令】</p>
+                <p class="text-sm font-sans-bold leading-loose text-gray-300">
+                    1. 挑選娘娘愛的姿勢<br>
+                    2. 對準半透明的 <span class="bg-yellow-400 text-black px-1">靈魂輪廓</span><br>
+                    3. 按下快門，祈禱平安<br>
+                    <span class="text-gray-500 text-xs mt-2 block">※ 若被嫌棄，本程式概不負責。</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- 固定的開始按鈕 (Fixed at bottom) -->
+        <div class="absolute bottom-10 left-0 w-full px-6 flex justify-center pointer-events-none z-50">
+            <button onclick="switchView('categoryView')" class="pixel-btn w-full max-w-sm text-xl py-4 animate-bounce pointer-events-auto">🔥 點我開始保命 🔥</button>
+        </div>
+    </div>
+
+    <!-- ================= 2. 選擇場景 ================= -->
+    <div id="categoryView" class="view-container">
+        <div class="top-bar">
+            <span class="font-sans-bold text-lg text-yellow-400">選擇戰場</span>
+            <button onclick="switchView('galleryView')" class="pixel-btn !p-2 !text-xs !bg-black !text-yellow-400">🏆 免死金牌庫</button>
+        </div>
+        
+        <div class="scroll-area">
+            <div class="category-grid" id="categoryContainer"></div>
+
+            <div class="mt-8 border-t-4 border-dashed border-gray-600 pt-6">
+                <p class="font-sans-bold text-sm text-yellow-400 mb-4 text-center">💡 網上看到讚的？直接抄作業！</p>
+                <label for="customUpload" class="pixel-btn pixel-btn-secondary w-full text-center block text-lg py-4">
+                    ➕ 偷抄作業 (上載照片)
+                </label>
+                <input type="file" id="customUpload" accept="image/*" class="hidden" onchange="handleCustomUpload(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 3. 選擇模板 ================= -->
+    <div id="templateListView" class="view-container">
+        <div class="top-bar">
+            <button onclick="switchView('categoryView')" class="pixel-btn !p-2 !text-xs !bg-gray-700 !text-white !border-gray-500">🏃 逃跑</button>
+            <span class="font-sans-bold text-lg text-white" id="currentCategoryTitle">選擇姿勢</span>
+            <div class="w-16"></div>
+        </div>
+        
+        <div class="scroll-area flex flex-col justify-center">
+            <p class="font-sans-bold text-sm text-center text-yellow-400 mb-4 bg-black p-2 border-2 border-yellow-400">左右滑動，選一個不會死的</p>
+            <div class="template-slider" id="templateContainer"></div>
+        </div>
+    </div>
+
+    <!-- ================= 4. 相機畫面 (全螢幕) ================= -->
+    <div id="cameraView" class="view-container">
+        
+        <!-- 全螢幕底層 (Video + Overlay + Touch) -->
+        <div id="camera-viewport">
+            <video id="webcam" autoplay playsinline></video>
+            
+            <div id="camera-grid">
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            </div>
+
+            <!-- 疊圖 (支援 Base64 與 URL) -->
+            <img id="camera-custom-overlay" src="" alt="overlay">
+            
+            <div id="touchArea"></div>
+        </div>
+        
+        <!-- UI 浮層 (覆蓋在相機之上) -->
+        <div class="camera-ui-layer pt-12 pb-8 px-4">
+            
+            <!-- 頂部區：按鈕與警告 -->
+            <div class="flex justify-between items-start pointer-auto">
+                <button onclick="toggleGrid()" class="pixel-btn !p-2 !text-xs !bg-black !text-yellow-400 !border-yellow-400"># 網格</button>
+                <div id="warningBox" class="hud-warning hidden">⚠ 警告文字</div>
+            </div>
+
+            <!-- 提示文字 -->
+            <div id="posePrompt" class="pixel-panel !bg-black/80 font-sans-bold text-base text-center w-4/5 mx-auto mt-4 shadow-[4px_4px_0_rgba(255,204,0,0.5)]">
+                提示載入中...
+            </div>
+
+            <!-- 底部區：滑桿與快門 -->
+            <div class="mt-auto pointer-auto">
+                <!-- 透明度拉桿 -->
+                <div id="opacityControl" class="hidden w-full flex items-center gap-3 mb-8 bg-black/80 p-2 rounded-lg border-2 border-yellow-400">
+                    <span class="text-xs font-sans-bold text-white">隱形</span>
+                    <input type="range" id="opacitySlider" min="0" max="0.5" step="0.01" value="0.4" class="flex-1">
+                    <span class="text-xs font-sans-bold text-white">50%</span>
+                </div>
+
+                <div class="flex justify-between items-center w-full">
+                    <button onclick="stopCamera(); switchView('templateListView')" class="pixel-btn pixel-btn-secondary !p-3">返回</button>
+                    
+                    <!-- 巨型快門 -->
+                    <button onclick="takePhoto()" class="relative w-24 h-24 rounded-full bg-yellow-400 border-8 border-white shadow-[0_8px_0_#B38F00] active:shadow-[0_0px_0_#000] active:translate-y-2 flex justify-center items-center transition-all">
+                        <span class="font-sans-bold text-black text-xl leading-tight">📸<br>拍下去</span>
+                    </button>
+                    
+                    <div class="w-[60px]"></div>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="photoCanvas" class="hidden"></canvas>
+    </div>
+
+    <!-- ================= 5. 結算畫面 ================= -->
+    <div id="reviewView" class="view-container">
+        <div class="top-bar">
+            <span class="font-sans-bold text-lg text-yellow-400">生死宣判時刻</span>
+        </div>
+        
+        <div class="scroll-area flex flex-col items-center">
+            
+            <!-- 全螢幕比例畫中畫對比 -->
+            <div class="pip-container">
+                <img id="reviewResult" class="pip-main allow-long-press" src="" alt="Result">
+                <div class="pip-corner" id="reviewTemplate">
+                    <div class="pip-label">原圖/目標</div>
+                </div>
+            </div>
+            
+            <button onclick="downloadPhoto()" class="pixel-btn pixel-btn-secondary w-full max-w-sm mb-8 text-lg py-4 border-white">
+                💾 趁還沒被罵先存起來
+            </button>
+            
+            <div class="pixel-panel text-center w-full max-w-sm">
+                <p class="font-sans-bold text-base mb-4 bg-yellow-400 text-black p-2 border-2 border-white">請將手機雙手奉上給娘娘評分</p>
+                <div class="flex justify-center gap-4">
+                    <button onclick="ratePhoto(true)" class="pixel-btn pixel-btn-green w-full text-lg py-3">👍<br>賜坐</button>
+                    <button onclick="ratePhoto(false)" class="pixel-btn pixel-btn-red w-full text-lg py-3">👎<br>拖出去斬</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 6. 收藏庫 ================= -->
+    <div id="galleryView" class="view-container">
+        <div class="top-bar">
+            <span class="font-sans-bold text-lg text-yellow-400">免死金牌庫</span>
+            <button onclick="switchView('categoryView')" class="pixel-btn !p-2 !text-xs !bg-gray-700 !text-white !border-gray-500">◀ 返回</button>
+        </div>
+        
+        <div class="scroll-area">
+            <p class="font-sans-bold text-sm text-center text-black mb-6 bg-yellow-400 p-2 border-2 border-white">被賞賜過 👍 的神級構圖都在這！</p>
+            <div id="galleryContainer" class="grid grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 產生安全編碼的 SVG (避免無法載入) ---
+        const createSafeSvg = (title, emoji, bg) => {
+            const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="100%" height="100%" fill="${bg}"/><rect x="5%" y="5%" width="90%" height="90%" fill="none" stroke="#FFCC00" stroke-width="6" stroke-dasharray="15,15"/><text y="40%" x="50%" fill="#FFF" font-family="sans-serif" font-size="60" text-anchor="middle">${emoji}</text><text y="60%" x="50%" fill="#FFF" font-family="sans-serif" font-size="30" font-weight="bold" text-anchor="middle">${title}</text></svg>`;
+            return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+        };
+
+        const specificLogoUrl = 'https://raw.githubusercontent.com/edithlyt0801/TeachingTool/refs/heads/main/logo.png';
+
+        const templateDatabase = {
+            categories: [
+                { id: 'cat_ktv', name: 'KTV 續命用', icon: '🎤', desc: '慵懶、廣角合影' },
+                { id: 'cat_bday', name: '生日免死牌', icon: '🎂', desc: '乖巧捧蛋糕、搞怪指' },
+                { id: 'cat_couple', name: '情侶放閃區', icon: '👫', desc: '自然互動感不尷尬' },
+                { id: 'cat_custom', name: '專屬外掛', icon: '🔗', desc: '載入教學指定Logo' }
+            ],
+            templates: {
+                'cat_ktv': [
+                    { id: 'ktv_1', name: '慵懶拿麥', desc: '假裝沒在看鏡頭最帥', prompt: '稍微後仰，手放頭上，展現慵懶感！', customImage: createSafeSvg('慵懶拿麥', '🛋️🎤', '#222222') },
+                    { id: 'ktv_2', name: '前景V手勢', desc: '網美最愛這招', prompt: '手往前伸擺V，焦點對準前景！', customImage: createSafeSvg('前景V手勢', '✌️🎤', '#333333') }
+                ],
+                'cat_bday': [
+                    { id: 'bday_1', name: '乖巧捧蛋糕', desc: '長輩看了都說讚', prompt: '雙手捧蛋糕放在大腿前，裝無辜看鏡頭！', customImage: createSafeSvg('捧蛋糕乖巧版', '🎂👐', '#2a2a2a') },
+                    { id: 'bday_2', name: '搞怪指蛋糕', desc: '俏皮感拉滿', prompt: '手撐沙發，另一手指蛋糕，單眼微閉！', customImage: createSafeSvg('指蛋糕搞怪版', '🎂👈😉', '#1a1a1a') }
+                ],
+                'cat_couple': [
+                    { id: 'couple_ktv', name: 'KTV廣角合影', desc: '男方手伸長就對了', prompt: '男生拿相機稍微高舉，女生在後靠攏比V！', customImage: createSafeSvg('廣角合影', '👫📸', '#222222') }
+                ],
+                'cat_custom': [
+                    { id: 'link_logo', name: '指定Logo掛', desc: '召喚神祕力量', prompt: '對齊畫面中的 Logo (單指移動/雙指縮放)', customImage: specificLogoUrl }
+                ]
+            }
+        };
+
+        let activeTemplate = null;
+        let currentPhotoDataUrl = null;
+        let stream = null;
+        let animationFrameId = null;
+        let likedTemplates = JSON.parse(localStorage.getItem('framemate_likes')) || [];
+
+        let isGridVisible = true;
+        let lastAcceleration = { x: 0, y: 0, z: 0 };
+        let isShaking = false, isDark = false;
+
+        // 自訂圖片形變狀態
+        let customImgX = 0, customImgY = 0, customImgScale = 1;
+        let initialTouchX = 0, initialTouchY = 0, initialTouchDist = 0;
+        let initialImgScale = 1;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const touchArea = document.getElementById('touchArea');
+            const customOverlay = document.getElementById('camera-custom-overlay');
+            const opacitySlider = document.getElementById('opacitySlider');
+
+            function getTouchDistance(touches) {
+                return Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+            }
+
+            touchArea.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    initialTouchX = e.touches[0].pageX - customImgX;
+                    initialTouchY = e.touches[0].pageY - customImgY;
+                } else if (e.touches.length === 2) {
+                    initialTouchDist = getTouchDistance(e.touches);
+                    initialImgScale = customImgScale;
+                }
+            }, { passive: false });
+
+            touchArea.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    customImgX = e.touches[0].pageX - initialTouchX;
+                    customImgY = e.touches[0].pageY - initialTouchY;
+                } else if (e.touches.length === 2) {
+                    const currentDist = getTouchDistance(e.touches);
+                    customImgScale = initialImgScale * (currentDist / initialTouchDist);
+                }
+                customOverlay.style.transform = `translate(${customImgX}px, ${customImgY}px) scale(${customImgScale})`;
+            }, { passive: false });
+
+            opacitySlider.addEventListener('input', (e) => {
+                customOverlay.style.opacity = e.target.value;
+            });
+        });
+
+        function resetCustomTransform() {
+            customImgX = 0; customImgY = 0; customImgScale = 1;
+            const overlay = document.getElementById('camera-custom-overlay');
+            overlay.style.transform = `translate(0px, 0px) scale(1)`;
+            overlay.style.opacity = "0.4";
+            document.getElementById('opacitySlider').value = 0.4;
+        }
+
+        function toggleGrid() {
+            isGridVisible = !isGridVisible;
+            document.getElementById('camera-grid').classList.toggle('hidden', !isGridVisible);
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            if (viewId === 'categoryView') renderCategories();
+            if (viewId === 'galleryView') renderGallery();
+            if (viewId !== 'cameraView') stopCamera();
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoryContainer');
+            if (container.children.length > 0) return;
+            templateDatabase.categories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.onclick = () => openCategory(cat.id, cat.name);
+                card.innerHTML = `<div class="cat-icon">${cat.icon}</div><h3 class="font-sans-bold text-yellow-400 mb-1 text-base">${cat.name}</h3><p class="font-sans-bold text-[10px] text-gray-400">${cat.desc}</p>`;
+                container.appendChild(card);
+            });
+        }
+
+        function openCategory(categoryId, categoryName) {
+            document.getElementById('currentCategoryTitle').innerText = categoryName;
+            const container = document.getElementById('templateContainer');
+            container.innerHTML = '';
+            
+            const temps = templateDatabase.templates[categoryId] || [];
+            temps.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'template-card';
+                card.style.backgroundImage = `url('${t.customImage}')`;
+                card.innerHTML = `<div class="template-info-bar"><h3 class="font-sans-bold text-yellow-400 text-lg mb-1">${t.name}</h3><p class="text-sm text-gray-300 font-sans-bold mb-4">${t.desc}</p><button onclick="startCamera('${categoryId}', '${t.id}')" class="pixel-btn w-full">就決定是你了！</button></div>`;
+                container.appendChild(card);
+            });
+            switchView('templateListView');
+        }
+
+        function handleCustomUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const customImgData = e.target.result;
+                activeTemplate = {
+                    id: 'custom_' + Date.now(),
+                    name: '抄作業模式',
+                    prompt: '動動你的雙指，把透明圖對齊被攝者！',
+                    customImage: customImgData
+                };
+                launchCamera();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function startCamera(categoryId, templateId) {
+            activeTemplate = templateDatabase.templates[categoryId].find(t => t.id === templateId);
+            launchCamera();
+        }
+
+        async function launchCamera() {
+            switchView('cameraView');
+            setupOverlay();
+
+            const video = document.getElementById('webcam');
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = () => { 
+                    video.play().catch(e => console.error(e)); 
+                    startSensors(); 
+                };
+            } catch (err) {
+                alert("⚠ 攝影機罷工啦！請檢查瀏覽器權限。");
+                switchView('categoryView');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+            stopSensors();
+        }
+
+        function setupOverlay() {
+            const promptEl = document.getElementById('posePrompt');
+            const customOverlay = document.getElementById('camera-custom-overlay');
+            const touchArea = document.getElementById('touchArea');
+            const opacityControl = document.getElementById('opacityControl');
+
+            promptEl.innerText = activeTemplate.prompt;
+
+            if (activeTemplate.customImage) {
+                customOverlay.src = activeTemplate.customImage;
+                customOverlay.style.display = 'block';
+                touchArea.style.display = 'block';
+                opacityControl.classList.remove('hidden'); 
+                opacityControl.classList.add('flex');
+                resetCustomTransform();
+            }
+        }
+
+        // --- 防翻車感測器 ---
+        function startSensors() {
+            window.addEventListener('devicemotion', handleMotion);
+            analyzeLight();
+        }
+
+        function stopSensors() {
+            window.removeEventListener('devicemotion', handleMotion);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        }
+
+        function handleMotion(event) {
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
+            const deltaX = Math.abs(acc.x - lastAcceleration.x);
+            const deltaY = Math.abs(acc.y - lastAcceleration.y);
+            const deltaZ = Math.abs(acc.z - lastAcceleration.z);
+
+            isShaking = (deltaX > 3.5 || deltaY > 3.5 || deltaZ > 3.5);
+            lastAcceleration = { x: acc.x, y: acc.y, z: acc.z };
+            updateWarningUI();
+        }
+
+        function analyzeLight() {
+            const video = document.getElementById('webcam');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            const checkBrightness = () => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = 32; canvas.height = 32;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    try {
+                        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                        let colorSum = 0;
+                        for(let x = 0; x < data.length; x+=4) { colorSum += (data[x] + data[x+1] + data[x+2]) / 3; }
+                        isDark = (colorSum / (canvas.width * canvas.height)) < 40; 
+                        updateWarningUI();
+                    } catch (e) {}
+                }
+                animationFrameId = requestAnimationFrame(checkBrightness);
+            };
+            checkBrightness();
+        }
+
+        let warningTimeout = null;
+        function updateWarningUI() {
+            const warningBox = document.getElementById('warningBox');
+            if (isShaking || isDark) {
+                warningBox.classList.remove('hidden');
+                let msgs = [];
+                if (isDark) msgs.push("太暗啦想拍鬼片？👻");
+                if (isShaking) msgs.push("手抖成這樣？🫨");
+                warningBox.innerText = `⚠ 警告: ${msgs.join(" + ")}`;
+            } else {
+                warningBox.classList.add('hidden');
+            }
+        }
+
+        // --- 全螢幕截圖完美算法 ---
+        function takePhoto() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('photoCanvas');
+            
+            const sw = window.innerWidth;
+            const sh = window.innerHeight;
+            
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            
+            canvas.width = sw;
+            canvas.height = sh;
+            const ctx = canvas.getContext('2d');
+            
+            const sRatio = sw / sh;
+            const vRatio = vw / vh;
+            
+            let sx, sy, sWidth, sHeight;
+            
+            if (sRatio > vRatio) {
+                sWidth = vw;
+                sHeight = vw / sRatio;
+                sx = 0;
+                sy = (vh - sHeight) / 2;
+            } else {
+                sHeight = vh;
+                sWidth = vh * sRatio;
+                sy = 0;
+                sx = (vw - sWidth) / 2;
+            }
+            
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sw, sh);
+            
+            currentPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:white;z-index:99;opacity:1;transition:opacity 0.2s;';
+            document.getElementById('camera-viewport').appendChild(flash);
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => { flash.remove(); stopCamera(); showReview(currentPhotoDataUrl); }, 200);
+            }, 50);
+        }
+
+        function showReview(photoUrl) {
+            switchView('reviewView');
+            const reviewTemplate = document.getElementById('reviewTemplate');
+            const reviewResult = document.getElementById('reviewResult');
+            reviewTemplate.style.backgroundImage = `url('${activeTemplate.customImage}')`;
+            reviewResult.src = photoUrl;
+        }
+
+        function downloadPhoto() {
+            if (!currentPhotoDataUrl) return;
+            try {
+                const link = document.createElement('a');
+                link.href = currentPhotoDataUrl;
+                link.download = `FrameMate_求生成功_${new Date().toISOString().replace(/[-:.]/g, "").slice(0, 14)}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                const btn = document.querySelector('.pixel-btn-secondary');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ 下載指令已發送！';
+                
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if(isIOS) {
+                    setTimeout(() => { alert("💡 iOS 用戶請直接「長按」上方照片儲存！"); }, 300);
+                }
+                
+                setTimeout(() => { btn.innerHTML = originalText; }, 2500);
+            } catch (err) {
+                alert("下載失敗，請直接長按照片進行儲存！");
+            }
+        }
+
+        function ratePhoto(isThumbUp) {
+            if (isThumbUp) {
+                if (!likedTemplates.find(t => t.id === activeTemplate.id)) {
+                    likedTemplates.push({ id: activeTemplate.id, name: activeTemplate.name, customImage: activeTemplate.customImage });
+                    localStorage.setItem('framemate_likes', JSON.stringify(likedTemplates));
+                }
+                alert("🎉 恭喜老爺！賀喜老爺！娘娘很滿意，今晚不用睡沙發了！(已存入免死金牌庫)");
+            } else {
+                alert("🪦 R.I.P. 兄弟保重... 換個姿勢再挑戰一次吧！");
+            }
+            switchView('categoryView');
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('galleryContainer');
+            container.innerHTML = '';
+            if (likedTemplates.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center text-white font-sans-bold py-10 bg-black border-2 border-yellow-400">你的免死金牌庫空空如也，<br>這代表你還沒拍出好照片...</div>';
+                return;
+            }
+            likedTemplates.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'pixel-panel !p-2 relative bg-black';
+                item.innerHTML = `<div class="w-full aspect-[9/16] bg-contain bg-no-repeat bg-center mb-2 border-2 border-gray-600" style="background-image: url('${t.customImage}')"></div><p class="font-sans-bold text-xs text-center text-yellow-400 truncate">${t.name}</p><div class="absolute -top-4 -right-4 text-2xl drop-shadow-[2px_2px_0_#000]">👍</div>`;
+                container.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
