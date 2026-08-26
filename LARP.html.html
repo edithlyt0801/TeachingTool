@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開殺 - AI劇本殺生成器</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-bg: #141414;
+            --blood-red: #8b0000;
+            --blood-red-glow: rgba(139, 0, 0, 0.6);
+            --dark-gold: #c5a059;
+            --dark-gold-dim: #8b7343;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --font-serif: "PMingLiU", "MingLiU", "Noto Serif TC", serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-serif);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 1px solid var(--blood-red);
+            box-shadow: 0 4px 15px var(--blood-red-glow);
+            background: linear-gradient(to bottom, #111, #000);
+        }
+
+        h1 {
+            color: var(--blood-red);
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 4px #000, 0 0 10px var(--blood-red);
+            margin-bottom: 10px;
+        }
+
+        .slogan {
+            color: var(--dark-gold);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            font-style: italic;
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Left Panel - Inputs */
+        .left-panel {
+            flex: 1;
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            border-left: 4px solid var(--blood-red);
+            padding: 30px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            height: fit-content;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--dark-gold);
+            font-size: 1.1rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        label::before {
+            content: "🩸";
+            font-size: 0.9rem;
+        }
+
+        select {
+            background: #000;
+            color: var(--text-main);
+            border: 1px solid var(--dark-gold-dim);
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 4px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--dark-gold);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.3);
+        }
+
+        /* Theme Tags */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            background: #222;
+            border: 1px solid #444;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .tag:hover {
+            border-color: var(--blood-red);
+            color: #fff;
+        }
+
+        .tag.selected {
+            background: var(--blood-red);
+            border-color: var(--blood-red);
+            color: #fff;
+            box-shadow: 0 0 10px var(--blood-red-glow);
+        }
+
+        .tag-hint {
+            font-size: 0.85rem;
+            color: var(--blood-red);
+            margin-top: -5px;
+            display: none;
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            background: linear-gradient(135deg, var(--blood-red) 0%, #4a0000 100%);
+            color: #fff;
+            border: 1px solid #ff4d4d;
+            padding: 15px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            letter-spacing: 3px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            margin-top: 10px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .generate-btn:hover {
+            box-shadow: 0 0 20px var(--blood-red-glow);
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            background: #333;
+            border-color: #555;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Right Panel - Output (Confidential File) */
+        .right-panel {
+            flex: 2;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        .right-panel::before {
+            content: "TOP SECRET";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 8rem;
+            color: rgba(139, 0, 0, 0.05);
+            font-weight: bold;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #000;
+            border-bottom: 2px solid var(--blood-red);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: #111;
+            color: var(--text-muted);
+            cursor: pointer;
+            border: none;
+            border-right: 1px solid #333;
+            font-family: inherit;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .tab:last-child {
+            border-right: none;
+        }
+
+        .tab.active {
+            background: var(--blood-red);
+            color: #fff;
+            font-weight: bold;
+            box-shadow: inset 0 3px 0 var(--dark-gold);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .placeholder-text {
+            color: #444;
+            text-align: center;
+            margin-top: 100px;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            font-style: italic;
+        }
+
+        .typewriter-cursor::after {
+            content: '█';
+            animation: blink 1s infinite;
+            color: var(--blood-red);
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Content Formatting inside the file */
+        .script-title {
+            color: var(--dark-gold);
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed var(--dark-gold-dim);
+            padding-bottom: 10px;
+        }
+
+        .section-title {
+            color: var(--blood-red);
+            font-size: 1.4rem;
+            margin: 20px 0 10px 0;
+            border-left: 3px solid var(--dark-gold);
+            padding-left: 10px;
+        }
+
+        .highlight {
+            color: var(--dark-gold);
+            font-weight: bold;
+        }
+
+        /* Action Buttons */
+        .actions {
+            display: flex;
+            padding: 15px;
+            background: #0d0d0d;
+            border-top: 1px solid #333;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid var(--dark-gold-dim);
+            color: var(--dark-gold);
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+            transition: 0.3s;
+        }
+
+        .action-btn:hover {
+            background: var(--dark-gold-dim);
+            color: #000;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            .left-panel, .right-panel {
+                width: 100%;
+            }
+            .right-panel {
+                min-height: 600px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>開殺</h1>
+        <div class="slogan">選擇主題按一鍵，專屬劇本免費現！</div>
+    </header>
+
+    <div class="container">
+        <!-- 左側：條件輸入 -->
+        <div class="left-panel">
+            <div class="input-group">
+                <label for="players">玩家人數</label>
+                <select id="players">
+                    <option value="4">4 人 (精緻微型)</option>
+                    <option value="5">5 人 (經典配置)</option>
+                    <option value="6" selected>6 人 (標準局)</option>
+                    <option value="7">7 人 (燒腦局)</option>
+                    <option value="8">8 人 (大型陣營)</option>
+                    <option value="9">9 人 (史詩群像)</option>
+                    <option value="10">10 人 (混沌交鋒)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="duration">預計時長</label>
+                <select id="duration">
+                    <option value="2">2 小時 (快節奏新手)</option>
+                    <option value="3">3 小時 (中度推理)</option>
+                    <option value="4" selected>4 小時 (深度沉浸)</option>
+                    <option value="5">5 小時 (硬核還原)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>劇本主題 (最多選擇 3 項)</label>
+                <div class="tags-container" id="theme-tags">
+                    <div class="tag">本格推理</div>
+                    <div class="tag">變格懸疑</div>
+                    <div class="tag">中式恐怖</div>
+                    <div class="tag">賽博龐克</div>
+                    <div class="tag">情感沉浸</div>
+                    <div class="tag">歡樂撕逼</div>
+                    <div class="tag">古風武俠</div>
+                    <div class="tag">現代都市</div>
+                    <div class="tag">歐式宮廷</div>
+                    <div class="tag">克蘇魯</div>
+                    <div class="tag">陣營機制</div>
+                </div>
+                <div class="tag-hint" id="tag-hint">最多只能選擇 3 個主題！</div>
+            </div>
+
+            <button class="generate-btn" id="generate-btn">生成專屬機密卷宗</button>
+        </div>
+
+        <!-- 右側：機密檔案輸出 -->
+        <div class="right-panel">
+            <div class="tabs">
+                <button class="tab active" data-target="role-card">角色卡</button>
+                <button class="tab" data-target="clue-card">線索卡</button>
+                <button class="tab" data-target="dm-manual">主持人手冊</button>
+            </div>
+            
+            <div class="content-area" id="content-area">
+                <div class="placeholder-text">等待匯入參數...<br>真相沉睡於黑暗之中。</div>
+            </div>
+
+            <div class="actions">
+                <button class="action-btn" id="share-btn" style="display:none;">🔗 分享卷宗</button>
+                <button class="action-btn" id="download-btn" style="display:none;">📥 下載列印檔 (PDF)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 狀態管理
+        const state = {
+            selectedTags: [],
+            isGenerating: false,
+            generatedData: {
+                role: "",
+                clue: "",
+                dm: ""
+            },
+            currentTab: 'role-card'
+        };
+
+        // 綁定 DOM
+        const tags = document.querySelectorAll('.tag');
+        const tagHint = document.getElementById('tag-hint');
+        const generateBtn = document.getElementById('generate-btn');
+        const contentArea = document.getElementById('content-area');
+        const tabs = document.querySelectorAll('.tab');
+        const actionBtns = document.querySelectorAll('.action-btn');
+
+        // 標籤選擇邏輯
+        tags.forEach(tag => {
+            tag.addEventListener('click', () => {
+                if (state.isGenerating) return;
+                
+                const text = tag.innerText;
+                if (state.selectedTags.includes(text)) {
+                    // 取消選擇
+                    state.selectedTags = state.selectedTags.filter(t => t !== text);
+                    tag.classList.remove('selected');
+                    tagHint.style.display = 'none';
+                } else {
+                    // 新增選擇
+                    if (state.selectedTags.length >= 3) {
+                        tagHint.style.display = 'block';
+                        setTimeout(() => { tagHint.style.display = 'none'; }, 2000);
+                        return;
+                    }
+                    state.selectedTags.push(text);
+                    tag.classList.add('selected');
+                }
+            });
+        });
+
+        // 頁籤切換邏輯
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                if(state.isGenerating) return; // 生成中不允許切換
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                state.currentTab = tab.getAttribute('data-target');
+                
+                if(state.generatedData.role !== "") {
+                    // 若已生成完畢，直接顯示該分頁完整內容
+                    displayFullContent(state.currentTab);
+                }
+            });
+        });
+
+        function displayFullContent(tabKey) {
+            let htmlContent = "";
+            if(tabKey === 'role-card') htmlContent = state.generatedData.role;
+            if(tabKey === 'clue-card') htmlContent = state.generatedData.clue;
+            if(tabKey === 'dm-manual') htmlContent = state.generatedData.dm;
+            
+            contentArea.innerHTML = htmlContent;
+        }
+
+        // 打字機特效函數
+        async function typeWriterEffect(element, htmlString, speed = 20) {
+            element.innerHTML = '';
+            // 建立一個隱藏的 div 來解析 HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlString;
+            
+            element.classList.add('typewriter-cursor');
+            
+            // 遞迴處理節點
+            async function processNode(node, targetParent) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    for (let i = 0; i < text.length; i++) {
+                        targetParent.appendChild(document.createTextNode(text[i]));
+                        // 捲動到底部
+                        contentArea.scrollTop = contentArea.scrollHeight;
+                        await new Promise(r => setTimeout(r, speed));
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const newEl = document.createElement(node.tagName);
+                    // 複製屬性
+                    Array.from(node.attributes).forEach(attr => {
+                        newEl.setAttribute(attr.name, attr.value);
+                    });
+                    targetParent.appendChild(newEl);
+                    
+                    for (let child of node.childNodes) {
+                        await processNode(child, newEl);
+                    }
+                }
+            }
+
+            for (let child of tempDiv.childNodes) {
+                await processNode(child, element);
+            }
+            
+            element.classList.remove('typewriter-cursor');
+        }
+
+        // 模擬 AI 生成按鈕點擊
+        generateBtn.addEventListener('click', async () => {
+            if (state.selectedTags.length === 0) {
+                alert("請至少選擇一個劇本主題，讓鮮血有其歸屬...");
+                return;
+            }
+
+            state.isGenerating = true;
+            generateBtn.disabled = true;
+            generateBtn.innerText = "正在推演殺機與謊言...";
+            contentArea.innerHTML = "<div class='placeholder-text typewriter-cursor'>正在連線 AI 核心...<br>構造密室...<br>分配致命動機...</div>";
+            
+            actionBtns.forEach(btn => btn.style.display = 'none');
+
+            const players = document.getElementById('players').value;
+            const themes = state.selectedTags.join('、');
+            
+            // =========================================================
+            // 💡 這裡未來將替換為真實的 AI API 呼叫 (如 OpenAI / Claude API)
+            // 嚴格遵守 prompt 要求：每次生成全新、無邊緣角色、邏輯自洽
+            // =========================================================
+            
+            // 這裡為了前端展示，準備一組高品質的預設範例模板（模擬 AI 產出格式）
+            const scriptName = `《${themes.split('、')[0]}之影》`;
+            
+            state.generatedData.role = `
+                <div class="script-title">${scriptName} - 角色卡檔案</div>
+                <div class="section-title">【玩家1】林醫生 (外科權威)</div>
+                <p><strong>【公開身份】</strong>：著名醫院的首席外科醫生，性格冷漠，手持銀色解剖刀。</p>
+                <p><strong>【深藏的秘密】</strong>：你曾在三年前的手術中，因為酒醉而引發嚴重的醫療事故，而死者正是今天死者的親妹妹。這件事被死者抓住了把柄，他每個月向你勒索鉅款。</p>
+                <p><strong>【時間線】</strong>：<br>
+                19:30 你來到別墅，死者正在客廳喝酒。<br>
+                20:15 你在二樓書房與死者發生激烈爭吵，你拿起了桌上的煙灰缸。<br>
+                20:30 你離開書房，當時他<span class="highlight">還活著</span>，但頭部流血。<br>
+                21:00 聽到一樓傳來尖叫聲。</p>
+                <p><strong>【主線任務】</strong>：隱藏你被勒索的動機，找出真兇。如果可能，將嫌疑推給同樣在 20:00 後去過書房的人。</p>
+                
+                <div class="section-title">【玩家2】趙繼承人 (紈絝子弟)</div>
+                <p><strong>【公開身份】</strong>：死者的侄子，整日遊手好閒，是家族遺產的第一順位繼承人。</p>
+                <p><strong>【深藏的秘密】</strong>：你早就破產了，甚至欠下了高利貸。你發現叔叔（死者）打算明天修改遺囑，將所有財產捐給慈善機構。你必須阻止他，哪怕是用最極端的方式。</p>
+                <p><strong>【時間線】</strong>：<br>
+                20:20 你在門外聽見林醫生和叔叔在爭吵。<br>
+                20:35 你進入書房，發現叔叔捂著頭。你在他的威士忌裡加入了致命的<span class="highlight">無色毒藥（苦杏仁味）</span>。<br>
+                21:00 你假裝在一樓客廳，和女僕一起「發現」了屍體。</p>
+                <p><strong>【主線任務】</strong>：掩蓋你下毒的事實。引導大家關注死者頭部的鈍器傷，將罪名嫁禍給林醫生。</p>
+                <p><em>(系統提示：共生成 ${players} 份視角各自獨立、訊息自洽的角色劇本...)</em></p>
+            `;
+
+            state.generatedData.clue = `
+                <div class="script-title">${scriptName} - 線索卡檔案</div>
+                <div class="section-title">【第一輪搜證：公共區域與屍體】</div>
+                <p><strong>【線索 1 - 屍體特徵】</strong>：死者倒在書房地毯上，後腦勺有嚴重的鈍器擊打傷口，血液已經凝固。但死者面部呈現不自然的櫻桃紅色，嘴角有微量嘔吐物。</p>
+                <p><strong>【線索 2 - 書房桌面】</strong>：桌上有一個帶血的沉重水晶煙灰缸。旁邊有一杯喝剩一半的威士忌，杯口邊緣散發著極其微弱的苦杏仁味。</p>
+                <p><strong>【線索 3 - 垃圾桶】</strong>：別墅外花園的垃圾桶裡，找到了一雙帶有泥土的醫用橡膠手套。</p>
+                
+                <div class="section-title">【第二輪搜證：私人房間】</div>
+                <p><strong>【線索 4 - 林醫生的公事包】</strong>：包底夾層有一張三年前的匯款單據，收款人是死者的帳戶，備註寫著「封口費」。</p>
+                <p><strong>【線索 5 - 趙繼承人的手機】</strong>：一條未讀短信：「今晚 12 點前不還錢，就等著被沉入海底吧。」發送時間是今晚 18:00。</p>
+                <p><em>(系統提示：AI 已動態編排 ${players * 3} 條符合邏輯鏈的線索...)</em></p>
+            `;
+
+            state.generatedData.dm = `
+                <div class="script-title">${scriptName} - 主持人(DM)手冊</div>
+                <div class="section-title">【核心真相揭秘】</div>
+                <p>這是一個<span class="highlight">雙重謀殺</span>的詭計。死者的真正死因並非林醫生造成的鈍器傷，而是趙繼承人下的氰化物毒藥。</p>
+                <p><strong>作案手法閉環</strong>：林醫生於 20:15 衝動擊打死者後腦勺，以為自己殺了人而逃離。死者並未死亡。20:35，趙繼承人進入書房，面對虛弱的死者，將毒藥投入威士忌中，死者飲下後於 20:45 毒發身亡。</p>
+                
+                <div class="section-title">【遊戲流程控制】</div>
+                <p>1. <strong>第一階段 (讀本與破冰)</strong>：玩家閱讀角色卡（約15分鐘）。DM引導玩家進行自我介紹。</p>
+                <p>2. <strong>第二階段 (第一輪搜證與公聊)</strong>：發放第一輪線索卡，引導玩家討論「是誰打傷了死者頭部」。</p>
+                <p>3. <strong>第三階段 (第二輪搜證與私聊)</strong>：發放私密線索，此時需引導玩家發現「死因矛盾」（鈍器傷 vs 毒發特徵）。</p>
+                
+                <div class="section-title">【DM 扶車點 (卡關提示)】</div>
+                <p>● 若玩家一口咬定林醫生是兇手，DM 可通過法醫 NPC 報告提醒：「鈍器傷雖然嚴重，但出血量似乎不足以在短時間內致命，請關注死者面部特徵。」</p>
+                <p>● 若玩家忽略了時間線，請引導他們在白板上列出 20:00 到 21:00 之間每個人的確切動向。</p>
+            `;
+
+            // 模擬 API 延遲
+            setTimeout(async () => {
+                // 確保強制跳回角色卡頁籤
+                tabs.forEach(t => t.classList.remove('active'));
+                tabs[0].classList.add('active');
+                state.currentTab = 'role-card';
+
+                // 打字機特效輸出第一頁
+                await typeWriterEffect(contentArea, state.generatedData.role, 15);
+                
+                // 結束生成狀態
+                state.isGenerating = false;
+                generateBtn.disabled = false;
+                generateBtn.innerText = "重新生成全新劇本";
+                actionBtns.forEach(btn => btn.style.display = 'block');
+
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
