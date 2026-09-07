@@ -1,62 +1,66 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyberpi 第三方網頁控制端</title>
-    <!-- 引入 MQTT.js 庫，讓 HTML 網頁支援 MQTT 通訊 -->
-    <script src="https://unpkg.com"></script>
+    <title>CyberPi 藍牙控制器</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
-        h1 { color: #333; }
-        .btn { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; border: none; border-radius: 5px; color: white; transition: 0.2s; }
-        .btn-green { background-color: #4CAF50; }
-        .btn-red { background-color: #f44336; }
-        .btn-blue { background-color: #008CBA; }
-        .btn:hover { opacity: 0.8; }
-        #status { margin-top: 20px; font-weight: bold; color: #666; }
+        body { font-family: sans-serif; text-align: center; marginTop: 50px; }
+        button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #status { color: gray; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>Cyberpi 待定行動控制面板</h1>
-    <p>透過 HTML 網頁發送訊號至 Cyberpi</p>
+    <h1>CyberPi 藍牙控制面板</h1>
+    <p>連線狀態：<span id="status">未連線</span></p>
 
-    <!-- 控制按鈕 -->
-    <button class="btn btn-green" onclick="sendSignal('ACTION_1')">執行行動一 (綠燈)</button>
-    <button class="btn btn-red" onclick="sendSignal('ACTION_2')">執行行動二 (紅燈)</button>
-    <button class="btn btn-blue" onclick="sendSignal('STOP')">停止所有行動</button>
+    <!-- 功能按鈕 -->
+    <button onclick="connectAndSend('A')">發送訊號 A (行動 1)</button>
+    <button onclick="connectAndSend('B')">發送訊號 B (行動 2)</button>
+    <button onclick="connectAndSend('STOP')">發送停止訊號</button>
 
-    <div id="status">正在連接到 MQTT 伺服器...</div>
+<script>
+let bluetoothDevice = null;
+let txCharacteristic = null;
 
-    <script>
-        // 連接到公開的 MQTT Broker (使用 WebSocket 埠號 8084 支援加密連線)
-        const broker = 'wss://://hivemq.com';
-        const topic = 'cyberpi/device1/command'; // 必須與 Cyberpi 訂閱的名稱完全相同
-        const client = mqtt.connect(broker);
+// CyberPi 採用的標準 Nordic UART 藍牙服務 UUID
+const UART_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const TX_CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; 
 
-        const statusDiv = document.getElementById('status');
-
-        client.on('connect', () => {
-            statusDiv.innerText = '狀態：已成功連接伺服器，可以發送訊號！';
-            statusDiv.style.color = 'green';
-        });
-
-        client.on('error', (err) => {
-            statusDiv.innerText = '連線失敗: ' + err;
-            statusDiv.style.color = 'red';
-        });
-
-        // 發送訊號的語法
-        function sendSignal(action) {
-            if (client.connected) {
-                client.publish(topic, action);
-                statusDiv.innerText = `發送訊號成功：${action}`;
-                statusDiv.style.color = '#333';
-            } else {
-                alert('未連接到伺服器，無法發送訊號！');
-            }
+async function connectAndSend(signalText) {
+    const statusText = document.getElementById('status');
+    
+    try {
+        // 1. 如果尚未連線，先進行藍牙配對
+        if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
+            statusText.innerText = "正在搜尋 CyberPi...";
+            
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+                // 搜尋名字開頭為 CyberPi 的設備，或改為 acceptAllDevices: true
+                filters: [{ namePrefix: 'CyberPi' }], 
+                optionalServices: [UART_SERVICE_UUID]
+            });
+            
+            statusText.innerText = "正在連接設備...";
+            const server = await bluetoothDevice.gatt.connect();
+            
+            statusText.innerText = "正在取得藍牙服務...";
+            const service = await server.getPrimaryService(UART_SERVICE_UUID);
+            txCharacteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
+            
+            statusText.innerText = "已連線";
+            statusText.style.color = "green";
         }
-    </script>
-</body>
-</html>
+
+        // 2. 發送訊號（結尾必須加 \n，CyberPi 才能正確讀取整行字串）
+        let encoder = new TextEncoder();
+        await txCharacteristic.writeValue(encoder.encode(signalText + '\n'));
+        console.log("成功發送訊號: " + signalText);
+
+    } catch (error) {
+        console.error("藍牙操作失敗: ", error);
+        statusText.innerText = "連線失敗或被取消";
+        statusText.style.color = "red";
+    }
+}
+</script>
