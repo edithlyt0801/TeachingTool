@@ -33,32 +33,56 @@
 let bluetoothDevice = null;
 let txCharacteristic = null;
 
-// 使用 Makeblock/mBlock 設備通用的 16-bit 專用 UUID
-const MAKEBLOCK_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb'; 
-const MAKEBLOCK_CHAR_UUID    = '0000ffe1-0000-1000-8000-00805f9b34fb'; 
-
 async function connectAndSend(signalText) {
     const statusDiv = document.getElementById('status');
     
     try {
         if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
-            statusDiv.innerText = "狀態：請在彈出視窗中選擇你的 CyberPi...";
+            statusDiv.innerText = "狀態：請在視窗中選擇 [CyberPi_GATT]...";
             statusDiv.style.color = "#0071e3";
             
-            // 搜尋過濾條件：必須明確宣告會用到 Makeblock 的 ffe0 服務
+            // 盲掃附近所有藍牙，不預設任何過濾器
             bluetoothDevice = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: 'CyberPi' }], 
-                optionalServices: [MAKEBLOCK_SERVICE_UUID]
+                acceptAllDevices: true
             });
             
-            statusDiv.innerText = "狀態：正在連接到 CyberPi...";
+            statusDiv.innerText = "狀態：已捕捉裝置，正在建立 GATT 連線...";
             const server = await bluetoothDevice.gatt.connect();
             
-            statusDiv.innerText = "狀態：正在綁定 mBlock 通訊特徵...";
-            const service = await server.getPrimaryService(MAKEBLOCK_SERVICE_UUID);
-            txCharacteristic = await service.getCharacteristic(MAKEBLOCK_CHAR_UUID);
+            statusDiv.innerText = "狀態：正在讀取晶片內部所有服務...";
+            // 關鍵：動態獲取這台設備上所有可用的 Primary Services
+            const services = await server.getPrimaryServices();
             
-            statusDiv.innerText = "狀態：🎉 連線成功！";
+            if (services.length === 0) {
+                throw new Error("這台設備目前沒有開放任何公開的藍牙服務，請重啟 CyberPi");
+            }
+            
+            console.log("發現服務數量:", services.length);
+            
+            // 尋找第一個可以進行資料讀寫通訊的服務
+            let foundService = null;
+            for (let service of services) {
+                try {
+                    const characteristics = await service.getCharacteristics();
+                    // 尋找具有寫入權限的通道
+                    txCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+                    if (txCharacteristic) {
+                        foundService = service;
+                        console.log("成功鎖定通訊服務 UUID:", service.uuid);
+                        console.log("成功鎖定寫入特徵值 UUID:", txCharacteristic.uuid);
+                        break;
+                    }
+                } catch (e) {
+                    // 跳過無權限讀取的系統預留服務
+                    continue;
+                }
+            }
+            
+            if (!txCharacteristic) {
+                throw new Error("雖然連上設備，但找不到任何允許網頁寫入數據的通道");
+            }
+            
+            statusDiv.innerText = "狀態：🎉 通道綁定成功，可以發送訊號！";
             statusDiv.style.color = "#34c759";
             
             bluetoothDevice.addEventListener('gattserverdisconnected', () => {
@@ -69,20 +93,21 @@ async function connectAndSend(signalText) {
             });
         }
 
-        if (signalText !== '') {
+        // 如果連線成功且有點擊功能鈕，則送出訊號
+        if (signalText !== '' && txCharacteristic) {
             let encoder = new TextEncoder();
-            // 發送指令（包含 \n）
             await txCharacteristic.writeValue(encoder.encode(signalText + '\n'));
             console.log("成功發送指令 -> " + signalText);
             statusDiv.innerText = `狀態：已成功發送指令 [${signalText}]`;
         }
 
     } catch (error) {
-        console.error("藍牙錯誤: ", error);
-        statusDiv.innerText = "狀態：連線失敗 (" + error.message + ")";
+        console.error("藍牙詳細錯誤報告: ", error);
+        statusDiv.innerText = "狀態：連線失敗 - " + error.message;
         statusDiv.style.color = "#ff3b30";
     }
 }
+
 </script>
 
 </body>
