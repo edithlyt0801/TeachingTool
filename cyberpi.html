@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberPi 藍牙核心控制器</title>
+    <title>CyberPi 序列藍牙控制器</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f5f5f7; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -17,72 +17,89 @@
 <body>
 
 <div class="container">
-    <h1>CyberPi 藍牙控制面板</h1>
+    <h1>CyberPi 藍牙序列控制面板</h1>
     <div id="status">當前狀態：等待連線...</div>
 
-    <button class="btn-connect" onclick="connectAndSend('')">🔍 搜尋並連接 CyberPi</button>
+    <!-- 點擊此按鈕會彈出藍牙序列埠選擇視窗 -->
+    <button class="btn-connect" onclick="connectToCyberPi()">🔍 連接 CyberPi 藍牙序列埠</button>
     <hr style="border: 0; border-top: 1px solid #d2d2d7; margin: 20px 0;">
 
-    <button class="btn-action" onclick="connectAndSend('A')">發送 A (行動 1)</button>
-    <button class="btn-action" onclick="connectAndSend('B')">發送 B (行動 2)</button>
+    <button class="btn-action" onclick="sendSignal('A')">發送 A (行動 1)</button>
+    <button class="btn-action" onclick="sendSignal('B')">發送 B (行動 2)</button>
     <br>
-    <button class="btn-stop" onclick="connectAndSend('STOP')">🛑 停止所有行動</button>
+    <button class="btn-stop" onclick="sendSignal('STOP')">🛑 停止所有行動</button>
 </div>
 
 <script>
-let bluetoothDevice = null;
-let txCharacteristic = null;
+let port = null;
+let writer = null;
 
-// Makeblock 晶片的核心通訊服務 UUID（16進位制轉 128-bit 標準格式）
-const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb'; 
-const CHAR_UUID    = '0000ffe1-0000-1000-8000-00805f9b34fb'; 
+// 標準藍牙序列埠 (Serial Port Profile, SPP) 的萬用 UUID
+const BLUETOOTH_SPP_UUID = "00001101-0000-1000-8000-00805f9b34fb"; 
 
-async function connectAndSend(signalText) {
+async function connectToCyberPi() {
     const statusDiv = document.getElementById('status');
     
-    try {
-        if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
-            statusDiv.innerText = "狀態：請在視窗中點選你的 CyberPi...";
-            statusDiv.style.color = "#0071e3";
-            
-            // 關鍵修改：使用 filters 強制綁定服務 UUID，這樣晶片才會把通道向網頁開放！
-            bluetoothDevice = await navigator.bluetooth.requestDevice({
-                filters: [
-                    { namePrefix: 'CyberPi' },
-                    { namePrefix: 'Makeblock' }
-                ],
-                optionalServices: [SERVICE_UUID] // 必須在這裡宣告，否則連線後會被系統阻擋讀取
-            });
-            
-            statusDiv.innerText = "狀態：已找到裝置，建立 GATT 安全連線中...";
-            const server = await bluetoothDevice.gatt.connect();
-            
-            statusDiv.innerText = "狀態：正在向晶片要求核心通訊通道...";
-            const service = await server.getPrimaryService(SERVICE_UUID);
-            txCharacteristic = await service.getCharacteristic(CHAR_UUID);
-            
-            statusDiv.innerText = "狀態：🎉 連線成功，已解鎖通訊服務！";
-            statusDiv.style.color = "#34c759";
-            
-            bluetoothDevice.addEventListener('gattserverdisconnected', () => {
-                statusDiv.innerText = "狀態：❌ 藍牙已斷開連線";
-                statusDiv.style.color = "#ff3b30";
-                bluetoothDevice = null;
-                txCharacteristic = null;
-            });
-        }
+    // 檢查瀏覽器是否支援 Web Serial API
+    if (!("serial" in navigator)) {
+        statusDiv.innerText = "錯誤：您的瀏覽器不支援 Web Serial，請使用 Chrome 或 Edge！";
+        statusDiv.style.color = "red";
+        return;
+    }
 
-        if (signalText !== '' && txCharacteristic) {
-            let encoder = new TextEncoder();
-            await txCharacteristic.writeValue(encoder.encode(signalText + '\n'));
-            console.log("成功發送指令 -> " + signalText);
-            statusDiv.innerText = `狀態：已成功發送指令 [${signalText}]`;
-        }
+    try {
+        statusDiv.innerText = "狀態：請在彈出視窗中選擇你的 CyberPi 藍牙裝置...";
+        statusDiv.style.color = "#0071e3";
+
+        // 請求使用者選擇藍牙虛擬序列埠
+        port = await navigator.serial.requestPort({
+            allowedBluetoothServiceClassIds: [BLUETOOTH_SPP_UUID],
+            filters: [{ bluetoothServiceClassId: BLUETOOTH_SPP_UUID }]
+        });
+
+        statusDiv.innerText = "狀態：正在開啟通訊埠 (波特率 115200)...";
+        // 開啟序列埠，CyberPi 預設通訊波特率通常為 115200
+        await port.open({ baudRate: 115200 });
+
+        statusDiv.innerText = "狀態：🎉 藍牙序列埠連線成功！";
+        statusDiv.style.color = "#34c759";
 
     } catch (error) {
-        console.error("藍牙詳細錯誤資訊: ", error);
+        console.error("序列埠連線失敗:", error);
         statusDiv.innerText = "狀態：連線失敗 - " + error.message;
         statusDiv.style.color = "#ff3b30";
+    }
+}
+
+async function sendSignal(signalText) {
+    const statusDiv = document.getElementById('status');
+    
+    if (!port || !port.writable) {
+        statusDiv.innerText = "狀態：❌ 請先點擊上方按鈕連接藍牙！";
+        statusDiv.style.color = "#ff3b30";
+        return;
+    }
+
+    try {
+        // 建立寫入串流
+        const encoder = new TextEncoder();
+        writer = port.writable.getWriter();
+        
+        // 補上 \n 換行符號，完美對接 CyberPi 的 read_string()
+        const data = encoder.encode(signalText + '\n');
+        await writer.write(data);
+        
+        // 釋放鎖定以供下次發送
+        writer.releaseLock();
+        
+        console.log("成功發送指令 -> " + signalText);
+        statusDiv.innerText = `狀態：已成功發送指令 [${signalText}]`;
+        statusDiv.style.color = "#34c759";
+    } catch (error) {
+        console.error("發送失敗:", error);
+        statusDiv.innerText = "狀態：發送失敗 - " + error.message;
+        statusDiv.style.color = "#ff3b30";
+        if (writer) writer.releaseLock();
     }
 }
 </script>
