@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberPi 網頁藍牙控制器</title>
+    <title>CyberPi mBlock 專用藍牙控制器</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; margin-top: 50px; background-color: #f5f5f7; }
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f5f5f7; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        button { font-size: 16px; font-weight: bold; padding: 12px 24px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
         .btn-connect { background-color: #0071e3; color: white; width: 80%; }
-        .btn-connect:hover { background-color: #0077ed; }
         .btn-action { background-color: #34c759; color: white; }
-        .btn-action:hover { background-color: #30b651; }
         .btn-stop { background-color: #ff3b30; color: white; }
-        .btn-stop:hover { background-color: #e03329; }
         #status { font-weight: bold; color: #86868b; margin: 20px 0; }
     </style>
 </head>
@@ -21,15 +18,11 @@
 
 <div class="container">
     <h1>CyberPi 藍牙控制面板</h1>
-    
-    <!-- 狀態顯示 -->
     <div id="status">當前狀態：等待連線...</div>
 
-    <!-- 連線按鈕（第一次可先點擊連線，或直接點功能鈕也會觸發連線） -->
     <button class="btn-connect" onclick="connectAndSend('')">🔍 搜尋並連接 CyberPi</button>
     <hr style="border: 0; border-top: 1px solid #d2d2d7; margin: 20px 0;">
 
-    <!-- 功能動作按鈕 -->
     <button class="btn-action" onclick="connectAndSend('A')">發送 A (行動 1)</button>
     <button class="btn-action" onclick="connectAndSend('B')">發送 B (行動 2)</button>
     <br>
@@ -40,42 +33,32 @@
 let bluetoothDevice = null;
 let txCharacteristic = null;
 
+// 使用 Makeblock/mBlock 設備通用的 16-bit 專用 UUID
+const MAKEBLOCK_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb'; 
+const MAKEBLOCK_CHAR_UUID    = '0000ffe1-0000-1000-8000-00805f9b34fb'; 
+
 async function connectAndSend(signalText) {
     const statusDiv = document.getElementById('status');
     
     try {
         if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
-            statusDiv.innerText = "狀態：請選擇你的 CyberPi...";
+            statusDiv.innerText = "狀態：請在彈出視窗中選擇你的 CyberPi...";
             statusDiv.style.color = "#0071e3";
             
-            // 1. 全掃描，並且不限制選用的服務
+            // 搜尋過濾條件：必須明確宣告會用到 Makeblock 的 ffe0 服務
             bluetoothDevice = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                // 不指定特定 UUID，改由連線後動態抓取
-                optionalServices: [] 
+                filters: [{ namePrefix: 'CyberPi' }], 
+                optionalServices: [MAKEBLOCK_SERVICE_UUID]
             });
             
-            statusDiv.innerText = "狀態：正在連接藍牙晶片...";
+            statusDiv.innerText = "狀態：正在連接到 CyberPi...";
             const server = await bluetoothDevice.gatt.connect();
             
-            statusDiv.innerText = "狀態：正在自動偵測 CyberPi 服務通道...";
-            // 2. 獲取該設備的所有主要服務
-            const services = await server.getPrimaryServices();
-            if (services.length === 0) throw new Error("此設備沒有開放任何藍牙服務");
+            statusDiv.innerText = "狀態：正在綁定 mBlock 通訊特徵...";
+            const service = await server.getPrimaryService(MAKEBLOCK_SERVICE_UUID);
+            txCharacteristic = await service.getCharacteristic(MAKEBLOCK_CHAR_UUID);
             
-            // 抓取第一個可用的服務
-            const service = services[0];
-            console.log("成功偵測到服務 UUID:", service.uuid);
-            
-            // 3. 獲取該服務下的所有特徵值
-            const characteristics = await service.getCharacteristics();
-            // 尋找具有「寫入(Write)」權限的通道
-            txCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-            
-            if (!txCharacteristic) throw new Error("找不到可寫入數據的藍牙通道");
-            console.log("成功偵測到寫入特徵值 UUID:", txCharacteristic.uuid);
-            
-            statusDiv.innerText = "狀態：🎉 自動配對成功！";
+            statusDiv.innerText = "狀態：🎉 連線成功！";
             statusDiv.style.color = "#34c759";
             
             bluetoothDevice.addEventListener('gattserverdisconnected', () => {
@@ -88,18 +71,18 @@ async function connectAndSend(signalText) {
 
         if (signalText !== '') {
             let encoder = new TextEncoder();
+            // 發送指令（包含 \n）
             await txCharacteristic.writeValue(encoder.encode(signalText + '\n'));
             console.log("成功發送指令 -> " + signalText);
             statusDiv.innerText = `狀態：已成功發送指令 [${signalText}]`;
         }
 
     } catch (error) {
-        console.error("藍牙詳細錯誤: ", error);
+        console.error("藍牙錯誤: ", error);
         statusDiv.innerText = "狀態：連線失敗 (" + error.message + ")";
         statusDiv.style.color = "#ff3b30";
     }
 }
-
 </script>
 
 </body>
