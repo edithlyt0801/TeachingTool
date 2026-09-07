@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberPi mBlock 專用藍牙控制器</title>
+    <title>CyberPi 藍牙核心控制器</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f5f5f7; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -33,56 +33,35 @@
 let bluetoothDevice = null;
 let txCharacteristic = null;
 
+// Makeblock 晶片的核心通訊服務 UUID（16進位制轉 128-bit 標準格式）
+const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb'; 
+const CHAR_UUID    = '0000ffe1-0000-1000-8000-00805f9b34fb'; 
+
 async function connectAndSend(signalText) {
     const statusDiv = document.getElementById('status');
     
     try {
         if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
-            statusDiv.innerText = "狀態：請在視窗中選擇 [CyberPi_GATT]...";
+            statusDiv.innerText = "狀態：請在視窗中點選你的 CyberPi...";
             statusDiv.style.color = "#0071e3";
             
-            // 盲掃附近所有藍牙，不預設任何過濾器
+            // 關鍵修改：使用 filters 強制綁定服務 UUID，這樣晶片才會把通道向網頁開放！
             bluetoothDevice = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true
+                filters: [
+                    { namePrefix: 'CyberPi' },
+                    { namePrefix: 'Makeblock' }
+                ],
+                optionalServices: [SERVICE_UUID] // 必須在這裡宣告，否則連線後會被系統阻擋讀取
             });
             
-            statusDiv.innerText = "狀態：已捕捉裝置，正在建立 GATT 連線...";
+            statusDiv.innerText = "狀態：已找到裝置，建立 GATT 安全連線中...";
             const server = await bluetoothDevice.gatt.connect();
             
-            statusDiv.innerText = "狀態：正在讀取晶片內部所有服務...";
-            // 關鍵：動態獲取這台設備上所有可用的 Primary Services
-            const services = await server.getPrimaryServices();
+            statusDiv.innerText = "狀態：正在向晶片要求核心通訊通道...";
+            const service = await server.getPrimaryService(SERVICE_UUID);
+            txCharacteristic = await service.getCharacteristic(CHAR_UUID);
             
-            if (services.length === 0) {
-                throw new Error("這台設備目前沒有開放任何公開的藍牙服務，請重啟 CyberPi");
-            }
-            
-            console.log("發現服務數量:", services.length);
-            
-            // 尋找第一個可以進行資料讀寫通訊的服務
-            let foundService = null;
-            for (let service of services) {
-                try {
-                    const characteristics = await service.getCharacteristics();
-                    // 尋找具有寫入權限的通道
-                    txCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                    if (txCharacteristic) {
-                        foundService = service;
-                        console.log("成功鎖定通訊服務 UUID:", service.uuid);
-                        console.log("成功鎖定寫入特徵值 UUID:", txCharacteristic.uuid);
-                        break;
-                    }
-                } catch (e) {
-                    // 跳過無權限讀取的系統預留服務
-                    continue;
-                }
-            }
-            
-            if (!txCharacteristic) {
-                throw new Error("雖然連上設備，但找不到任何允許網頁寫入數據的通道");
-            }
-            
-            statusDiv.innerText = "狀態：🎉 通道綁定成功，可以發送訊號！";
+            statusDiv.innerText = "狀態：🎉 連線成功，已解鎖通訊服務！";
             statusDiv.style.color = "#34c759";
             
             bluetoothDevice.addEventListener('gattserverdisconnected', () => {
@@ -93,7 +72,6 @@ async function connectAndSend(signalText) {
             });
         }
 
-        // 如果連線成功且有點擊功能鈕，則送出訊號
         if (signalText !== '' && txCharacteristic) {
             let encoder = new TextEncoder();
             await txCharacteristic.writeValue(encoder.encode(signalText + '\n'));
@@ -102,12 +80,11 @@ async function connectAndSend(signalText) {
         }
 
     } catch (error) {
-        console.error("藍牙詳細錯誤報告: ", error);
+        console.error("藍牙詳細錯誤資訊: ", error);
         statusDiv.innerText = "狀態：連線失敗 - " + error.message;
         statusDiv.style.color = "#ff3b30";
     }
 }
-
 </script>
 
 </body>
