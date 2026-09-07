@@ -40,36 +40,44 @@
 let bluetoothDevice = null;
 let txCharacteristic = null;
 
-// CyberPi 採用的標準 Nordic UART 藍牙服務 UUID
-const UART_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-const TX_CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; 
-
 async function connectAndSend(signalText) {
     const statusDiv = document.getElementById('status');
     
     try {
-        // 1. 如果尚未建立連線，先進行藍牙配對
         if (!bluetoothDevice || !bluetoothDevice.gatt.connected) {
-            statusDiv.innerText = "狀態：正在彈出藍牙視窗，請選擇你的 CyberPi...";
+            statusDiv.innerText = "狀態：請選擇你的 CyberPi...";
             statusDiv.style.color = "#0071e3";
             
-            // 啟用全掃描模式，避免被名稱篩選擋住
+            // 1. 全掃描，並且不限制選用的服務
             bluetoothDevice = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true, 
-                optionalServices: [UART_SERVICE_UUID] 
+                acceptAllDevices: true,
+                // 不指定特定 UUID，改由連線後動態抓取
+                optionalServices: [] 
             });
             
             statusDiv.innerText = "狀態：正在連接藍牙晶片...";
             const server = await bluetoothDevice.gatt.connect();
             
-            statusDiv.innerText = "狀態：正在尋找通訊通道...";
-            const service = await server.getPrimaryService(UART_SERVICE_UUID);
-            txCharacteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
+            statusDiv.innerText = "狀態：正在自動偵測 CyberPi 服務通道...";
+            // 2. 獲取該設備的所有主要服務
+            const services = await server.getPrimaryServices();
+            if (services.length === 0) throw new Error("此設備沒有開放任何藍牙服務");
             
-            statusDiv.innerText = "狀態：🎉 連線成功！";
+            // 抓取第一個可用的服務
+            const service = services[0];
+            console.log("成功偵測到服務 UUID:", service.uuid);
+            
+            // 3. 獲取該服務下的所有特徵值
+            const characteristics = await service.getCharacteristics();
+            // 尋找具有「寫入(Write)」權限的通道
+            txCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+            
+            if (!txCharacteristic) throw new Error("找不到可寫入數據的藍牙通道");
+            console.log("成功偵測到寫入特徵值 UUID:", txCharacteristic.uuid);
+            
+            statusDiv.innerText = "狀態：🎉 自動配對成功！";
             statusDiv.style.color = "#34c759";
             
-            // 監聽斷線事件
             bluetoothDevice.addEventListener('gattserverdisconnected', () => {
                 statusDiv.innerText = "狀態：❌ 藍牙已斷開連線";
                 statusDiv.style.color = "#ff3b30";
@@ -78,22 +86,20 @@ async function connectAndSend(signalText) {
             });
         }
 
-        // 2. 如果有點擊功能按鈕（傳入的文字不為空），則發送訊號
         if (signalText !== '') {
             let encoder = new TextEncoder();
-            // 尾端必須加上 \n 換行符號，CyberPi 的 read_string() 才能正確斷句
             await txCharacteristic.writeValue(encoder.encode(signalText + '\n'));
-            console.log("成功發送訊號 -> " + signalText);
+            console.log("成功發送指令 -> " + signalText);
             statusDiv.innerText = `狀態：已成功發送指令 [${signalText}]`;
-            statusDiv.style.color = "#34c759";
         }
 
     } catch (error) {
-        console.error("藍牙錯誤資訊: ", error);
-        statusDiv.innerText = "狀態：連線失敗或被取消 (" + error.message + ")";
+        console.error("藍牙詳細錯誤: ", error);
+        statusDiv.innerText = "狀態：連線失敗 (" + error.message + ")";
         statusDiv.style.color = "#ff3b30";
     }
 }
+
 </script>
 
 </body>
