@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人色顏判斷 - AI 智能色系評估系統</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        warm: {
+                            50: '#FFF9F6',
+                            100: '#FFEEEC',
+                            200: '#FCD7D2',
+                            500: '#E77C68', // Korean Peach Blossom Accent
+                            600: '#D16653',
+                            700: '#B54D3C',
+                            900: '#432520'
+                        },
+                        cool: {
+                            50: '#F0F7FF',
+                            100: '#E0F0FE',
+                            500: '#4682B4',
+                            700: '#2A5885'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans HK', 'sans-serif'],
+                        serif: ['Playfair Display', 'Noto Sans HK', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans HK', sans-serif;
+            background-color: #FAF8F6;
+            color: #2D3748;
+        }
+        
+        .serif-title {
+            font-family: 'Playfair Display', 'Noto Sans HK', serif;
+        }
+
+        /* Custom subtle scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Smooth transitions */
+        .tab-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Magnifier preview glass styling */
+        #magnifier-glass {
+            position: absolute;
+            border: 3px solid #E77C68;
+            border-radius: 50%;
+            cursor: crosshair;
+            width: 90px;
+            height: 90px;
+            display: none;
+            pointer-events: none;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            background-repeat: no-repeat;
+            z-index: 30;
+        }
+
+        /* Color card hover lift */
+        .color-card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .color-card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -4px rgba(0,0,0,0.08);
+        }
+
+        .drape-overlay {
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-warm-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100/80 px-4 md:px-8 py-3.5 flex justify-between items-center shadow-xs">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-warm-500 to-warm-200 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                色
+            </div>
+            <span class="text-lg md:text-xl font-bold tracking-wider text-gray-900 serif-title">
+                個人色顔判斷<span class="text-warm-500">.</span>
+            </span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="hidden sm:inline-block text-xs px-3 py-1 bg-warm-50 text-warm-600 rounded-full font-medium border border-warm-100">
+                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI K-Beauty Color Lab
+            </span>
+            <button onclick="resetDiagnosis()" class="text-xs px-3 py-1.5 text-gray-500 hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-100">
+                <i class="fa-solid fa-rotate-right mr-1"></i> 重置重新測
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Banner -->
+    <header class="relative px-6 pt-8 pb-4 text-center max-w-2xl mx-auto">
+        <span class="inline-block text-[11px] uppercase tracking-widest text-warm-600 font-semibold bg-warm-100/80 px-3.5 py-1 rounded-full border border-warm-200/50 mb-3">
+            <i class="fa-solid fa-palette mr-1"></i> 韓系個人四季色彩鑑定
+        </span>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 leading-snug">
+            買衫選色困難？經常顯黑發黃？
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-500 mt-2 font-light leading-relaxed max-w-lg mx-auto">
+            只需上傳一張清晰相片，即可分析肌膚底色 (Undertone) 與飽和度，為你解鎖命定衣著穿搭色卡！
+        </p>
+    </header>
+
+    <!-- Main Interactive Diagnostic Zone -->
+    <main id="diagnostic-zone" class="max-w-xl mx-auto px-4 sm:px-6 pb-16 w-full flex-grow">
+        
+        <!-- Step Progress Indicator -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between relative max-w-xs mx-auto">
+                <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-200 -z-0 -translate-y-1/2"></div>
+                
+                <div id="step-indicator-1" class="relative z-10 w-8 h-8 rounded-full bg-warm-500 text-white font-bold text-xs flex items-center justify-center shadow-md transition-all">
+                    1
+                </div>
+                <div id="step-indicator-2" class="relative z-10 w-8 h-8 rounded-full bg-gray-200 text-gray-500 font-bold text-xs flex items-center justify-center transition-all">
+                    2
+                </div>
+                <div id="step-indicator-3" class="relative z-10 w-8 h-8 rounded-full bg-gray-200 text-gray-500 font-bold text-xs flex items-center justify-center transition-all">
+                    3
+                </div>
+            </div>
+            <div class="flex justify-between max-w-xs mx-auto text-[11px] font-medium text-gray-400 mt-2 px-1">
+                <span class="text-warm-600">上傳吸色</span>
+                <span>虛擬試色</span>
+                <span>報告與建議</span>
+            </div>
+        </div>
+
+        <!-- ================= STEP 1: UPLOAD & COLOR SAMPLING ================= -->
+        <div id="step-upload" class="space-y-5 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+            <div class="text-center space-y-1">
+                <span class="text-[10px] font-bold text-warm-500 uppercase tracking-widest">Step 01 / 肌膚精準色調測量</span>
+                <h3 class="text-base font-bold text-gray-900">請放入一張清晰正臉相片</h3>
+                <p class="text-xs text-gray-500">上傳後，請直接<strong>點擊相片中的臉頰肌膚</strong>以讀取膚色底色</p>
+            </div>
+
+            <!-- Preset Model Quick Test Buttons -->
+            <div class="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                <div class="text-[11px] font-medium text-gray-500 mb-2 text-center flex items-center justify-center gap-1">
+                    <span>💡 沒有合適相片？選取以下預設範例速測：</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="loadPresetImage('spring')" class="text-center group focus:outline-none">
+                        <div class="w-12 h-12 mx-auto rounded-full overflow-hidden border-2 border-transparent group-hover:border-warm-500 transition-all shadow-xs">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Spring Model">
+                        </div>
+                        <span class="text-[10px] text-gray-600 mt-1 block">暖春樣本</span>
+                    </button>
+                    <button onclick="loadPresetImage('summer')" class="text-center group focus:outline-none">
+                        <div class="w-12 h-12 mx-auto rounded-full overflow-hidden border-2 border-transparent group-hover:border-warm-500 transition-all shadow-xs">
+                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Summer Model">
+                        </div>
+                        <span class="text-[10px] text-gray-600 mt-1 block">冷夏樣本</span>
+                    </button>
+                    <button onclick="loadPresetImage('autumn')" class="text-center group focus:outline-none">
+                        <div class="w-12 h-12 mx-auto rounded-full overflow-hidden border-2 border-transparent group-hover:border-warm-500 transition-all shadow-xs">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Autumn Model">
+                        </div>
+                        <span class="text-[10px] text-gray-600 mt-1 block">暖秋樣本</span>
+                    </button>
+                    <button onclick="loadPresetImage('winter')" class="text-center group focus:outline-none">
+                        <div class="w-12 h-12 mx-auto rounded-full overflow-hidden border-2 border-transparent group-hover:border-warm-500 transition-all shadow-xs">
+                            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Winter Model">
+                        </div>
+                        <span class="text-[10px] text-gray-600 mt-1 block">冷冬樣本</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Upload Box & Interactive Canvas Container -->
+            <div id="upload-box-container" class="relative w-full rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center p-2 min-h-[280px] overflow-hidden transition-all hover:border-warm-300">
+                
+                <!-- Initial Upload Placeholder -->
+                <div id="upload-placeholder" class="text-center space-y-2 p-6 cursor-pointer" onclick="document.getElementById('file-input').click()">
+                    <div class="w-16 h-16 bg-warm-100 text-warm-500 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-gray-700">點擊上傳相片 或 拖放至此</p>
+                        <p class="text-[10px] text-gray-400 mt-1">支援 JPG, PNG 格式 (本地無痕運算，保障隱私)</p>
+                    </div>
+                </div>
+                
+                <!-- Canvas Area for Image display & sampling -->
+                <div id="canvas-wrapper" class="relative hidden max-w-full flex justify-center items-center">
+                    <canvas id="face-canvas" class="max-w-full rounded-xl cursor-crosshair shadow-sm border border-gray-100"></canvas>
+                    
+                    <!-- Magnifier / Dropper Glass -->
+                    <div id="magnifier-glass"></div>
+
+                    <!-- Face alignment guide overlay -->
+                    <div id="face-guide" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center border-2 border-dashed border-warm-500/40 rounded-full w-48 h-64 mx-auto my-auto opacity-60">
+                        <span class="text-[10px] bg-warm-500 text-white px-2 py-0.5 rounded-full shadow-xs mb-auto mt-2">請將臉部置於框內</span>
+                    </div>
+                </div>
+
+                <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+            </div>
+
+            <!-- Sampled Color Real-time Feedback Panel -->
+            <div id="color-preview-panel" class="hidden p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between transition-all">
+                <div class="flex items-center gap-3">
+                    <div id="sampled-color-block" class="w-12 h-12 rounded-xl shadow-md border-2 border-white transition-all bg-white flex items-center justify-center text-xs text-gray-300">
+                        ?
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-gray-800">已取樣臉頰膚色</div>
+                        <div id="sampled-color-text" class="text-[11px] font-mono text-gray-500 mt-0.5">HEX: #FFFFFF</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="tone-badge" class="text-[10px] font-bold bg-white px-2.5 py-1 rounded-full shadow-2xs text-warm-600 border border-warm-100 inline-block">
+                        準備判定
+                    </span>
+                    <div id="undertone-hint" class="text-[10px] text-gray-400 mt-1">點擊畫面可重測</div>
+                </div>
+            </div>
+            
+            <button onclick="goToDraping()" id="btn-next-1" class="w-full bg-gray-200 text-gray-400 font-medium text-sm py-3.5 rounded-full cursor-not-allowed transition-all shadow-xs flex items-center justify-center gap-2" disabled>
+                <span>下一步：進入虛擬色布測繪</span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+        </div>
+
+        <!-- ================= STEP 2: VIRTUAL DRAPING INTERACTION ================= -->
+        <div id="step-draping" class="hidden space-y-5 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+            <div class="text-center space-y-1">
+                <span class="text-[10px] font-bold text-warm-500 uppercase tracking-widest">Step 02 / 虛擬色布對比驗證</span>
+                <h3 class="text-base font-bold text-gray-900">觀察哪種色調能讓臉色提亮</h3>
+                <p class="text-xs text-gray-500">切換下方色布，觀察對面部皮膚明亮感與瑕疵對比的影響</p>
+            </div>
+
+            <!-- Virtual Drapes Canvas Display -->
+            <div class="relative w-full rounded-2xl overflow-hidden border border-gray-200 flex flex-col items-center justify-center bg-gray-900">
+                <div class="relative w-full max-w-sm aspect-[4/5] overflow-hidden flex flex-col justify-end">
+                    <!-- Photo preview container -->
+                    <img id="drape-photo-preview" class="w-full h-full object-cover absolute inset-0 z-0" src="" alt="Virtual Drape Preview">
+                    
+                    <!-- Color Collar Overlay Draping Effect -->
+                    <div id="drape-overlay" class="drape-overlay relative z-10 w-full h-1/3 bg-warm-500/80 backdrop-blur-[1px] rounded-t-[50%] border-t-4 border-white/40 shadow-2xl flex items-center justify-center">
+                        <span id="drape-label" class="text-xs font-bold text-white bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/20">
+                            暖春 蜜桃珊瑚色
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drape Palette Selection Tabs -->
+            <div class="space-y-3">
+                <div class="text-xs font-semibold text-gray-700 text-center">選取測試色布：</div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="applyDrape('#FF8A75', '暖春 · 明亮蜜桃粉', 'warm_spring')" class="p-2 rounded-xl border border-gray-200 text-center hover:border-warm-500 transition-all flex flex-col items-center gap-1 group">
+                        <span class="w-6 h-6 rounded-full bg-[#FF8A75] shadow-xs group-hover:scale-110 transition-transform"></span>
+                        <span class="text-[11px] font-medium text-gray-700">暖春蜜桃</span>
+                    </button>
+                    
+                    <button onclick="applyDrape('#8FAADC', '冷夏 · 天青霧藍', 'cool_summer')" class="p-2 rounded-xl border border-gray-200 text-center hover:border-cool-500 transition-all flex flex-col items-center gap-1 group">
+                        <span class="w-6 h-6 rounded-full bg-[#8FAADC] shadow-xs group-hover:scale-110 transition-transform"></span>
+                        <span class="text-[11px] font-medium text-gray-700">冷夏天青</span>
+                    </button>
+
+                    <button onclick="applyDrape('#C86D51', '暖秋 · 焦糖楓紅', 'warm_autumn')" class="p-2 rounded-xl border border-gray-200 text-center hover:border-amber-600 transition-all flex flex-col items-center gap-1 group">
+                        <span class="w-6 h-6 rounded-full bg-[#C86D51] shadow-xs group-hover:scale-110 transition-transform"></span>
+                        <span class="text-[11px] font-medium text-gray-700">暖秋焦糖</span>
+                    </button>
+
+                    <button onclick="applyDrape('#1F3A60', '冷冬 · 深海墨藍', 'cool_winter')" class="p-2 rounded-xl border border-gray-200 text-center hover:border-blue-900 transition-all flex flex-col items-center gap-1 group">
+                        <span class="w-6 h-6 rounded-full bg-[#1F3A60] shadow-xs group-hover:scale-110 transition-transform"></span>
+                        <span class="text-[11px] font-medium text-gray-700">冷冬墨藍</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step Navigation Buttons -->
+            <div class="flex gap-3 pt-2">
+                <button onclick="backToStep1()" class="w-1/3 bg-gray-100 text-gray-600 font-medium text-xs py-3 rounded-full hover:bg-gray-200 transition-all">
+                    返回吸色
+                </button>
+                <button onclick="generateFinalReport()" class="w-2/3 bg-warm-500 text-white font-medium text-xs py-3 rounded-full hover:bg-warm-600 transition-all shadow-md flex items-center justify-center gap-1">
+                    <span>生成AI個人色顏報告</span>
+                    <i class="fa-solid fa-square-poll-vertical"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= STEP 3: COMPREHENSIVE RESULT REPORT ================= -->
+        <div id="step-result" class="hidden space-y-6">
+            
+            <!-- Result Header Banner -->
+            <div class="text-center bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-24 h-24 bg-warm-100 rounded-full blur-xl pointer-events-none"></div>
+                <span class="inline-block text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/60 mb-2">
+                    <i class="fa-solid fa-circle-check mr-1"></i> AI 智能判定完成 Analysis Completed
+                </span>
+                <h2 class="text-2xl font-bold text-gray-900 serif-title mt-1" id="result-title">個人命定色系診斷</h2>
+                <p class="text-xs text-warm-600 font-medium mt-1" id="result-subtitle">已為你精準篩選適合穿搭的個人四季風格！</p>
+            </div>
+
+            <!-- Main Archetype Result Card -->
+            <div class="bg-gradient-to-br from-white via-warm-50/40 to-white border border-warm-100/80 rounded-3xl p-6 shadow-sm space-y-4">
+                <div class="flex items-start justify-between border-b border-warm-100/60 pb-4">
+                    <div>
+                        <span class="text-[10px] font-bold text-gray-400 tracking-wider uppercase block">專屬韓劇色系風格</span>
+                        <h3 id="result-season-name" class="text-xl font-bold text-gray-900 mt-1">--</h3>
+                    </div>
+                    <div id="season-badge-icon" class="w-12 h-12 rounded-2xl bg-warm-100 flex items-center justify-center text-warm-600 text-xl font-bold shadow-xs">
+                        🌸
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs bg-white/80 p-3 rounded-2xl border border-gray-100">
+                    <div>
+                        <span class="text-gray-400 text-[10px] block">膚色底色 (Undertone)</span>
+                        <span id="res-undertone" class="font-semibold text-gray-800">--</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-[10px] block">對比與明亮感</span>
+                        <span id="res-brightness" class="font-semibold text-gray-800">--</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-gray-700 tracking-wide uppercase flex items-center gap-1">
+                        <i class="fa-solid fa-sparkles text-warm-500"></i> 氣質風格與穿搭診斷
+                    </h4>
+                    <p id="result-description" class="text-xs text-gray-600 leading-relaxed mt-1.5 font-light">--</p>
+                </div>
+            </div>
+
+            <!-- Best Pick vs Disaster Color Lists -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- BEST CLOTHING COLORS -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-5 space-y-3 shadow-xs">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h4 class="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                            <i class="fa-solid fa-thumbs-up"></i> 命定穿搭色 (Best Picks)
+                        </h4>
+                        <span class="text-[10px] text-emerald-500 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">顯白提亮</span>
+                    </div>
+                    <div id="best-colors-container" class="space-y-2">
+                        <!-- Dynamic Swatches -->
+                    </div>
+                </div>
+
+                <!-- WORST DISASTER COLORS -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-5 space-y-3 shadow-xs">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h4 class="text-xs font-bold text-rose-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-triangle-exclamation"></i> 避雷災難色 (Worst Avoid)
+                        </h4>
+                        <span class="text-[10px] text-rose-500 font-medium bg-rose-50 px-2 py-0.5 rounded-full">容易顯黃暗沉</span>
+                    </div>
+                    <div id="worst-colors-container" class="space-y-2">
+                        <!-- Dynamic Swatches -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Interactive Wardrobe Outfit Coordinator -->
+            <div class="bg-white border border-gray-100 rounded-3xl p-5 space-y-4 shadow-xs">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shirt text-warm-500"></i> 一秒穿搭組合配對器 (OOTD Matcher)
+                    </h4>
+                    <span class="text-[10px] text-gray-400">點擊切換上半身配色</span>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div id="outfit-top-preview" class="w-10 h-10 rounded-xl shadow-xs border border-white"></div>
+                        <div>
+                            <span class="text-[10px] text-gray-400 block">推薦上衣顏色</span>
+                            <span id="outfit-top-name" class="text-xs font-bold text-gray-800">--</span>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-300">+</span>
+                    <div class="flex items-center space-x-3">
+                        <div id="outfit-bottom-preview" class="w-10 h-10 rounded-xl bg-gray-800 shadow-xs border border-white"></div>
+                        <div>
+                            <span class="text-[10px] text-gray-400 block">百搭下身配搭</span>
+                            <span id="outfit-bottom-name" class="text-xs font-bold text-gray-800">經典米白 / 酷黑</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="outfit-swatch-picker" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <!-- Swatches injected via JS -->
+                </div>
+            </div>
+
+            <!-- Jewelry & Makeup Recommendation Cards -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white border border-gray-100 rounded-2xl p-4 text-center space-y-1">
+                    <span class="text-[10px] text-gray-400 block">適合飾品材質</span>
+                    <div id="jewelry-recommendation" class="text-xs font-bold text-warm-600">--</div>
+                </div>
+                <div class="bg-white border border-gray-100 rounded-2xl p-4 text-center space-y-1">
+                    <span class="text-[10px] text-gray-400 block">建議唇膏色號</span>
+                    <div id="lipstick-recommendation" class="text-xs font-bold text-warm-600">--</div>
+                </div>
+            </div>
+
+            <!-- Fashion Rule Checklist for Non-stylists -->
+            <div class="p-5 bg-warm-50 rounded-2xl border border-warm-100/60">
+                <h4 class="text-xs font-bold text-warm-900 flex items-center gap-1">
+                    <i class="fa-solid fa-lightbulb text-warm-500"></i> 給「選衫困難症」的 30 秒法則：
+                </h4>
+                <p class="text-xs text-warm-900/80 leading-relaxed mt-2" id="ootd-advice">
+                    不要再盲目購買黑色。靠近面部的上衣（Shirt/Inner）必須盡量選擇命定推薦色；下半身則可安心搭配米白、灰或黑色褲裙。簡單兩步即可打造氣質滿分的韓系街頭日常感！
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button onclick="copySummaryReport()" class="w-full sm:w-1/2 bg-gray-900 text-white font-medium text-xs py-3.5 rounded-full hover:bg-black transition-all flex items-center justify-center gap-2">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>複製診斷結果卡</span>
+                </button>
+                <button onclick="resetDiagnosis()" class="w-full sm:w-1/2 bg-white border border-gray-200 text-gray-700 font-medium text-xs py-3.5 rounded-full hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>重新評估其他相片</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-[11px] text-gray-400 border-t border-gray-100 bg-white">
+        <p>© 2026 個人色顏判斷. Powered by J-K Personal Color Theory Engine.</p>
+    </footer>
+
+    <!-- AI Color Assessment Core JavaScript Algorithm & Application Engine -->
+    <script>
+        // 12-Seasonal Color Database & Style Guide Matrix
+        const colorDatabase = {
+            warm_spring: {
+                name: "亮麗暖春型 (Warm Spring) ─ 活力陽光、溫暖親和風",
+                subtitle: "韓劇陽光女/男主角般的元氣明亮感",
+                badge: "🌸",
+                undertone: "暖色調 (Warm Yellow-Peach Base)",
+                contrast: "高明亮 / 鮮艷清亮",
+                desc: "你擁有溫暖且帶有微金色調的肌底基因。在深沉灰暗衣服壓制下容易顯得缺乏元氣。當穿上輕快明亮、飽和度高且溫暖的配色時，面部暗沉會被神奇消解，散發出朝氣蓬勃的親和氣場！",
+                jewelry: "亮金色 (Bright Gold) / 溫暖珍珠",
+                lipstick: "珊瑚蜜桃 (Coral Pink) / 暖橘紅",
+                best: [
+                    { name: "明亮蜜桃粉 (Peach Pink)", hex: "#FFB0A3", tip: "靠近面部作為上衣，瞬間拉滿少女/少年高光感" },
+                    { name: "暖金南瓜橘 (Pumpkin Orange)", hex: "#FF7034", tip: "去黃提亮效果絕佳，凸顯精神活力" },
+                    { name: "明黃奶油色 (Creamy Yellow)", hex: "#FFE17D", tip: "溫和無壓力，襯托皮膚通透感" },
+                    { name: "鮮亮嫩草綠 (Bright Apple Green)", hex: "#88C982", tip: "充滿春日生機，令人眼睛一亮" }
+                ],
+                worst: [
+                    { name: "沉悶純黑色 (Pure Black)", hex: "#121212", tip: "量感過重，會壓制你的面部氣色" },
+                    { name: "冷清冰天藍 (Ice Blue)", hex: "#D6EAF8", tip: "與皮膚底色強烈衝突，容易顯得蒼白發青" },
+                    { name: "深灰紫墨色 (Dark Purple Grey)", hex: "#4A3F4C", tip: "會使膚色顯得髒暗無光采" }
+                ]
+            },
+            cool_summer: {
+                name: "溫柔冷夏型 (Cool Summer) ─ 霧面文藝、初戀知性風",
+                subtitle: "蓋上韓系柔焦濾鏡的初戀溫柔感",
+                badge: "🌿",
+                undertone: "冷色調 (Cool Pink-Blue Base)",
+                contrast: "柔和莫蘭迪 / 低對比霧面",
+                desc: "你的肌底帶有粉紅或微冷青色調，膚色自然帶有柔焦清涼感。最適合莫蘭迪帶灰調的低飽和冷色系。它們能將你與生俱來的知性文藝感發揮得淋漓盡致！",
+                jewelry: "亮銀色 (Silver) / K白金 / 玫瑰金",
+                lipstick: "豆沙玫瑰 (Dusty Rose) / 莓果粉",
+                best: [
+                    { name: "天青霧藍 (Pigeon Blue)", hex: "#5C8BB0", tip: "讓膚色看起來乾淨通透，文藝氣質突出" },
+                    { name: "莫蘭迪玫瑰粉 (Dusty Rose)", hex: "#C88EA7", tip: "帶灰調的溫柔紅潤，極具高貴感" },
+                    { name: "薰衣草柔紫 (Soft Lavender)", hex: "#B39DDB", tip: "有效修飾黃氣，賦予仙氣質感" },
+                    { name: "薄荷涼霜綠 (Mint Sage)", hex: "#81C784", tip: "清涼消暑，給人極佳舒適視覺" }
+                ],
+                worst: [
+                    { name: "正暖金橘色 (Vibrant Orange)", hex: "#FFA500", tip: "災難配色！會讓肌膚顯得焦黃土氣" },
+                    { name: "芥末深泥黃 (Mustard Yellow)", hex: "#D4A300", tip: "會讓臉色看起來像熬夜疲憊" },
+                    { name: "高飽和螢光粉 (Neon Pink)", hex: "#FF007F", tip: "過度刺眼，會掩蓋面部柔和五官" }
+                ]
+            },
+            warm_autumn: {
+                name: "高雅暖秋型 (Warm Autumn) ─ 濃郁復古、智性美高定風",
+                subtitle: "沉穩大地色系的高級智性氣場",
+                badge: "🍂",
+                undertone: "暖色調 (Deep Warm Golden)",
+                contrast: "中高飽和 / 復古深濃",
+                desc: "你的膚色蘊含沉穩的金色與暖棕底蘊。極其適合大地色、駱駝色與濃郁復古暖色系。這些顏色能為你注入渾然天成的高級質感與智性美感。",
+                jewelry: "霧面古銅金 (Antique Gold) / 琥珀",
+                lipstick: "楓葉磚紅 (Maple Red) / 焦糖紅棕",
+                best: [
+                    { name: "焦糖楓葉紅 (Caramel Red)", hex: "#C85A32", tip: "壓得住氣場，展現無與倫比的高級感" },
+                    { name: "濃郁駱駝棕 (Camel Tan)", hex: "#C19A6B", tip: "經典高定大地配色，溫暖又有內涵" },
+                    { name: "復古橄欖綠 (Olive Green)", hex: "#6B8E23", tip: "氣質沉穩，去黃襯膚首選" },
+                    { name: "暖烤奶茶色 (Warm Milk Tea)", hex: "#D7B59F", tip: "日常極度耐看且不挑場合" }
+                ],
+                worst: [
+                    { name: "冷調桃紅 (Magenta Pink)", hex: "#FF00FF", tip: "色彩過度尖銳，與面部底色格格不入" },
+                    { name: "螢光天藍 (Bright Cyan)", hex: "#00E5FF", tip: "打破面部沉穩暖感，會顯老顯病態" },
+                    { name: "純雪白色 (Pure Snow White)", hex: "#FFFFFF", tip: "對比過強，容易顯得臉色死板" }
+                ]
+            },
+            cool_winter: {
+                name: "冷艷冷冬型 (Cool Winter) ─ 摩登俐落、冷冷高質感",
+                subtitle: "黑白對比鮮明的冷酷時髦名模感",
+                badge: "❄️",
+                undertone: "冷色調 (Cool Pure Rosy/Porcelain)",
+                contrast: "高對比 / 深沉明亮兼備",
+                desc: "你的面部輪廓清晰，肌色極清澈或具深冷對比。極其適合高飽和度、純黑純白及冰冷純色。穿上俐落飽和的配色能瞬間激發你的名模質感！",
+                jewelry: "白金 (Platinum) / 璀璨鑽石 / 銀飾",
+                lipstick: "冷調正紅 (True Ruby Red) / 漿果酒紅",
+                best: [
+                    { name: "深海皇家藍 (Royal Navy)", hex: "#1A365D", tip: "非常顯白且襯托精緻五官線條" },
+                    { name: "冷極雪白色 (Pure Ice White)", hex: "#FFFFFF", tip: "打造極致清爽俐落的高對比質感" },
+                    { name: "冷艷寶石紅 (Ruby Red)", hex: "#C51162", tip: "極具壓場感，提亮面部整體氣色" },
+                    { name: "墨黑曜石色 (Obsidian Black)", hex: "#121212", tip: "完美駕馭黑色，呈現滿分時髦感" }
+                ],
+                worst: [
+                    { name: "土黃薑黃色 (Muddy Mustard)", hex: "#C29B38", tip: "會讓透亮肌膚顯得土黃沉悶" },
+                    { name: "橘粉三文魚色 (Salmon Peach)", hex: "#FA8072", tip: "暖色濁感強，會讓五官模糊" },
+                    { name: "駝色米黃 (Dusty Beige)", hex: "#D2B48C", tip: "過度模糊，無法突出你的高對比度優勢" }
+                ]
+            }
+        };
+
+        // Application State Variables
+        let currentRGB = { r: 235, g: 195, b: 175 };
+        let currentSeasonKey = 'warm_spring';
+        let uploadedImageObject = null;
+
+        // STEP INDICATOR CONTROLLER
+        function updateStepUI(stepNumber) {
+            [1, 2, 3].forEach(step => {
+                const el = document.getElementById(`step-indicator-${step}`);
+                if (step === stepNumber) {
+                    el.className = "relative z-10 w-8 h-8 rounded-full bg-warm-500 text-white font-bold text-xs flex items-center justify-center shadow-md transition-all";
+                } else if (step < stepNumber) {
+                    el.className = "relative z-10 w-8 h-8 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center transition-all";
+                    el.innerHTML = '<i class="fa-solid fa-check text-[10px]"></i>';
+                } else {
+                    el.className = "relative z-10 w-8 h-8 rounded-full bg-gray-200 text-gray-500 font-bold text-xs flex items-center justify-center transition-all";
+                    el.innerText = step;
+                }
+            });
+        }
+
+        // PRESET MODEL QUICK LOAD
+        function loadPresetImage(type) {
+            const presets = {
+                spring: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+                summer: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80",
+                autumn: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
+                winter: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80"
+            };
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = function () {
+                initCanvasWithImage(img);
+            };
+            img.src = presets[type];
+        }
+
+        // IMAGE UPLOAD HANDLER
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    initCanvasWithImage(img);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // INIT CANVAS WITH LOADED IMAGE & SETUP INTERACTIVE EYE DROPPER
+        function initCanvasWithImage(img) {
+            uploadedImageObject = img;
+            const canvas = document.getElementById('face-canvas');
+            const ctx = canvas.getContext('2d');
+            const wrapper = document.getElementById('canvas-wrapper');
+            const placeholder = document.getElementById('upload-placeholder');
+
+            // Show canvas wrapper & hide placeholder
+            placeholder.classList.add('hidden');
+            wrapper.classList.remove('hidden');
+
+            // Responsive bounds
+            const maxWidth = Math.min(480, window.innerWidth - 60);
+            const scale = maxWidth / img.width;
+            canvas.width = maxWidth;
+            canvas.height = img.height * scale;
+
+            // Render photo on canvas
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Set drape preview photo src
+            document.getElementById('drape-photo-preview').src = canvas.toDataURL();
+
+            // Setup Eye Dropper & Magnifier Glass
+            setupMagnifierAndSampling(canvas, ctx, img);
+
+            // Default sample center area
+            sampleColorAtCoordinates(canvas.width / 2, canvas.height / 2, ctx);
+        }
+
+        // EYE DROPPER & MAGNIFIER GLASS LOGIC
+        function setupMagnifierAndSampling(canvas, ctx, img) {
+            const glass = document.getElementById('magnifier-glass');
+
+            function getMousePos(e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+
+            canvas.onmousemove = function (e) {
+                const pos = getMousePos(e);
+                
+                // Show magnifier
+                glass.style.display = "block";
+                glass.style.left = (pos.x - 45) + "px";
+                glass.style.top = (pos.y - 45) + "px";
+                glass.style.backgroundImage = `url('${canvas.toDataURL()}')`;
+                glass.style.backgroundSize = `${canvas.width * 2}px ${canvas.height * 2}px`;
+                glass.style.backgroundPosition = `-${pos.x * 2 - 45}px -${pos.y * 2 - 45}px`;
+            };
+
+            canvas.onmouseleave = function () {
+                glass.style.display = "none";
+            };
+
+            canvas.onclick = function (e) {
+                const pos = getMousePos(e);
+                sampleColorAtCoordinates(pos.x, pos.y, ctx);
+            };
+
+            // Touch support for mobile devices
+            canvas.ontouchmove = function (e) {
+                if (e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+                    sampleColorAtCoordinates(x, y, ctx);
+                }
+            };
+        }
+
+        // SAMPLE RGB COLOR & CALCULATE UNDERTONE
+        function sampleColorAtCoordinates(x, y, ctx) {
+            // Take 5x5 pixel average around tap area for smoother noise-reduction sampling
+            const sampleRadius = 2;
+            let totalR = 0, totalG = 0, totalB = 0, count = 0;
+
+            for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
+                for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
+                    const pxX = Math.floor(x + dx);
+                    const pxY = Math.floor(y + dy);
+
+                    if (pxX >= 0 && pxX < ctx.canvas.width && pxY >= 0 && pxY < ctx.canvas.height) {
+                        const pixel = ctx.getImageData(pxX, pxY, 1, 1).data;
+                        totalR += pixel[0];
+                        totalG += pixel[1];
+                        totalB += pixel[2];
+                        count++;
+                    }
+                }
+            }
+
+            if (count === 0) return;
+
+            currentRGB = {
+                r: Math.round(totalR / count),
+                g: Math.round(totalG / count),
+                b: Math.round(totalB / count)
+            };
+
+            const hex = rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b);
+
+            // Update UI preview panel
+            const block = document.getElementById('sampled-color-block');
+            block.style.backgroundColor = hex;
+            block.innerText = '';
+            document.getElementById('sampled-color-text').innerText = `HEX: ${hex.toUpperCase()} | RGB(${currentRGB.r},${currentRGB.g},${currentRGB.b})`;
+            document.getElementById('color-preview-panel').classList.remove('hidden');
+
+            // Evaluate Color Undertone Logic
+            currentSeasonKey = calculatePersonalSeason(currentRGB.r, currentRGB.g, currentRGB.b);
+            const seasonData = colorDatabase[currentSeasonKey];
+
+            document.getElementById('tone-badge').innerText = seasonData.undertone.split(' ')[0];
+
+            // Enable Next Step Button
+            const btnNext = document.getElementById('btn-next-1');
+            btnNext.disabled = false;
+            btnNext.className = "w-full bg-warm-500 text-white font-medium text-sm py-3.5 rounded-full hover:bg-warm-600 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer";
+        }
+
+        // RGB TO HEX HELPER
+        function rgbToHex(r, g, b) {
+            return "#" + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? "0" + hex : hex;
+            }).join("");
+        }
+
+        // AI UNDERTONE & SEASONAL COLOR CLASSIFICATION ALGORITHM
+        function calculatePersonalSeason(r, g, b) {
+            // Convert RGB to HSV
+            const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+            const max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
+            const delta = max - min;
+
+            let h = 0;
+            if (delta !== 0) {
+                if (max === rNorm) h = ((gNorm - bNorm) / delta) % 6;
+                else if (max === gNorm) h = (bNorm - rNorm) / delta + 2;
+                else h = (rNorm - gNorm) / delta + 4;
+                h = Math.round(h * 60);
+                if (h < 0) h += 360;
+            }
+
+            const s = max === 0 ? 0 : delta / max;
+            const v = max;
+
+            // Warmth / Coolness Metric: Compare Red-Yellow ratio against Blue
+            // Warm undertones have higher R & G relative to B (Peach/Golden). Cool undertones have higher B relative to G/R (Rosy/Blue).
+            const warmScore = (r - b) + (g - b) * 0.5;
+
+            const isWarm = warmScore > 85;
+            const isBright = v > 0.68;
+
+            if (isWarm) {
+                return isBright ? 'warm_spring' : 'warm_autumn';
+            } else {
+                return isBright ? 'cool_summer' : 'cool_winter';
+            }
+        }
+
+        // NAVIGATION: STEP 1 TO STEP 2
+        function goToDraping() {
+            document.getElementById('step-upload').classList.add('hidden');
+            document.getElementById('step-draping').classList.remove('hidden');
+            updateStepUI(2);
+
+            // Apply default drape for matched season
+            const defaultDrapes = {
+                warm_spring: { color: '#FF8A75', title: '暖春 · 明亮蜜桃粉' },
+                cool_summer: { color: '#8FAADC', title: '冷夏 · 天青霧藍' },
+                warm_autumn: { color: '#C86D51', title: '暖秋 · 焦糖楓紅' },
+                cool_winter: { color: '#1F3A60', title: '冷冬 · 深海墨藍' }
+            };
+
+            const drape = defaultDrapes[currentSeasonKey];
+            applyDrape(drape.color, drape.title, currentSeasonKey);
+        }
+
+        // NAVIGATION: BACK TO STEP 1
+        function backToStep1() {
+            document.getElementById('step-draping').classList.add('hidden');
+            document.getElementById('step-upload').classList.remove('hidden');
+            updateStepUI(1);
+        }
+
+        // APPLY VIRTUAL DRAPE OVERLAY
+        function applyDrape(colorHex, titleText, seasonKey) {
+            const drapeOverlay = document.getElementById('drape-overlay');
+            const drapeLabel = document.getElementById('drape-label');
+
+            drapeOverlay.style.backgroundColor = colorHex + "D0"; // Apply opacity
+            drapeLabel.innerText = titleText;
+
+            // Dynamically update season if user selects manually
+            if (seasonKey) {
+                currentSeasonKey = seasonKey;
+            }
+        }
+
+        // GENERATE FINAL REPORT (STEP 3)
+        function generateFinalReport() {
+            document.getElementById('step-draping').classList.add('hidden');
+            document.getElementById('step-result').classList.remove('hidden');
+            updateStepUI(3);
+
+            const season = colorDatabase[currentSeasonKey];
+
+            // Render Header & Main Archetype
+            document.getElementById('result-season-name').innerText = season.name;
+            document.getElementById('result-subtitle').innerText = season.subtitle;
+            document.getElementById('season-badge-icon').innerText = season.badge;
+            document.getElementById('res-undertone').innerText = season.undertone;
+            document.getElementById('res-brightness').innerText = season.contrast;
+            document.getElementById('result-description').innerText = season.desc;
+
+            // Render Best Clothing Swatches
+            const bestContainer = document.getElementById('best-colors-container');
+            bestContainer.innerHTML = season.best.map(item => `
+                <div class="color-card-hover p-2.5 rounded-xl border border-gray-100 bg-gray-50/80 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg shadow-sm border border-white flex-shrink-0" style="background-color: ${item.hex}"></div>
+                    <div>
+                        <div class="text-xs font-bold text-gray-800">${item.name}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">${item.tip}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render Disaster Avoidance Swatches
+            const worstContainer = document.getElementById('worst-colors-container');
+            worstContainer.innerHTML = season.worst.map(item => `
+                <div class="color-card-hover p-2.5 rounded-xl border border-gray-100 bg-gray-50/80 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg shadow-sm border border-white flex-shrink-0" style="background-color: ${item.hex}"></div>
+                    <div>
+                        <div class="text-xs font-bold text-gray-800">${item.name}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">${item.tip}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render Jewelry & Lipstick Recommendations
+            document.getElementById('jewelry-recommendation').innerText = season.jewelry;
+            document.getElementById('lipstick-recommendation').innerText = season.lipstick;
+
+            // Render Wardrobe Outfit Matcher
+            initOutfitMatcher(season);
+
+            // Scroll smoothly to top of results
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+
+        // OOTD WARDROBE OUTFIT MATCHING ENGINE
+        function initOutfitMatcher(season) {
+            const picker = document.getElementById('outfit-swatch-picker');
+            
+            // Render clickable top swatches
+            picker.innerHTML = season.best.map((item, idx) => `
+                <button onclick="selectOutfitTop('${item.hex}', '${item.name}')" class="flex-shrink-0 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:border-warm-500 transition-all flex items-center gap-1.5 text-xs">
+                    <span class="w-3 h-3 rounded-full" style="background-color: ${item.hex}"></span>
+                    <span class="text-[11px] text-gray-700">${item.name.split(' ')[0]}</span>
+                </button>
+            `).join('');
+
+            // Select initial top color
+            if (season.best.length > 0) {
+                selectOutfitTop(season.best[0].hex, season.best[0].name);
+            }
+        }
+
+        function selectOutfitTop(hex, name) {
+            document.getElementById('outfit-top-preview').style.backgroundColor = hex;
+            document.getElementById('outfit-top-name').innerText = name;
+        }
+
+        // COPY SUMMARY REPORT TO CLIPBOARD
+        function copySummaryReport() {
+            const season = colorDatabase[currentSeasonKey];
+            const text = `✨【個人色顏判斷 - AI 個人診斷報告】✨\n` +
+                         `我的命定韓系風格：${season.name}\n` +
+                         `皮膚底色 (Undertone)：${season.undertone}\n` +
+                         `適合飾品：${season.jewelry}\n` +
+                         `命定穿搭色：${season.best.map(b => b.name).join('、')}\n` +
+                         `避雷災難色：${season.worst.map(w => w.name).join('、')}\n\n` +
+                         `快來體驗你的專屬個人色顏鑑定！`;
+
+            // Fallback execCommand clipboard handler
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('已成功複製診斷結果摘要至剪貼簿！');
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // RESET DIAGNOSIS
+        function resetDiagnosis() {
+            document.getElementById('step-result').classList.add('hidden');
+            document.getElementById('step-draping').classList.add('hidden');
+            document.getElementById('step-upload').classList.remove('hidden');
+
+            document.getElementById('upload-placeholder').classList.remove('hidden');
+            document.getElementById('canvas-wrapper').classList.add('hidden');
+            document.getElementById('color-preview-panel').classList.add('hidden');
+
+            document.getElementById('file-input').value = '';
+            document.getElementById('btn-next-1').disabled = true;
+            document.getElementById('btn-next-1').className = "w-full bg-gray-200 text-gray-400 font-medium text-sm py-3.5 rounded-full cursor-not-allowed transition-all shadow-xs flex items-center justify-center gap-2";
+
+            updateStepUI(1);
+        }
+    </script>
+</body>
+</html>
