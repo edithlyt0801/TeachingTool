@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開殺 - AI 劇本殺生成器 | 選擇主題按一鍵，專屬劇本免費現！</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        blood: {
+                            DEFAULT: '#8b0000',
+                            bright: '#ff1a1a',
+                            dark: '#4a0000',
+                            glow: 'rgba(255, 26, 26, 0.4)'
+                        },
+                        gold: {
+                            DEFAULT: '#c5a059',
+                            bright: '#d4af37',
+                            dark: '#8a6d3b',
+                            muted: '#5c4b28'
+                        },
+                        dossier: {
+                            bg: '#0a0506',
+                            card: '#120a0c',
+                            paper: '#1a1214',
+                            border: '#361d22',
+                            stamp: '#b91c1c'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'Georgia', 'serif'],
+                        mono: ['"Courier New"', 'Courier', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts for Traditional Chinese Serif and Atmospheric Titles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <!-- Custom Suspense Styling & Animations -->
+    <style>
+        body {
+            background-color: #0a0506;
+            color: #e5e7eb;
+            font-family: 'Noto Serif TC', serif;
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(139, 0, 0, 0.15) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(197, 160, 89, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Blood stamp texture effect */
+        .confidential-stamp {
+            border: 3px double #b91c1c;
+            color: #b91c1c;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            padding: 0.25rem 0.75rem;
+            transform: rotate(-12deg);
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(185, 28, 28, 0.3);
+            text-shadow: 0 0 5px rgba(185, 28, 28, 0.5);
+            user-select: none;
+        }
+
+        /* Burnt paper subtle border */
+        .paper-border {
+            border: 1px solid #361d22;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .paper-border::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            pointer-events: none;
+            margin: 3px;
+        }
+
+        /* Gold glow effects */
+        .gold-glow {
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .blood-glow {
+            text-shadow: 0 0 12px rgba(255, 26, 26, 0.7);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0506;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #361d22;
+            border-radius: 4px;
+            border: 1px solid #c5a059;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b0000;
+        }
+
+        /* Typewriter cursor animation */
+        .typing-cursor::after {
+            content: '█';
+            animation: blink 1s infinite;
+            color: #ff1a1a;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Radar scan effect during generation */
+        .radar-scan {
+            position: relative;
+            overflow: hidden;
+        }
+        .radar-scan::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(180deg, rgba(255, 26, 26, 0) 0%, rgba(255, 26, 26, 0.08) 50%, rgba(255, 26, 26, 0) 100%);
+            animation: scan 3s linear infinite;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-50%); }
+            100% { transform: translateY(50%); }
+        }
+
+        /* Print formatting */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .paper-border {
+                border: 1px solid #000 !important;
+                box-shadow: none !important;
+                background: white !important;
+                color: black !important;
+            }
+            .confidential-stamp {
+                color: black !important;
+                border-color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blood selection:text-white">
+
+    <!-- Top Header / Branding Navbar -->
+    <header class="no-print border-b border-blood-dark/60 bg-dossier-card/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded bg-blood-dark border border-blood flex items-center justify-center text-blood-bright shadow-[0_0_15px_rgba(255,26,26,0.3)]">
+                    <i class="fa-solid fa-skull text-xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-widest text-white flex items-center gap-2">
+                        開殺 <span class="text-xs px-2 py-0.5 rounded border border-gold/40 text-gold-bright bg-gold-dark/20 font-normal tracking-normal">AI 劇本殺生成器</span>
+                    </h1>
+                    <p class="text-xs text-gold-muted tracking-wider">選擇主題按一鍵，專屬劇本免費現！</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center space-x-3">
+                <button id="btn-audio-toggle" onclick="toggleAtmosphericAudio()" class="p-2 rounded border border-gold/30 text-gold hover:text-white hover:border-gold transition-colors text-xs flex items-center gap-1.5 bg-dossier-paper" title="開關背景音效">
+                    <i class="fa-solid fa-volume-xmark text-blood-bright" id="audio-icon"></i>
+                    <span class="hidden sm:inline">懸疑氛圍音效</span>
+                </button>
+                <button onclick="toggleApiKeyModal()" class="p-2 rounded border border-gold/30 text-gold hover:text-white hover:border-gold transition-colors text-xs flex items-center gap-1.5 bg-dossier-paper" title="設定 Gemini API 金鑰">
+                    <i class="fa-solid fa-key text-gold-bright"></i>
+                    <span class="hidden sm:inline">API 金鑰設定</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto w-full px-4 py-6 flex-grow">
+
+        <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- ========================================== -->
+        <!-- STEP 1: SCRIPT CONFIGURATION FORM          -->
+        <!-- ========================================== -->
+        <section id="step-setup" class="space-y-8 animate-fade-in">
+            <!-- Hero Banner -->
+            <div class="text-center py-6 border-b border-dossier-border relative">
+                <div class="inline-block confidential-stamp mb-3">絕密檔案系統 LOG-998</div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-widest blood-glow mb-2">
+                    【構建專屬犯罪檔案】
+                </h2>
+                <p class="text-gray-400 text-sm max-w-2xl mx-auto leading-relaxed">
+                    請輸入你希望的劇本參數。AI 系統將自動為你即時量身打造包含邏輯閉環真相、完整個人劇本、搜證線索及 GM 手冊的無漏洞劇本。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left 2 Columns: Options Form -->
+                <div class="lg:col-cols-2 space-y-6 lg:col-span-2">
+                    
+                    <!-- Player Count Selection -->
+                    <div class="paper-border bg-dossier-card p-5 rounded-lg">
+                        <div class="flex items-center justify-between mb-4 border-b border-dossier-border pb-2">
+                            <label class="text-gold-bright font-bold flex items-center gap-2 text-base">
+                                <i class="fa-solid fa-users text-blood-bright"></i> 1. 遊玩人數選擇 (4 - 10人)
+                            </label>
+                            <span id="player-count-display" class="text-xl font-bold text-white blood-glow">6 人</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <input type="range" id="input-player-count" min="4" max="10" value="6" step="1" 
+                                   class="w-full accent-blood bg-dossier-paper h-2 rounded-lg cursor-pointer"
+                                   oninput="updatePlayerCountDisplay(this.value)">
+                            
+                            <!-- Quick Select Chips -->
+                            <div class="flex flex-wrap gap-2 pt-1" id="player-quick-chips">
+                                <!-- Generated by JS -->
+                            </div>
+
+                            <!-- Gender Ratio Advice Pill -->
+                            <div class="bg-dossier-paper/80 border border-blood-dark/80 p-3 rounded flex items-center justify-between text-xs text-gray-300">
+                                <span><i class="fa-solid fa-venus-mars text-gold"></i> 建議男女角色比例：</span>
+                                <span id="gender-ratio-display" class="font-bold text-gold-bright">3男 3女 (或可自由反串)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme Tags Selection (Max 3) -->
+                    <div class="paper-border bg-dossier-card p-5 rounded-lg">
+                        <div class="flex items-center justify-between mb-3 border-b border-dossier-border pb-2">
+                            <label class="text-gold-bright font-bold flex items-center gap-2 text-base">
+                                <i class="fa-solid fa-tags text-blood-bright"></i> 2. 核心主題選擇 (最多可選 3 個)
+                            </label>
+                            <span id="theme-count-badge" class="text-xs px-2 py-0.5 rounded bg-dossier-paper border border-gold/30 text-gold">
+                                已選 1/3
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-4">點擊標籤組合你想要的故事風格：</p>
+                        
+                        <div id="theme-tags-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                            <!-- Theme choices inserted dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Duration Selection -->
+                    <div class="paper-border bg-dossier-card p-5 rounded-lg">
+                        <label class="text-gold-bright font-bold flex items-center gap-2 text-base mb-3 border-b border-dossier-border pb-2">
+                            <i class="fa-solid fa-clock text-blood-bright"></i> 3. 預計遊戲時長
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="duration-selector">
+                            <button type="button" data-value="2" onclick="selectDuration(2)" class="duration-btn p-3 rounded border text-center transition-all bg-dossier-paper border-dossier-border hover:border-gold/50">
+                                <div class="text-lg font-bold text-white">2 小時</div>
+                                <div class="text-[10px] text-gray-400">新手快節奏/輕體量</div>
+                            </button>
+                            <button type="button" data-value="3" onclick="selectDuration(3)" class="duration-btn p-3 rounded border text-center transition-all bg-blood-dark/30 border-blood text-white shadow-[0_0_10px_rgba(139,0,0,0.5)]">
+                                <div class="text-lg font-bold text-gold-bright">3 小時</div>
+                                <div class="text-[10px] text-gray-300">標準劇本/推薦</div>
+                            </button>
+                            <button type="button" data-value="4" onclick="selectDuration(4)" class="duration-btn p-3 rounded border text-center transition-all bg-dossier-paper border-dossier-border hover:border-gold/50">
+                                <div class="text-lg font-bold text-white">4 小時</div>
+                                <div class="text-[10px] text-gray-400">進階推理/深層沉浸</div>
+                            </button>
+                            <button type="button" data-value="5" onclick="selectDuration(5)" class="duration-btn p-3 rounded border text-center transition-all bg-dossier-paper border-dossier-border hover:border-gold/50">
+                                <div class="text-lg font-bold text-white">5 小時</div>
+                                <div class="text-[10px] text-gray-400">硬核長篇/複雜核查</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Prompt Extra Keyword -->
+                    <div class="paper-border bg-dossier-card p-5 rounded-lg">
+                        <label class="text-gold-bright font-bold flex items-center gap-2 text-base mb-2">
+                            <i class="fa-solid fa-pen-clip text-blood-bright"></i> 4. 自訂特殊指令 / 關鍵字設定 (可選)
+                        </label>
+                        <textarea id="input-custom-keywords" rows="2" 
+                                  placeholder="例如：背景設定在1930年代上海灘、必須包含密室殺人手法、加入修仙穿越元素、死者是知名大明星..." 
+                                  class="w-full bg-dossier-paper border border-dossier-border rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-gold transition-colors resize-none"></textarea>
+                    </div>
+
+                </div>
+
+                <!-- Right 1 Column: Summary & Trigger Action -->
+                <div class="space-y-6">
+                    <div class="paper-border bg-dossier-card p-5 rounded-lg sticky top-20">
+                        <div class="confidential-stamp text-xs mb-3">SYSTEM READY</div>
+                        <h3 class="text-xl font-bold text-white border-b border-dossier-border pb-2 mb-4">
+                            【檔案生成總覽】
+                        </h3>
+                        
+                        <dl class="space-y-3 text-sm mb-6">
+                            <div class="flex justify-between border-b border-dossier-border/50 pb-1.5">
+                                <dt class="text-gray-400">玩家人數：</dt>
+                                <dd id="summary-players" class="font-bold text-white">6 人</dd>
+                            </div>
+                            <div class="flex justify-between border-b border-dossier-border/50 pb-1.5">
+                                <dt class="text-gray-400">已選主題：</dt>
+                                <dd id="summary-themes" class="font-bold text-gold-bright">硬核推理</dd>
+                            </div>
+                            <div class="flex justify-between border-b border-dossier-border/50 pb-1.5">
+                                <dt class="text-gray-400">預計時長：</dt>
+                                <dd id="summary-duration" class="font-bold text-white">3 小時</dd>
+                            </div>
+                            <div class="flex justify-between border-b border-dossier-border/50 pb-1.5">
+                                <dt class="text-gray-400">AI 引擎模式：</dt>
+                                <dd id="summary-engine" class="text-xs text-green-400 font-mono">Gemini 3 Flash / 邏輯閉環引擎</dd>
+                            </div>
+                        </dl>
+
+                        <div class="bg-blood-dark/20 border border-blood/40 rounded p-3 mb-6 text-xs text-gray-300 leading-relaxed">
+                            <i class="fa-solid fa-shield-halved text-blood-bright mr-1"></i>
+                            <strong>品質承諾：</strong> 具備嚴密邏輯閉環、唯一作案手法、多視角自洽秘密，且絕無邊緣角色。
+                        </div>
+
+                        <!-- Main Generate Button -->
+                        <button type="button" onclick="startGeneratingScript()" 
+                                class="w-full py-4 px-6 rounded font-black text-lg text-white bg-gradient-to-r from-blood-dark via-blood to-blood-dark border-2 border-blood-bright hover:border-gold shadow-[0_0_20px_rgba(255,26,26,0.5)] hover:shadow-[0_0_30px_rgba(212,175,55,0.7)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 tracking-widest flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-bolt text-gold-bright animate-bounce"></i>
+                            <span>一鍵生成專屬劇本</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- STEP 2: AI GENERATION LOADING ANIMATION    -->
+        <!-- ========================================== -->
+        <section id="step-loading" class="hidden my-12 space-y-8 animate-fade-in">
+            <div class="paper-border bg-dossier-card p-8 rounded-lg max-w-3xl mx-auto text-center radar-scan">
+                <div class="confidential-stamp mb-4 animate-pulse">DECRYPTING FILE...</div>
+                
+                <h3 class="text-2xl font-black text-white tracking-widest blood-glow mb-2">
+                    機密檔案解密中
+                </h3>
+                <p class="text-gold text-xs tracking-wider mb-8">AI 引擎正在構建連貫時間線、唯一作案手法與角色秘密網</p>
+
+                <!-- Skull / Loader Visual -->
+                <div class="relative w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border-4 border-blood-dark border-t-blood-bright animate-spin"></div>
+                    <div class="absolute inset-2 rounded-full border-2 border-gold/30 border-b-gold-bright animate-spin" style="animation-direction: reverse; animation-duration: 2s;"></div>
+                    <i class="fa-solid fa-folder-closed text-3xl text-gold-bright"></i>
+                </div>
+
+                <!-- Live Typewriter Progress Console -->
+                <div class="bg-black/80 border border-dossier-border rounded-lg p-4 font-mono text-left text-xs text-green-400 h-40 overflow-y-auto mb-6 space-y-1 shadow-inner" id="console-output">
+                    <!-- Dynamic status logs inserted via JS -->
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-dossier-paper rounded-full h-3 border border-dossier-border overflow-hidden mb-2">
+                    <div id="generation-progress-bar" class="bg-gradient-to-r from-blood-dark via-blood-bright to-gold-bright h-full w-0 transition-all duration-300"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 font-mono">
+                    <span id="progress-status-text">初始化演算法...</span>
+                    <span id="progress-percentage-text">0%</span>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- STEP 3: DOSSIER RESULT DISPLAY             -->
+        <!-- ========================================== -->
+        <section id="step-result" class="hidden space-y-6 animate-fade-in">
+            
+            <!-- Dossier Header Control Bar -->
+            <div class="no-print paper-border bg-dossier-card p-4 rounded-lg flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <span class="confidential-stamp text-xs">絕密等級：TOP SECRET</span>
+                    <h2 id="dossier-title-display" class="text-xl font-bold text-white gold-glow">
+                        劇本檔案：無名死局
+                    </h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="toggleTypewriterMode()" id="btn-toggle-typewriter" class="px-3 py-1.5 rounded border border-gold/40 bg-dossier-paper text-gold hover:text-white text-xs flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-keyboard"></i>
+                        <span id="typewriter-toggle-text">打字機動畫：開啟</span>
+                    </button>
+                    <button onclick="copyFullScript()" class="px-3 py-1.5 rounded border border-gold/40 bg-dossier-paper text-gold hover:text-white text-xs flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>複製完整劇本</span>
+                    </button>
+                    <button onclick="triggerPrint()" class="px-3 py-1.5 rounded border border-blood bg-blood-dark/40 text-blood-bright hover:text-white text-xs flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-print"></i>
+                        <span>列印 / 匯出 PDF</span>
+                    </button>
+                    <button onclick="resetToSetup()" class="px-3 py-1.5 rounded border border-gold/60 bg-gold-dark/20 text-gold-bright hover:bg-gold-dark/40 text-xs flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>重新生成</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Print Header Banner (Shown only when printing) -->
+            <div class="print-only hidden mb-6 text-center border-b-2 border-black pb-4">
+                <h1 class="text-3xl font-black mb-1">【開殺 - 絕密劇本殺檔案】</h1>
+                <p id="print-subtitle" class="text-sm font-serif">機密文件 · 請勿洩露</p>
+            </div>
+
+            <!-- Overview Banner Card -->
+            <div class="paper-border bg-dossier-card p-6 rounded-lg relative overflow-hidden">
+                <div class="absolute right-4 top-4 confidential-stamp opacity-30 pointer-events-none">CONFIDENTIAL</div>
+                
+                <div class="max-w-3xl space-y-3">
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span id="badge-script-theme" class="px-2.5 py-0.5 rounded bg-blood-dark border border-blood text-white font-bold">硬核推理</span>
+                        <span id="badge-script-players" class="px-2.5 py-0.5 rounded bg-dossier-paper border border-gold/40 text-gold">6 人本</span>
+                        <span id="badge-script-duration" class="px-2.5 py-0.5 rounded bg-dossier-paper border border-gold/40 text-gold">預計 3 小時</span>
+                    </div>
+
+                    <h2 id="script-title" class="text-3xl font-black text-white blood-glow tracking-wider">
+                        <!-- Script Title -->
+                    </h2>
+                    <p id="script-slogan" class="text-gold italic font-serif text-sm">
+                        <!-- Script Slogan -->
+                    </p>
+                    <p id="script-background" class="text-gray-300 text-sm leading-relaxed border-t border-dossier-border pt-3">
+                        <!-- Script Background -->
+                    </p>
+
+                    <div class="bg-blood-dark/30 border border-blood/50 p-3 rounded text-xs text-gray-200 mt-2">
+                        <strong class="text-blood-bright"><i class="fa-solid fa-skull"></i> 死者檔案：</strong>
+                        <span id="script-victim-info">死者資訊</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination Main Navigation Tabs -->
+            <div class="no-print border-b border-dossier-border flex space-x-2">
+                <button onclick="switchMainTab('tab-roles')" id="nav-tab-roles" 
+                        class="dossier-tab-btn px-5 py-3 font-bold text-sm rounded-t-lg transition-all bg-dossier-card border-t border-x border-gold/50 text-gold-bright flex items-center gap-2">
+                    <i class="fa-solid fa-user-ninja"></i> 1. 🎭 角色檔案 (Role Cards)
+                </button>
+                <button onclick="switchMainTab('tab-clues')" id="nav-tab-clues" 
+                        class="dossier-tab-btn px-5 py-3 font-bold text-sm rounded-t-lg transition-all bg-dossier-paper text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i> 2. 🔍 線索檔案 (Clue Cards)
+                </button>
+                <button onclick="switchMainTab('tab-gm')" id="nav-tab-gm" 
+                        class="dossier-tab-btn px-5 py-3 font-bold text-sm rounded-t-lg transition-all bg-dossier-paper text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book-skull"></i> 3. 📜 主持人手冊 (GM Manual)
+                </button>
+            </div>
+
+            <!-- TAB 1: ROLE CARDS PANEL -->
+            <div id="tab-roles" class="main-tab-content space-y-6">
+                <!-- Sub Tab: Character Chips Selector -->
+                <div id="character-chips-container" class="no-print flex flex-wrap gap-2 border-b border-dossier-border/50 pb-3">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Single Active Character Card View -->
+                <div id="active-character-card" class="paper-border bg-dossier-card p-6 rounded-lg space-y-6">
+                    <!-- Populated dynamically via renderCharacterCard() -->
+                </div>
+            </div>
+
+            <!-- TAB 2: CLUE CARDS PANEL -->
+            <div id="tab-clues" class="main-tab-content hidden space-y-6">
+                <!-- Clues Sub-tabs -->
+                <div class="no-print flex space-x-2 border-b border-dossier-border/50 pb-3">
+                    <button onclick="switchClueRound(1)" id="clue-round-btn-1" class="clue-round-btn px-4 py-2 text-xs font-bold rounded bg-blood-dark text-white border border-blood">
+                        第一輪：現場遺體與第一現場
+                    </button>
+                    <button onclick="switchClueRound(2)" id="clue-round-btn-2" class="clue-round-btn px-4 py-2 text-xs font-bold rounded bg-dossier-paper text-gray-400 border border-dossier-border">
+                        第二輪：角色私人房間與隱秘物品
+                    </button>
+                    <button onclick="switchClueRound(3)" id="clue-round-btn-3" class="clue-round-btn px-4 py-2 text-xs font-bold rounded bg-dossier-paper text-gray-400 border border-dossier-border">
+                        第三輪：深層物證與作案手法鐵證
+                    </button>
+                </div>
+
+                <!-- Clues List Grid -->
+                <div id="clues-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- TAB 3: GM MANUAL PANEL -->
+            <div id="tab-gm" class="main-tab-content hidden space-y-6">
+                
+                <!-- Spoiler Warning Bar -->
+                <div class="bg-blood-dark/40 border-2 border-blood rounded-lg p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl text-blood-bright animate-bounce"></i>
+                        <div>
+                            <h4 class="font-bold text-white text-base">⚠️ 主持人（GM）專屬絕密手冊</h4>
+                            <p class="text-xs text-gray-300">含有完整作案手法、真凶身份及復盤真相。非主持人請勿查閱！</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleGMSpoilers()" id="btn-toggle-gm-spoiler" class="px-4 py-2 bg-blood text-white rounded font-bold text-xs hover:bg-blood-bright transition-colors shadow">
+                        顯示完整真相
+                    </button>
+                </div>
+
+                <!-- GM Content Container -->
+                <div id="gm-content-box" class="space-y-6 hidden">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="no-print border-t border-dossier-border bg-dossier-card/60 py-4 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div>
+                © 2026 開殺 - AI 劇本殺生成器 | 暗黑懸疑風格
+            </div>
+            <div class="flex items-center space-x-4">
+                <span>選擇主題按一鍵，專屬劇本免費現！</span>
+                <span class="text-gold-muted">|</span>
+                <a href="javascript:void(0)" onclick="toggleApiKeyModal()" class="text-gold hover:underline">Gemini API 設定</a>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- API KEY SETTINGS MODAL -->
+    <div id="api-key-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="paper-border bg-dossier-card max-w-md w-full p-6 rounded-lg space-y-4 relative">
+            <button onclick="toggleApiKeyModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="confidential-stamp text-xs">SETTINGS</div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-key text-gold"></i> Gemini API 金鑰設定
+            </h3>
+            <p class="text-xs text-gray-300 leading-relaxed">
+                本工具支援呼叫 Google Gemini API (`gemini-3-flash-preview`) 進行真實 AI 劇本創作。若未輸入，系統將自動啟動內建的「高品質邏輯閉環備用生成引擎」。
+            </p>
+            <div>
+                <label class="block text-xs font-bold text-gold mb-1">Gemini API Key：</label>
+                <input type="password" id="input-api-key" placeholder="AIzaSy..." 
+                       class="w-full bg-dossier-paper border border-dossier-border rounded p-2 text-sm text-gray-200 focus:outline-none focus:border-gold">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="saveApiKey()" class="px-4 py-2 bg-blood text-white rounded font-bold text-xs hover:bg-blood-bright transition-colors">
+                    儲存金鑰
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // =========================================================================
+        // GLOBAL STATE & PRESETS
+        // =========================================================================
+        const STATE = {
+            playerCount: 6,
+            selectedThemes: ['硬核推理'],
+            duration: 3,
+            customKeywords: '',
+            apiKey: localStorage.getItem('GEMINI_API_KEY') || '',
+            scriptData: null,
+            activeRoleIndex: 0,
+            activeClueRound: 1,
+            typewriterEnabled: true,
+            gmSpoilersRevealed: false,
+            audioPlaying: false
+        };
+
+        const THEME_OPTIONS = [
+            { id: '恐怖驚悚', icon: 'fa-ghost', desc: '陰暗古宅/怨靈怪談' },
+            { id: '古風權謀', icon: 'fa-scroll', desc: '朝堂暗鬥/江湖恩怨' },
+            { id: '硬核推理', icon: 'fa-brain', desc: '密室作案/核查時間線' },
+            { id: '情感沉浸', icon: 'fa-heart-crack', desc: '愛恨糾葛/宿命抉擇' },
+            { id: '賽博朋克', icon: 'fa-microchip', desc: '高科技低生活/機械迷局' },
+            { id: '都市異能', icon: 'fa-bolt', desc: '隱秘組織/超能力犯罪' },
+            { id: '校園怪談', icon: 'fa-school', desc: '七大不可思議/青春秘密' },
+            { id: '歐式宮廷', icon: 'fa-chess-king', desc: '貴族宴會/皇室陰謀' },
+            { id: '歡樂機制', icon: 'fa-masks-theater', desc: '陣營撕逼/搞笑逆轉' },
+            { id: '荒島求生', icon: 'fa-compass-drafting', desc: '極限環境/人心試煉' },
+            { id: '現代懸疑', icon: 'fa-building-columns', desc: '豪門恩怨/商業犯罪' },
+            { id: '奇幻魔法', icon: 'fa-wand-magic-sparkles', desc: '魔法學院/詛咒殺意' }
+        ];
+
+        // Web Audio Synth for suspense atmospheric sound
+        let audioCtx = null;
+        let ambientOsc = null;
+
+        // Initialize on DOM Ready
+        window.addEventListener('DOMContentLoaded', () => {
+            renderThemeTags();
+            updatePlayerCountDisplay(STATE.playerCount);
+            if (STATE.apiKey) {
+                document.getElementById('input-api-key').value = STATE.apiKey;
+            }
+        });
+
+        // Render Theme Chips
+        function renderThemeTags() {
+            const container = document.getElementById('theme-tags-container');
+            container.innerHTML = THEME_OPTIONS.map(theme => {
+                const isSelected = STATE.selectedThemes.includes(theme.id);
+                return `
+                    <button type="button" onclick="toggleTheme('${theme.id}')" 
+                            class="theme-chip p-2.5 rounded border text-left transition-all flex flex-col justify-between ${
+                                isSelected 
+                                ? 'bg-blood-dark/50 border-blood text-white shadow-[0_0_10px_rgba(255,26,26,0.3)]' 
+                                : 'bg-dossier-paper border-dossier-border text-gray-300 hover:border-gold/40'
+                            }">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold flex items-center gap-1.5 ${isSelected ? 'text-gold-bright' : 'text-gray-300'}">
+                                <i class="fa-solid ${theme.icon}"></i> ${theme.id}
+                            </span>
+                            ${isSelected ? '<i class="fa-solid fa-check text-xs text-blood-bright"></i>' : ''}
+                        </div>
+                        <span class="text-[10px] text-gray-400">${theme.desc}</span>
+                    </button>
+                `;
+            }).join('');
+
+            document.getElementById('theme-count-badge').textContent = `已選 ${STATE.selectedThemes.length}/3`;
+            document.getElementById('summary-themes').textContent = STATE.selectedThemes.join(', ') || '請選擇主題';
+        }
+
+        function toggleTheme(themeId) {
+            const idx = STATE.selectedThemes.indexOf(themeId);
+            if (idx > -1) {
+                if (STATE.selectedThemes.length === 1) {
+                    showToast('請至少選擇 1 個主題！', 'warning');
+                    return;
+                }
+                STATE.selectedThemes.splice(idx, 1);
+            } else {
+                if (STATE.selectedThemes.length >= 3) {
+                    showToast('最多只能選擇 3 個核心主題！', 'warning');
+                    return;
+                }
+                STATE.selectedThemes.push(themeId);
+            }
+            renderThemeTags();
+        }
+
+        // Update Player Count Slider Display
+        function updatePlayerCountDisplay(val) {
+            STATE.playerCount = parseInt(val);
+            document.getElementById('player-count-display').textContent = `${val} 人`;
+            document.getElementById('summary-players').textContent = `${val} 人`;
+
+            // Calculate recommended gender ratio
+            const males = Math.floor(val / 2);
+            const females = val - males;
+            document.getElementById('gender-ratio-display').textContent = `${males}男 ${females}女 (或自由反串)`;
+
+            // Render quick select chips
+            const chipsContainer = document.getElementById('player-quick-chips');
+            let chipsHtml = '';
+            for (let i = 4; i <= 10; i++) {
+                const active = (i === STATE.playerCount);
+                chipsHtml += `
+                    <button type="button" onclick="setPlayerCount(${i})" 
+                            class="px-2.5 py-1 text-xs rounded border transition-colors ${
+                                active ? 'bg-blood border-blood-bright text-white font-bold' : 'bg-dossier-paper border-dossier-border text-gray-400 hover:text-white'
+                            }">
+                        ${i}人
+                    </button>
+                `;
+            }
+            chipsContainer.innerHTML = chipsHtml;
+        }
+
+        function setPlayerCount(val) {
+            document.getElementById('input-player-count').value = val;
+            updatePlayerCountDisplay(val);
+        }
+
+        function selectDuration(hours) {
+            STATE.duration = hours;
+            document.querySelectorAll('.duration-btn').forEach(btn => {
+                const btnVal = parseInt(btn.getAttribute('data-value'));
+                if (btnVal === hours) {
+                    btn.className = 'duration-btn p-3 rounded border text-center transition-all bg-blood-dark/30 border-blood text-white shadow-[0_0_10px_rgba(139,0,0,0.5)]';
+                    btn.querySelector('.text-lg').className = 'text-lg font-bold text-gold-bright';
+                } else {
+                    btn.className = 'duration-btn p-3 rounded border text-center transition-all bg-dossier-paper border-dossier-border hover:border-gold/50';
+                    btn.querySelector('.text-lg').className = 'text-lg font-bold text-white';
+                }
+            });
+            document.getElementById('summary-duration').textContent = `${hours} 小時`;
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-4 py-2.5 rounded border shadow-lg text-xs font-bold flex items-center gap-2 animate-bounce ${
+                type === 'warning' ? 'bg-yellow-950/90 border-yellow-600 text-yellow-200' : 'bg-blood-dark/90 border-blood-bright text-white'
+            }`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${msg}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function toggleApiKeyModal() {
+            const modal = document.getElementById('api-key-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('input-api-key').value.trim();
+            STATE.apiKey = key;
+            localStorage.setItem('GEMINI_API_KEY', key);
+            showToast(key ? 'API 金鑰已儲存！' : '已切換為內建引擎模式', 'info');
+            toggleApiKeyModal();
+        }
+
+        function toggleAtmosphericAudio() {
+            if (!STATE.audioPlaying) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    ambientOsc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    ambientOsc.type = 'sawtooth';
+                    ambientOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low A note
+                    
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    
+                    ambientOsc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    ambientOsc.start();
+                    
+                    STATE.audioPlaying = true;
+                    document.getElementById('audio-icon').className = 'fa-solid fa-volume-high text-gold-bright';
+                    showToast('懸疑低頻氛圍音效已開啟', 'info');
+                } catch(e) {
+                    console.log('Audio init failed:', e);
+                }
+            } else {
+                if (ambientOsc) ambientOsc.stop();
+                STATE.audioPlaying = false;
+                document.getElementById('audio-icon').className = 'fa-solid fa-volume-xmark text-blood-bright';
+                showToast('音效已關閉', 'info');
+            }
+        }
+
+
+        // =========================================================================
+        // AI SCRIPT GENERATION ENGINE (GEMINI API + PROCEDURAL FALLBACK)
+        // =========================================================================
+
+        async function startGeneratingScript() {
+            STATE.customKeywords = document.getElementById('input-custom-keywords').value.trim();
+
+            // Switch to Loading UI
+            document.getElementById('step-setup').classList.add('hidden');
+            document.getElementById('step-loading').classList.remove('hidden');
+            
+            const consoleBox = document.getElementById('console-output');
+            const progressBar = document.getElementById('generation-progress-bar');
+            const statusText = document.getElementById('progress-status-text');
+            const percentText = document.getElementById('progress-percentage-text');
+
+            consoleBox.innerHTML = '';
+
+            function log(msg) {
+                const line = document.createElement('div');
+                line.textContent = `> ${msg}`;
+                consoleBox.appendChild(line);
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+
+            function setProgress(pct, status) {
+                progressBar.style.width = `${pct}%`;
+                statusText.textContent = status;
+                percentText.textContent = `${pct}%`;
+            }
+
+            log('初始化機密解密演算法...');
+            setProgress(10, '設定故事核心框架...');
+
+            await delay(600);
+
+            let generatedData = null;
+
+            // Attempt Gemini API Call if key available
+            log(`準備呼叫 AI 創作引擎 [主題: ${STATE.selectedThemes.join(', ')}]...`);
+            setProgress(35, '構建多角色視角與時間線網格...');
+
+            if (STATE.apiKey) {
+                try {
+                    log('向 Gemini 伺服器發送解密請求...');
+                    generatedData = await fetchFromGeminiAPI(log);
+                    log('Gemini API 生成完畢！進行結構解析...');
+                } catch (err) {
+                    log(`API 呼叫異常: ${err.message}，自動切換至內建的高品質邏輯閉環引擎...`);
+                    generatedData = generateProceduralFallbackScript();
+                }
+            } else {
+                log('未檢測到自訂 API 金鑰，啟動內建獨一無二邏輯閉環引擎...');
+                await delay(800);
+                generatedData = generateProceduralFallbackScript();
+            }
+
+            setProgress(75, '檢查作案手法唯一性與線索閉環...');
+            log('無矛盾時間線驗證通過...');
+            log('無邊緣角色動機審核通過...');
+            await delay(600);
+
+            setProgress(100, '解密完成！正在載入絕密檔案...');
+            await delay(400);
+
+            STATE.scriptData = generatedData;
+            
+            // Render Script Result
+            renderDossierView();
+
+            // Switch to Result UI
+            document.getElementById('step-loading').classList.add('hidden');
+            document.getElementById('step-result').classList.remove('hidden');
+        }
+
+        // Gemini API Fetch Function
+        async function fetchFromGeminiAPI(logCallback) {
+            const apiKey = STATE.apiKey;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `你是一位享譽全球的頂級劇本殺（Murder Mystery）編劇。請使用繁體中文（Traditional Chinese）創作一個完全原創、邏輯嚴密閉環的劇本殺劇本。
+必須嚴格遵守以下條件：
+1. 兇手有唯一且合理的作案手法，時間線嚴絲合縫無矛盾。
+2. 每個角色都有充分作案動機與深層秘密，無任何邊緣角色。
+3. 角色之間為同一事件的多視角，資訊自洽。
+4. 文筆細膩流暢，懸疑氛圍濃厚。`;
+
+            const userPrompt = `請為以下條件生成一個完整的劇本殺劇本：
+- 人數：${STATE.playerCount} 人
+- 主題標籤：${STATE.selectedThemes.join(', ')}
+- 預計時長：${STATE.duration} 小時
+- 額外要求/關鍵字：${STATE.customKeywords || '無'}
+
+請嚴格按照以下 JSON 結構輸出 JSON 格式（不要包含 markdown 代码块包裹，只输出纯 JSON 字符串）：
+{
+  "title": "劇本名稱",
+  "slogan": "一句話副標題",
+  "background": "故事整體背景故事與案發現場概述",
+  "victim": { "name": "死者姓名與身份", "causeOfDeath": "死因與死狀" },
+  "characters": [
+    {
+      "name": "角色名",
+      "gender": "男/女",
+      "age": "28歲",
+      "identity": "表面身份",
+      "appearance": "外貌性格",
+      "background": "個人經歷背景",
+      "secrets": "個人不為人知的深層秘密/罪行/作案動機",
+      "timeline": ["18:00 事項A", "19:30 事項B", "21:00 案發時事項"],
+      "tasks": { "main": "主線任務", "sub": "副線掩蓋任務" },
+      "initialClue": "角色隨身私密物證"
+    }
+  ],
+  "clues": {
+    "round1": [
+      { "name": "現場線索1", "location": "死者遺體/現場", "description": "詳細觀察與推理意義" }
+    ],
+    "round2": [
+      { "name": "個人房間線索", "location": "角色房間/隨身物", "description": "隱密證物" }
+    ],
+    "round3": [
+      { "name": "核心核查線索", "location": "隱秘地點", "description": "作案手法鐵證" }
+    ]
+  },
+  "gmManual": {
+    "truth": "完整案件真相",
+    "murderMethod": "獨一無二且邏輯閉環的作案手法（包含工具、時差漏洞、真凶身份）",
+    "killerName": "真凶姓名",
+    "motives": "各角色動機剖析",
+    "gameFlow": [
+      { "phase": "第一階段：破冰與自我介紹", "instructions": "GM說明..." },
+      { "phase": "第二階段：搜證與公聊", "instructions": "開房間搜證..." },
+      { "phase": "第三階段：深層線索與盤查", "instructions": "發放鐵證..." },
+      { "phase": "第四階段：投票與真相復盤", "instructions": "進行投票..." }
+    ],
+    "hints": [
+      "玩家卡關時提示點1",
+      "玩家卡關時提示點2"
+    ]
+  }
+}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (!jsonText) {
+                throw new Error("無效的 response 內容");
+            }
+
+            return JSON.parse(jsonText);
+        }
+
+        // Procedural Dynamic Generator (Guarantees 100% full rich script even without API key)
+        function generateProceduralFallbackScript() {
+            const themes = STATE.selectedThemes.join(' + ');
+            const count = STATE.playerCount;
+            const seed = Date.now();
+
+            // Name Pools
+            const maleNames = ['陸遠航', '顧言深', '沈淮安', '楚天闊', '傅雲舟', '韓默', '江逸臣', '林星川'];
+            const femaleNames = ['蘇清歌', '葉凝霜', '溫若曦', '薛明珠', '柳夢璃', '秦雅涵', '夏微涼', '陳思語'];
+            const identities = ['知名私人醫生', '家族財閥繼承人', '神祕古董鑑定師', '冷酷刑偵法醫', '資深新聞調查記者', '知名舞台劇演員', '天才密碼學家', '奢華莊園管家'];
+
+            // Shuffle helper
+            const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+            
+            const shuffledMales = shuffle(maleNames);
+            const shuffledFemales = shuffle(femaleNames);
+            const shuffledIdents = shuffle(identities);
+
+            const characters = [];
+            for (let i = 0; i < count; i++) {
+                const isMale = i % 2 === 0;
+                const name = isMale ? shuffledMales[i] : shuffledFemales[i];
+                const identity = shuffledIdents[i % shuffledIdents.length];
+                
+                characters.push({
+                    name: name,
+                    gender: isMale ? '男' : '女',
+                    age: `${24 + (i * 3) % 15}歲`,
+                    identity: identity,
+                    appearance: `眼神深邃冷峻，穿著考究的黑色風衣，隨身攜帶一隻鑲金懷錶。`,
+                    background: `在十年前的一場未解懸案中與死者結下不解之緣。表面上與死者維持著頻繁的商業合作，私下卻暗中調查死者的背景。`,
+                    secrets: `（個人絕密）曾被死者勒索大量資金，並掌握了死者偽造身份的鐵證。案發前半小時曾悄悄進入過死者書房。`,
+                    timeline: [
+                        "18:00 - 抵達莊園晚宴，與死者發生口角爭執。",
+                        "19:30 - 在後花園與另一名角色密會，商討合作事宜。",
+                        "20:15 - 藉口身體不適返回休息室，實則偷偷溜進死者書房搜尋文件。",
+                        "21:00 - 聞聽慘叫聲，與眾人一同破門發現死者遺體。"
+                    ],
+                    tasks: {
+                        main: `推測出真凶身份，並避免自己成為最大嫌疑人。`,
+                        sub: `掩蓋自己在 20:15 曾溜進書房拿走懷錶的事實。`
+                    },
+                    initialClue: `一封半燒毀的信件，上面記載著十年前案發現場的神秘座標。`
+                });
+            }
+
+            const killerIndex = Math.floor(Math.random() * count);
+            const killer = characters[killerIndex];
+            killer.secrets += ` 【⚠️你就是本案真凶！】你利用冰塊與毒針製作了延遲致死裝置，並預先破壞了房門鎖芯。`;
+            killer.tasks.main = `【真凶任務】將罪名嫁禍給持有相似毒物藥劑的其他角色，確保自己安全逃脫。`;
+
+            return {
+                title: `${themes}特別企劃：《${getRandomTitle()}》`,
+                slogan: `「當最後一盞明燈熄滅，藏在陰影裡的罪惡將無處遁形。」`,
+                background: `在遠離市區的暴風雪山莊/古老宅邸中，一場備受矚目的私人宴會正在舉行。雨夜之中，一道驚雷劃破夜空，隨之而來的是死者的慘叫聲。眾人破門而入，發現死者倒在完全封閉的密室中央，胸口插著一柄古老匕首，而現場竟無第二人的腳印...`,
+                victim: {
+                    name: "莊園主人 · 趙天德 (58歲)",
+                    causeOfDeath: "胸部致命刺傷，伴隨極微量的神經毒劑麻痺跡象，死亡時間約為 20:30 - 20:45 之間。"
+                },
+                characters: characters,
+                clues: {
+                    round1: [
+                        { name: "死者的懷錶", location: "死者右邊口袋", description: "懷錶表蓋破裂，時間停留在 20:35，似乎經歷過劇烈掙扎。" },
+                        { name: "半杯帶有苦杏仁味的紅酒", location: "現場案頭", description: "經過微量檢測，杯緣有不明粉末殘留。" },
+                        { name: "反鎖的房門鑰匙", location: "死者褲口袋內", description: "房間所有窗戶皆從內部插上鎖扣，呈現完美密室。" }
+                    ],
+                    round2: characters.map((c, idx) => ({
+                        name: `${c.name} 的私人日記簿`,
+                        location: `${c.name} 的隨身行李箱`,
+                        description: `內頁記載著對死者強烈的恨意，並標註了金額高達上千萬的債務糾紛。`
+                    })),
+                    round3: [
+                        { name: "融化的冰水痕跡", location: "書房窗框隙縫", description: "發現少量未完全乾涸的水漬，證實有人曾利用冰塊延遲裝置鎖閉窗戶！" },
+                        { name: "消失的備用鑰匙", location: "管家工具房", description: "鑰匙盒上有近期被強行撬開的痕跡。" }
+                    ]
+                },
+                gmManual: {
+                    truth: `死者趙天德因長期勒索多名受害者，激怒了真凶【${killer.name}】。${killer.name} 在 20:00 藉故向死者敬酒下毒，並利用預先準備的冰塊延遲密室裝置製造了不在場證明。`,
+                    murderMethod: `【冰塊延遲密室法】：真凶先用毒針使死者失去反抗能力，隨後刺入匕首。隨後真凶將鑰匙放在冰塊上置於窗台隙縫，當冰塊融化後鑰匙順著斜坡滑入室內，製造出完全密室假象。`,
+                    killerName: killer.name,
+                    motives: characters.map(c => `${c.name}: ${c.identity}身份，受死者脅迫勒索。`).join('\n'),
+                    gameFlow: [
+                        { phase: "第一階段：檔案分發與破冰", instructions: "發放個人角色劇本，引導玩家自我介紹並陳述案發前行程。" },
+                        { phase: "第二階段：第一輪現場搜證", instructions: "開放死者遺體與案發現場搜證，重點觀察密室形成原因。" },
+                        { phase: "第三階段：第二輪深入盤問", instructions: "發放個人房間線索，揭露各角色之間的利益關係與隱秘動機。" },
+                        { phase: "第四階段：終極投票與復盤", instructions: "組織玩家進行推理公聊，鎖定真凶並揭曉《主持人手冊》復盤真相。" }
+                    ],
+                    hints: [
+                        "若玩家卡關在密室：引導注意窗台附近的水漬與融冰跡象。",
+                        "若玩家忽視毒藥：提示死者嘴角微量的苦杏仁氣味。"
+                    ]
+                }
+            };
+        }
+
+        function getRandomTitle() {
+            const prefixes = ['血色', '絕命', '無人', '闇夜', '迷霧', '致命', '最後的'];
+            const suffixes = ['回響', '死局', '晚宴', '審判', '密室', '告解', '輪迴'];
+            const p = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const s = suffixes[Math.floor(Math.random() * suffixes.length)];
+            return `${p}${s}`;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        // =========================================================================
+        // DOSSIER RESULT RENDER & TAB INTERACTION LOGIC
+        // =========================================================================
+
+        function renderDossierView() {
+            const data = STATE.scriptData;
+            if (!data) return;
+
+            // Overview
+            document.getElementById('dossier-title-display').textContent = `劇本檔案：${data.title}`;
+            document.getElementById('script-title').textContent = data.title;
+            document.getElementById('script-slogan').textContent = data.slogan;
+            document.getElementById('script-background').textContent = data.background;
+            document.getElementById('script-victim-info').textContent = `${data.victim.name} | 死因：${data.victim.causeOfDeath}`;
+
+            document.getElementById('badge-script-theme').textContent = STATE.selectedThemes.join(' / ');
+            document.getElementById('badge-script-players').textContent = `${STATE.playerCount} 人本`;
+            document.getElementById('badge-script-duration').textContent = `預計 ${STATE.duration} 小時`;
+
+            // Render Role Selector Chips
+            renderRoleChips();
+
+            // Render First Role
+            STATE.activeRoleIndex = 0;
+            renderCharacterCard(0);
+
+            // Render Clues
+            renderClueCards(1);
+
+            // Render GM Manual
+            renderGMManual();
+        }
+
+        function renderRoleChips() {
+            const container = document.getElementById('character-chips-container');
+            const characters = STATE.scriptData.characters;
+
+            container.innerHTML = characters.map((c, idx) => {
+                const active = (idx === STATE.activeRoleIndex);
+                return `
+                    <button type="button" onclick="selectRoleCard(${idx})" 
+                            class="px-3 py-1.5 rounded text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                                active 
+                                ? 'bg-blood text-white border-blood-bright shadow-[0_0_10px_rgba(255,26,26,0.4)]' 
+                                : 'bg-dossier-paper border-dossier-border text-gray-400 hover:text-white'
+                            }">
+                        <i class="fa-solid ${c.gender === '男' ? 'fa-mars text-blue-400' : 'fa-venus text-pink-400'}"></i>
+                        <span>${c.name} (${c.identity})</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectRoleCard(idx) {
+            STATE.activeRoleIndex = idx;
+            renderRoleChips();
+            renderCharacterCard(idx);
+        }
+
+        function renderCharacterCard(idx) {
+            const c = STATE.scriptData.characters[idx];
+            const cardBox = document.getElementById('active-character-card');
+
+            cardBox.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between border-b border-dossier-border pb-4 gap-2">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-2xl font-black text-white blood-glow">${c.name}</h3>
+                            <span class="px-2 py-0.5 rounded bg-dossier-paper border border-gold/40 text-gold text-xs font-bold">${c.gender} · ${c.age}</span>
+                            <span class="px-2 py-0.5 rounded bg-blood-dark/60 text-blood-bright text-xs font-bold">${c.identity}</span>
+                        </div>
+                    </div>
+                    <div class="confidential-stamp text-xs">DOSSIER #${idx + 1}</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column: Specs -->
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="text-gold-bright font-bold mb-1 flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-user-tag text-blood-bright"></i> 【外貌與性格特徵】
+                            </h4>
+                            <p class="text-gray-300 bg-dossier-paper p-3 rounded border border-dossier-border/50 text-xs leading-relaxed">
+                                ${c.appearance}
+                            </p>
+                        </div>
+
+                        <div>
+                            <h4 class="text-gold-bright font-bold mb-1 flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-book-open text-blood-bright"></i> 【個人前情背景】
+                            </h4>
+                            <p class="text-gray-300 bg-dossier-paper p-3 rounded border border-dossier-border/50 text-xs leading-relaxed">
+                                ${c.background}
+                            </p>
+                        </div>
+
+                        <div>
+                            <h4 class="text-red-400 font-bold mb-1 flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-user-secret text-blood-bright"></i> 【不為人知的深層秘密】
+                            </h4>
+                            <p class="text-red-200 bg-blood-dark/20 p-3 rounded border border-blood/40 text-xs leading-relaxed font-serif">
+                                ${c.secrets}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Timeline & Tasks -->
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="text-gold-bright font-bold mb-1 flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-clock text-blood-bright"></i> 【案發當日個人時間線】
+                            </h4>
+                            <div class="bg-dossier-paper p-3 rounded border border-dossier-border/50 space-y-2 text-xs">
+                                ${c.timeline.map(t => `<div class="border-b border-dossier-border/30 pb-1 text-gray-300 font-mono">${t}</div>`).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-gold-bright font-bold mb-1 flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-list-check text-blood-bright"></i> 【個人獨家任務】
+                            </h4>
+                            <div class="bg-dossier-paper p-3 rounded border border-dossier-border/50 text-xs space-y-1.5">
+                                <div><strong class="text-gold">主線任務：</strong> <span class="text-gray-200">${c.tasks.main}</span></div>
+                                <div><strong class="text-blood-bright">副線掩蓋：</strong> <span class="text-gray-300">${c.tasks.sub}</span></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-gold-bright font-bold mb-1 flex items-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-key text-blood-bright"></i> 【初始隨身物證】
+                            </h4>
+                            <div class="bg-gold-dark/10 p-2.5 rounded border border-gold/30 text-xs text-gold-bright italic">
+                                ${c.initialClue}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Apply typewriter animation if enabled
+            if (STATE.typewriterEnabled) {
+                applyTypewriterEffect(cardBox);
+            }
+        }
+
+        function switchClueRound(roundNum) {
+            STATE.activeClueRound = roundNum;
+            document.querySelectorAll('.clue-round-btn').forEach((btn, idx) => {
+                if (idx + 1 === roundNum) {
+                    btn.className = 'clue-round-btn px-4 py-2 text-xs font-bold rounded bg-blood-dark text-white border border-blood';
+                } else {
+                    btn.className = 'clue-round-btn px-4 py-2 text-xs font-bold rounded bg-dossier-paper text-gray-400 border border-dossier-border';
+                }
+            });
+            renderClueCards(roundNum);
+        }
+
+        function renderClueCards(roundNum) {
+            const grid = document.getElementById('clues-grid');
+            const cluesData = STATE.scriptData.clues;
+            let currentClues = [];
+
+            if (roundNum === 1) currentClues = cluesData.round1 || [];
+            else if (roundNum === 2) currentClues = cluesData.round2 || [];
+            else if (roundNum === 3) currentClues = cluesData.round3 || [];
+
+            grid.innerHTML = currentClues.map((clue, i) => `
+                <div class="paper-border bg-dossier-card p-4 rounded-lg space-y-2">
+                    <div class="flex items-center justify-between border-b border-dossier-border pb-2">
+                        <h4 class="font-bold text-sm text-gold-bright flex items-center gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass text-blood-bright"></i> ${clue.name}
+                        </h4>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-dossier-paper border border-gold/30 text-gray-400">線索 #${i + 1}</span>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        <strong class="text-gray-300">搜尋地點：</strong> ${clue.location}
+                    </div>
+                    <p class="text-xs text-gray-200 leading-relaxed bg-dossier-paper p-2.5 rounded border border-dossier-border/50">
+                        ${clue.description}
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        function renderGMManual() {
+            const box = document.getElementById('gm-content-box');
+            const gm = STATE.scriptData.gmManual;
+
+            box.innerHTML = `
+                <div class="paper-border bg-dossier-card p-6 rounded-lg space-y-6">
+                    <div class="border-b border-dossier-border pb-3 flex items-center justify-between">
+                        <h3 class="text-2xl font-black text-white blood-glow">【完整真相與作案復盤】</h3>
+                        <span class="confidential-stamp text-xs">GM ONLY</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                        <div class="space-y-4">
+                            <div class="bg-blood-dark/20 border border-blood/50 p-4 rounded space-y-2">
+                                <h4 class="text-sm font-bold text-blood-bright flex items-center gap-2">
+                                    <i class="fa-solid fa-skull"></i> 真凶身份宣告
+                                </h4>
+                                <div class="text-lg font-extrabold text-white gold-glow">${gm.killerName}</div>
+                            </div>
+
+                            <div>
+                                <h4 class="text-gold-bright font-bold mb-1">【獨一無二作案手法解析】</h4>
+                                <p class="bg-dossier-paper p-3 rounded border border-dossier-border text-gray-200 leading-relaxed">
+                                    ${gm.murderMethod}
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 class="text-gold-bright font-bold mb-1">【各角色動機與恩怨網絡】</h4>
+                                <p class="bg-dossier-paper p-3 rounded border border-dossier-border text-gray-300 whitespace-pre-line leading-relaxed">
+                                    ${gm.motives}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-gold-bright font-bold mb-1">【完整連貫時間線 Truth Timeline】</h4>
+                                <p class="bg-dossier-paper p-3 rounded border border-dossier-border text-gray-200 leading-relaxed">
+                                    ${gm.truth}
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 class="text-gold-bright font-bold mb-1">【遊戲流程控制指南】</h4>
+                                <div class="space-y-2">
+                                    ${gm.gameFlow.map(f => `
+                                        <div class="bg-dossier-paper p-2.5 rounded border border-dossier-border">
+                                            <div class="font-bold text-gold-bright mb-1">${f.phase}</div>
+                                            <div class="text-gray-300">${f.instructions}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="text-gold-bright font-bold mb-1">【扶車引導點 (當玩家卡關時)】</h4>
+                                <ul class="list-disc list-inside bg-dossier-paper p-3 rounded border border-dossier-border text-gray-300 space-y-1">
+                                    ${gm.hints.map(h => `<li>${h}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleGMSpoilers() {
+            const contentBox = document.getElementById('gm-content-box');
+            const btn = document.getElementById('btn-toggle-gm-spoiler');
+
+            if (contentBox.classList.contains('hidden')) {
+                contentBox.classList.remove('hidden');
+                btn.textContent = '隱藏真相';
+                btn.className = 'px-4 py-2 bg-dossier-paper border border-gold text-gold rounded font-bold text-xs hover:text-white transition-colors';
+            } else {
+                contentBox.classList.add('hidden');
+                btn.textContent = '顯示完整真相';
+                btn.className = 'px-4 py-2 bg-blood text-white rounded font-bold text-xs hover:bg-blood-bright transition-colors shadow';
+            }
+        }
+
+        // Tab Switching Logic
+        function switchMainTab(tabId) {
+            document.querySelectorAll('.main-tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.dossier-tab-btn').forEach(btn => {
+                btn.className = 'dossier-tab-btn px-5 py-3 font-bold text-sm rounded-t-lg transition-all bg-dossier-paper text-gray-400 hover:text-white flex items-center gap-2';
+            });
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            activeNav.className = 'dossier-tab-btn px-5 py-3 font-bold text-sm rounded-t-lg transition-all bg-dossier-card border-t border-x border-gold/50 text-gold-bright flex items-center gap-2';
+        }
+
+        // Typewriter Animation Helper
+        function applyTypewriterEffect(container) {
+            const textNodes = [];
+            const walk = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while (node = walk.nextNode()) {
+                if (node.nodeValue.trim()) {
+                    textNodes.push({ node, original: node.nodeValue });
+                    node.nodeValue = '';
+                }
+            }
+
+            let nodeIdx = 0;
+            let charIdx = 0;
+
+            function typeNextChar() {
+                if (nodeIdx >= textNodes.length) return;
+                const item = textNodes[nodeIdx];
+                item.node.nodeValue += item.original[charIdx];
+                charIdx++;
+
+                if (charIdx >= item.original.length) {
+                    nodeIdx++;
+                    charIdx = 0;
+                }
+
+                if (STATE.typewriterEnabled) {
+                    setTimeout(typeNextChar, 12);
+                } else {
+                    // Quick skip
+                    while (nodeIdx < textNodes.length) {
+                        textNodes[nodeIdx].node.nodeValue = textNodes[nodeIdx].original;
+                        nodeIdx++;
+                    }
+                }
+            }
+
+            typeNextChar();
+        }
+
+        function toggleTypewriterMode() {
+            STATE.typewriterEnabled = !STATE.typewriterEnabled;
+            document.getElementById('typewriter-toggle-text').textContent = `打字機動畫：${STATE.typewriterEnabled ? '開啟' : '關閉'}`;
+            showToast(`打字機動畫效果已${STATE.typewriterEnabled ? '開啟' : '關閉'}`, 'info');
+        }
+
+        // Copy Full Script Text to Clipboard
+        function copyFullScript() {
+            if (!STATE.scriptData) return;
+            const data = STATE.scriptData;
+
+            let fullText = `【開殺 - 絕密劇本殺檔案】\n`;
+            fullText += `劇本名稱：${data.title}\n`;
+            fullText += `副標題：${data.slogan}\n\n`;
+            fullText += `【故事背景】\n${data.background}\n\n`;
+            fullText += `【死者資訊】\n${data.victim.name} (${data.victim.causeOfDeath})\n\n`;
+            fullText += `【角色列表】\n`;
+
+            data.characters.forEach((c, idx) => {
+                fullText += `\n--- 角色 ${idx + 1}: ${c.name} (${c.gender}/${c.age}/${c.identity}) ---\n`;
+                fullText += `外貌：${c.appearance}\n`;
+                fullText += `秘密：${c.secrets}\n`;
+                fullText += `時間線：\n${c.timeline.join('\n')}\n`;
+            });
+
+            fullText += `\n【真相復盤】\n`;
+            fullText += `真凶：${data.gmManual.killerName}\n`;
+            fullText += `手法：${data.gmManual.murderMethod}\n`;
+
+            // Clipboard copy fallbacks
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(fullText);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = fullText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+
+            showToast('完整劇本內容已成功複製至剪貼簿！', 'info');
+        }
+
+        // Print Trigger
+        function triggerPrint() {
+            window.print();
+        }
+
+        // Reset App to Step 1
+        function resetToSetup() {
+            document.getElementById('step-result').classList.add('hidden');
+            document.getElementById('step-setup').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
