@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>(羅桂祥預報) HKMA K. S. Lo College Weather Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: opacity 1.5s ease-in-out;
+      filter: brightness(0.45);
+      z-index: -10;
+    }
+    #bg1 { opacity: 1; z-index: -10; }
+    #bg2 { opacity: 0; z-index: -9; }
+    
+    .glass-card {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between font-sans relative overflow-x-hidden select-none">
+
+  <!-- DYNAMIC TSW STREET BACKGROUND SLIDESHOW (20 PHOTOS + RANDOM 5-8S CROSSFADE) -->
+  <div id="bg1" class="bg-layer"></div>
+  <div id="bg2" class="bg-layer"></div>
+
+  <!-- TOP HEADER -->
+  <header class="glass-card px-6 py-4 flex items-center justify-between sticky top-0 z-50 border-b border-gray-700/80 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-xl shadow-md text-white">KS</div>
+      <div>
+        <h1 class="font-black text-lg tracking-wide text-blue-400">香港管理專業協會羅桂祥中學 Weather Report</h1>
+        <p class="text-[11px] text-gray-300">The Hong Kong Management Association K. S. Lo College • 18區通勤天氣監測</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <div class="text-xs font-mono text-green-400 flex items-center gap-1 justify-end">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> HKO 即時連線
+      </div>
+      <div id="last-updated" class="text-[10px] text-gray-400 font-mono">更新中...</div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-4xl w-full mx-auto p-4 space-y-5 my-auto z-10">
+
+    <!-- LOCATION SELECTOR: 18 DISTRICTS HOME SELECTION -->
+    <section class="glass-card rounded-2xl p-4 border border-blue-500/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🏠</span>
+        <div>
+          <div class="text-xs font-bold text-gray-300">選擇你的居住地區 (Home District)</div>
+          <div class="text-[11px] text-gray-400">系統比對「住址地區」與「目的地：羅桂祥中學 (天水圍天柏路26號)」天氣</div>
+        </div>
+      </div>
+      <select id="user-district" onchange="onDistrictChange()" class="bg-gray-900 text-blue-300 border border-blue-500/50 rounded-xl px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer w-full sm:w-auto">
+        <option value="元朗">元朗區 / 天水圍 (Yuen Long / TSW)</option>
+        <option value="屯門">屯門區 (Tuen Mun)</option>
+        <option value="荃灣">荃灣區 (Tsuen Wan)</option>
+        <option value="葵青">葵青區 (Kwai Tsing)</option>
+        <option value="北區">北區 (North District)</option>
+        <option value="大埔">大埔區 (Tai Po)</option>
+        <option value="沙田">沙田區 (Sha Tin)</option>
+        <option value="西貢">西貢區 / 將軍澳 (Sai Kung)</option>
+        <option value="深水埗">深水埗區 (Sham Shui Po)</option>
+        <option value="油尖旺">油尖旺區 (Yau Tsim Mong)</option>
+        <option value="九龍城">九龍城區 (Kowloon City)</option>
+        <option value="黃大仙">黃大仙區 (Wong Tai Sin)</option>
+        <option value="觀塘">觀塘區 (Kwun Tong)</option>
+        <option value="中西區">中西區 (Central & Western)</option>
+        <option value="灣仔">灣仔區 (Wan Chai)</option>
+        <option value="東區">東區 (Eastern)</option>
+        <option value="南區">南區 (Southern)</option>
+        <option value="離島">離島區 (Islands)</option>
+      </select>
+    </section>
+
+    <!-- 1. PRIMARY TOP UI: BRING UMBRELLA & SUNSCREEN DIRECTIVE -->
+    <section class="glass-card rounded-3xl p-6 sm:p-8 text-center shadow-2xl border-2 border-blue-500/50 relative overflow-hidden">
+      <div class="text-xs font-bold uppercase tracking-widest text-blue-300 mb-2">上學出門指令 • UMBRELLA & SUNSCREEN DIRECTIVE</div>
+      
+      <!-- Main Status Banner -->
+      <div id="umbrella-main-box" class="py-6 px-4 rounded-2xl bg-blue-950/80 border border-blue-500/50 my-2 transition-all duration-300">
+        <div id="umbrella-icon" class="text-6xl sm:text-7xl mb-2">☔</div>
+        <h2 id="umbrella-decision" class="text-3xl sm:text-5xl font-black text-yellow-300 tracking-tight">分析通勤路線數據中...</h2>
+        <p id="umbrella-subtext" class="text-sm sm:text-base text-gray-200 mt-2">正從香港天文台 (HKO) 分析居住區與羅桂祥中學降雨與紫外線數據</p>
+      </div>
+
+      <!-- COMMUTE WEATHER COMPARISON WIDGET -->
+      <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+        <div class="bg-black/50 p-3.5 rounded-xl border border-gray-700/80">
+          <div class="text-[11px] font-bold text-gray-400">🏠 居住區雨量 (<span id="home-district-label">元朗區</span>)</div>
+          <div id="home-rainfall" class="text-sm font-bold text-white mt-1">0 mm</div>
+        </div>
+        <div class="bg-black/50 p-3.5 rounded-xl border border-gray-700/80">
+          <div class="text-[11px] font-bold text-gray-400">🏫 羅桂祥中學雨量 (天水圍)</div>
+          <div id="tsw-rainfall" class="text-sm font-bold text-blue-300 mt-1">0 mm</div>
+        </div>
+        <div class="bg-black/50 p-3.5 rounded-xl border border-gray-700/80">
+          <div class="text-[11px] font-bold text-gray-400">🧴 紫外線與防曬建議</div>
+          <div id="uv-recommendation" class="text-sm font-bold text-amber-300 mt-1">計算中...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SECONDARY UI: NEED GO TO SCHOOL OR NOT? -->
+    <section class="glass-card rounded-2xl p-5 border border-gray-700/80">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-sm text-gray-300 flex items-center gap-2">🏫 羅桂祥中學上學安排 (HKMA K. S. Lo Attendance Status)</h3>
+        <span id="school-status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-300 border border-green-500/40">正常上學</span>
+      </div>
+      <div id="school-notice" class="bg-black/40 p-3 rounded-xl text-xs text-gray-300 leading-relaxed border border-gray-800">
+        現時天文台未發出暴雨警告或八號以上熱帶氣旋警告，香港管理專業協會羅桂祥中學學生應如常上學。
+      </div>
+    </section>
+
+    <!-- 3. REAL-TIME METRICS (TSW & HKO CONNECTED) -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="glass-card p-4 rounded-xl text-center">
+        <div class="text-xs text-gray-400 font-medium">羅桂祥中學氣溫</div>
+        <div class="text-2xl sm:text-3xl font-black text-white mt-1"><span id="tsw-temp">--</span>°C</div>
+      </div>
+      <div class="glass-card p-4 rounded-xl text-center">
+        <div class="text-xs text-gray-400 font-medium">相對濕度</div>
+        <div class="text-2xl sm:text-3xl font-black text-cyan-300 mt-1"><span id="tsw-humidity">--</span>%</div>
+      </div>
+      <div class="glass-card p-4 rounded-xl text-center">
+        <div class="text-xs text-gray-400 font-medium">紫外線指數 (UV)</div>
+        <div class="text-2xl sm:text-3xl font-black text-amber-400 mt-1" id="uv-index-val">--</div>
+        <div id="uv-level-text" class="text-[10px] text-gray-300 mt-0.5">--</div>
+      </div>
+      <div class="glass-card p-4 rounded-xl text-center">
+        <div class="text-xs text-gray-400 font-medium">現時警告 / 自動更新</div>
+        <div id="tsw-warning" class="text-xs font-bold text-yellow-300 mt-1.5 truncate">無警告</div>
+        <div class="text-[10px] font-mono text-green-400 mt-0.5">每 30 分鐘自動同步</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="text-center py-4 text-xs text-gray-400 glass-card border-t border-gray-800">
+    香港管理專業協會羅桂祥中學 (HKMA K. S. Lo College) Weather Report • 100% 直連香港天文台 (HKO) Open Data 數據庫
+  </footer>
+
+  <script>
+    // --- 1. 20 TSW STREET PHOTOS WITH DUAL-LAYER SMOOTH FADE & RANDOM 5-8 SEC TIMER ---
+    const tswImages = [
+      "https://images.unsplash.com/photo-1508057198894-247b23fe5ade?w=1600&q=80",
+      "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1600&q=80",
+      "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?w=1600&q=80",
+      "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1600&q=80",
+      "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1600&q=80",
+      "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&q=80",
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1600&q=80",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1600&q=80",
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1600&q=80",
+      "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=1600&q=80",
+      "https://images.unsplash.com/photo-1496568816309-51d7c20e3b21?w=1600&q=80",
+      "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&q=80",
+      "https://images.unsplash.com/photo-1518391846015-55a9cc003b25?w=1600&q=80",
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80",
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&q=80",
+      "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1600&q=80",
+      "https://images.unsplash.com/photo-1520106212299-d99c443e4568?w=1600&q=80",
+      "https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?w=1600&q=80",
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1600&q=80",
+      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1600&q=80"
+    ];
+
+    let currentImgIdx = 0;
+    let activeBgLayer = 1;
+
+    tswImages.forEach(src => { const img = new Image(); img.src = src; });
+
+    function getRandomDelay() {
+      return Math.floor(Math.random() * (8000 - 5000 + 1)) + 5000;
+    }
+
+    function rotateBackgroundSmoothly() {
+      let nextIdx;
+      do {
+        nextIdx = Math.floor(Math.random() * tswImages.length);
+      } while (nextIdx === currentImgIdx && tswImages.length > 1);
+      
+      currentImgIdx = nextIdx;
+
+      const currentLayer = document.getElementById(`bg${activeBgLayer}`);
+      activeBgLayer = activeBgLayer === 1 ? 2 : 1;
+      const nextLayer = document.getElementById(`bg${activeBgLayer}`);
+
+      nextLayer.style.backgroundImage = `url('${tswImages[nextIdx]}')`;
+      nextLayer.style.opacity = '1';
+      currentLayer.style.opacity = '0';
+
+      setTimeout(rotateBackgroundSmoothly, getRandomDelay());
+    }
+
+    document.getElementById('bg1').style.backgroundImage = `url('${tswImages[0]}')`;
+    setTimeout(rotateBackgroundSmoothly, getRandomDelay());
+
+    // --- 2. HKO API REAL-TIME DATA FETCHING (EVERY 30 MINUTES) ---
+    let globalWeatherData = null;
+
+    async function fetchHKOWeather() {
+      try {
+        const response = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
+        globalWeatherData = await response.json();
+
+        // TSW Temperature
+        let tswTemp = null;
+        if (globalWeatherData.temperature && globalWeatherData.temperature.data) {
+          const tswObj = globalWeatherData.temperature.data.find(item => item.place === '天水圍' || item.place === '濕地公園' || item.place === '流浮山' || item.place === '元朗');
+          if (tswObj) tswTemp = tswObj.value;
+        }
+        document.getElementById('tsw-temp').innerText = tswTemp !== null ? tswTemp : '--';
+
+        // Relative Humidity
+        if (globalWeatherData.humidity && globalWeatherData.humidity.data && globalWeatherData.humidity.data.length > 0) {
+          document.getElementById('tsw-humidity').innerText = globalWeatherData.humidity.data[0].value;
+        }
+
+        // UV Index
+        let uvVal = 0;
+        let uvDesc = '弱';
+        if (globalWeatherData.uvindex && globalWeatherData.uvindex.data && globalWeatherData.uvindex.data.length > 0) {
+          uvVal = Number(globalWeatherData.uvindex.data[0].value) || 0;
+          uvDesc = globalWeatherData.uvindex.data[0].desc || getUVDesc(uvVal);
+        } else {
+          uvVal = 0;
+          uvDesc = '夜晚/極低';
+        }
+
+        document.getElementById('uv-index-val').innerText = uvVal;
+        document.getElementById('uv-level-text').innerText = `等級: ${uvDesc}`;
+
+        // Warnings
+        let warnings = [];
+        if (globalWeatherData.warningMessage && Array.isArray(globalWeatherData.warningMessage)) {
+          warnings = globalWeatherData.warningMessage;
+          document.getElementById('tsw-warning').innerText = warnings.length > 0 ? warnings[0] : '無警告生效';
+        } else {
+          document.getElementById('tsw-warning').innerText = '天氣良好';
+        }
+
+        // Evaluate District Commute Decision
+        processCommuteDecision();
+
+        // Update Timestamp
+        const now = new Date();
+        const hrs = now.getHours().toString().padStart(2, '0');
+        const mins = now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('last-updated').innerText = `最後更新: ${hrs}:${mins}`;
+
+      } catch (err) {
+        console.error('HKO Data Fetch Error:', err);
+        document.getElementById('last-updated').innerText = 'HKO API 連線異常';
+      }
+    }
+
+    function getUVDesc(val) {
+      if (val <= 2) return '低';
+      if (val <= 5) return '中等';
+      if (val <= 7) return '高';
+      if (val <= 10) return '甚高';
+      return '極高';
+    }
+
+    function onDistrictChange() {
+      const selected = document.getElementById('user-district').value;
+      localStorage.setItem('kslo_user_district', selected);
+      processCommuteDecision();
+    }
+
+    function processCommuteDecision() {
+      if (!globalWeatherData) return;
+
+      const selectedDistrict = document.getElementById('user-district').value;
+      document.getElementById('home-district-label').innerText = selectedDistrict + '區';
+
+      // 1. Extract Home District Rainfall
+      let homeRain = 0;
+      if (globalWeatherData.rainfall && globalWeatherData.rainfall.data) {
+        const homeObj = globalWeatherData.rainfall.data.find(r => r.place === selectedDistrict || r.place.includes(selectedDistrict));
+        if (homeObj) homeRain = homeObj.max || 0;
+      }
+      document.getElementById('home-rainfall').innerText = `${homeRain} mm`;
+
+      // 2. Extract TSW / HKMA KSLo Rainfall
+      let tswRain = 0;
+      if (globalWeatherData.rainfall && globalWeatherData.rainfall.data) {
+        const tswObj = globalWeatherData.rainfall.data.find(r => r.place === '元朗' || r.place === '天水圍');
+        if (tswObj) tswRain = tswObj.max || 0;
+      }
+      document.getElementById('tsw-rainfall').innerText = `${tswRain} mm`;
+
+      // 3. Extract Warnings & UV
+      let warnings = globalWeatherData.warningMessage || [];
+      let uvVal = 0;
+      let uvDesc = '弱';
+      if (globalWeatherData.uvindex && globalWeatherData.uvindex.data && globalWeatherData.uvindex.data.length > 0) {
+        uvVal = Number(globalWeatherData.uvindex.data[0].value) || 0;
+        uvDesc = globalWeatherData.uvindex.data[0].desc || getUVDesc(uvVal);
+      }
+
+      updateDecisions(homeRain, tswRain, warnings, uvVal, uvDesc, selectedDistrict);
+    }
+
+    function updateDecisions(homeRain, tswRain, warnings, uvVal, uvDesc, selectedDistrict) {
+      const umbrellaDecision = document.getElementById('umbrella-decision');
+      const umbrellaSubtext = document.getElementById('umbrella-subtext');
+      const umbrellaIcon = document.getElementById('umbrella-icon');
+      const uvRec = document.getElementById('uv-recommendation');
+      
+      const schoolBadge = document.getElementById('school-status-badge');
+      const schoolNotice = document.getElementById('school-notice');
+
+      const isHomeRaining = homeRain > 0;
+      const isTSWRaining = tswRain > 0;
+      const hasRainWarning = warnings.some(w => w.includes('暴雨') || w.includes('雷暴'));
+
+      // Sunscreen evaluation
+      let sunscreenAdvice = "";
+      if (uvVal >= 6) {
+        sunscreenAdvice = "⚠️ 紫外線強烈，請塗抹 SPF30+ 防曬霜並帶遮陽傘！";
+        uvRec.innerText = `UV ${uvVal} (${uvDesc}) - 必須搽防曬霜`;
+        uvRec.className = "text-sm font-bold text-red-400 mt-1";
+      } else if (uvVal >= 3) {
+        sunscreenAdvice = "🌤️ 建議塗抹防曬霜，避免曬傷。";
+        uvRec.innerText = `UV ${uvVal} (${uvDesc}) - 建議塗抹防曬`;
+        uvRec.className = "text-sm font-bold text-yellow-300 mt-1";
+      } else {
+        sunscreenAdvice = "✅ 紫外線溫和。";
+        uvRec.innerText = `UV ${uvVal} (${uvDesc}) - 紫外線適中`;
+        uvRec.className = "text-sm font-bold text-green-300 mt-1";
+      }
+
+      // COMMUTE UMBRELLA DIRECTIVE LOGIC
+      if (hasRainWarning || isHomeRaining || isTSWRaining) {
+        umbrellaIcon.innerText = '🌧️☔';
+        umbrellaDecision.innerText = '前往羅桂祥中學請務必帶傘！';
+        umbrellaDecision.className = 'text-3xl sm:text-5xl font-black text-red-400 tracking-tight';
+
+        if (isHomeRaining && isTSWRaining) {
+          umbrellaSubtext.innerText = `你的居住區【${selectedDistrict}區】與【羅桂祥中學(天水圍)】均有降雨！全程請備好雨具。${sunscreenAdvice}`;
+        } else if (isHomeRaining) {
+          umbrellaSubtext.innerText = `你的居住區【${selectedDistrict}區】正在下雨！雖然羅桂祥中學周邊暫未降雨，出門仍需帶傘。${sunscreenAdvice}`;
+        } else if (isTSWRaining) {
+          umbrellaSubtext.innerText = `居住區【${selectedDistrict}區】乾燥，但目的地【羅桂祥中學(天水圍)】正在下雨！請務必帶傘。${sunscreenAdvice}`;
+        } else {
+          umbrellaSubtext.innerText = `天文台發出雷暴/暴雨警告，前往學校途中降雨風險高，請帶傘！${sunscreenAdvice}`;
+        }
+      } else if (uvVal >= 6) {
+        umbrellaIcon.innerText = '☀️☂️';
+        umbrellaDecision.innerText = '帶防UV遮陽傘 + 搽防曬霜！';
+        umbrellaDecision.className = 'text-3xl sm:text-5xl font-black text-amber-300 tracking-tight';
+        umbrellaSubtext.innerText = `【${selectedDistrict}區】與天水圍無雨，但天水圍紫外線達到【${uvDesc}】(UV ${uvVal})！前往羅桂祥中學途中請撐遮陽傘並防曬。`;
+      } else {
+        umbrellaIcon.innerText = '🌤️🌂';
+        umbrellaDecision.innerText = '帶摺傘備用 + 正常出門';
+        umbrellaDecision.className = 'text-3xl sm:text-5xl font-black text-green-300 tracking-tight';
+        umbrellaSubtext.innerText = `【${selectedDistrict}區】至【羅桂祥中學】沿途無顯著降雨，紫外線為【${uvDesc}】(UV ${uvVal})。帶輕便摺傘即可。`;
+      }
+
+      // SCHOOL ATTENDANCE DECISION
+      const isRedOrBlackRain = warnings.some(w => w.includes('紅色暴雨') || w.includes('黑色暴雨'));
+      const isTyphoon8OrAbove = warnings.some(w => w.includes('八號') || w.includes('九號') || w.includes('十號'));
+
+      if (isRedOrBlackRain || isTyphoon8OrAbove) {
+        schoolBadge.innerText = '🚫 停課 / 毋須上學';
+        schoolBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse';
+        schoolNotice.innerText = '天文台發出紅雨/黑雨或八號以上風球。根據教育局指引，今日香港管理專業協會羅桂祥中學學生毋須上學。';
+      } else {
+        schoolBadge.innerText = '✅ 正常上學';
+        schoolBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-300 border border-green-500/40';
+        schoolNotice.innerText = '現時無停課警告。請羅桂祥中學學生按時出門，注意通勤安全。';
+      }
+    }
+
+    // Restore saved district preference
+    const savedDistrict = localStorage.getItem('kslo_user_district');
+    if (savedDistrict) {
+      document.getElementById('user-district').value = savedDistrict;
+    }
+
+    // Initial Fetch & Start 30-min timer
+    fetchHKOWeather();
+    setInterval(fetchHKOWeather, 30 * 60 * 1000);
+  </script>
+</body>
+</html>
