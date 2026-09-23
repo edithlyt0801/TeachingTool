@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Pop Insider | 追星资讯与抢票攻略</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0F0F12',
+                        cardBg: '#1D1E24',
+                        accentPink: '#FF2A6D',
+                        accentGreen: '#05D5AA',
+                        accentPurple: '#7928CA',
+                        subText: '#8A8F9E'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Pretendard', 'Noto Sans SC', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0F0F12; }
+        ::-webkit-scrollbar-thumb { background: #2A2C35; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FF2A6D; }
+        
+        .glass-header {
+            background: rgba(15, 15, 18, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        
+        .neon-border-pink {
+            box-shadow: 0 0 15px rgba(255, 42, 109, 0.3);
+        }
+        
+        .neon-border-pink:hover {
+            box-shadow: 0 0 25px rgba(255, 42, 109, 0.6);
+        }
+
+        .neon-glow-text {
+            text-shadow: 0 0 10px rgba(255, 42, 109, 0.5);
+        }
+
+        .pulse-live {
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(5, 213, 170, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(5, 213, 170, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(5, 213, 170, 0); }
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans antialiased min-h-screen flex flex-col selection:bg-accentPink selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 glass-header border-b border-gray-800 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <a href="#" class="flex items-center space-x-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentPink to-accentPurple flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-105 transition-transform">
+                            K
+                        </div>
+                        <span class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-accentPink">
+                            K-POP<span class="text-accentPink">.INSIDER</span>
+                        </span>
+                    </a>
+                    
+                    <!-- Live Server Time Pill -->
+                    <div class="hidden lg:flex items-center space-x-2 bg-gray-900/80 border border-gray-800 px-3 py-1 rounded-full text-xs font-mono text-gray-300">
+                        <span class="w-2 h-2 rounded-full bg-accentGreen pulse-live"></span>
+                        <span class="text-gray-400">KST (Interpark Server):</span>
+                        <span id="kst-clock" class="text-accentGreen font-bold">18:00:00.000</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center space-x-1 lg:space-x-4 text-sm font-medium">
+                    <a href="#hero" class="px-3 py-2 rounded-lg hover:text-accentPink hover:bg-gray-800/50 transition-colors">首页</a>
+                    <a href="#ticket-section" class="px-3 py-2 rounded-lg hover:text-accentPink hover:bg-gray-800/50 transition-colors">抢票攻略</a>
+                    <a href="#comeback-section" class="px-3 py-2 rounded-lg hover:text-accentPink hover:bg-gray-800/50 transition-colors">回归情报</a>
+                    <a href="#music-show-section" class="px-3 py-2 rounded-lg hover:text-accentPink hover:bg-gray-800/50 transition-colors">打歌舞台</a>
+                    <a href="#schedule-section" class="px-3 py-2 rounded-lg hover:text-accentPink hover:bg-gray-800/50 transition-colors">行程日历</a>
+                    <a href="#news-section" class="px-3 py-2 rounded-lg hover:text-accentPink hover:bg-gray-800/50 transition-colors">快讯专区</a>
+                </nav>
+
+                <!-- Action Controls -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <!-- Search Trigger -->
+                    <button onclick="toggleSearchModal()" class="p-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 hover:text-white transition-all flex items-center space-x-2" title="搜索 (Ctrl+K)">
+                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                        <span class="hidden xl:inline text-xs text-subText bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700">⌘K</span>
+                    </button>
+
+                    <!-- Subscription Push Trigger -->
+                    <button onclick="toggleSubscribeModal()" class="p-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-accentPink hover:text-white transition-all relative" title="开票与回归推送提醒">
+                        <i class="fa-solid fa-bell text-sm"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accentPink animate-ping"></span>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accentPink"></span>
+                    </button>
+
+                    <!-- Group Category Quick Selector -->
+                    <select id="group-filter-select" onchange="filterCategory(this.value)" class="bg-gray-900 text-xs sm:text-sm text-gray-200 border border-gray-800 rounded-xl px-2.5 py-2 focus:outline-none focus:border-accentPink">
+                        <option value="all">🌐 全部组别</option>
+                        <option value="bg">👦 男团 (Boy Groups)</option>
+                        <option value="gg">👧 女团 (Girl Groups)</option>
+                        <option value="solo">🎤 Solo 歌手</option>
+                        <option value="gen5">⚡ 5代/6代新星</option>
+                    </select>
+
+                    <!-- Mobile Menu Trigger -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-xl bg-gray-900 border border-gray-800 text-gray-300">
+                        <i id="mobile-menu-icon" class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer Navigation -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-800 bg-darkBg/95 backdrop-blur-xl px-4 py-4 space-y-2">
+            <a href="#hero" onclick="toggleMobileMenu()" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 text-gray-200">首页</a>
+            <a href="#ticket-section" onclick="toggleMobileMenu()" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 text-gray-200">抢票攻略</a>
+            <a href="#comeback-section" onclick="toggleMobileMenu()" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 text-gray-200">回归情报</a>
+            <a href="#music-show-section" onclick="toggleMobileMenu()" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 text-gray-200">打歌舞台</a>
+            <a href="#schedule-section" onclick="toggleMobileMenu()" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 text-gray-200">行程日历</a>
+            <a href="#news-section" onclick="toggleMobileMenu()" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 text-gray-200">快讯专区</a>
+        </div>
+    </header>
+
+    <!-- HERO SPOTLIGHT SECTION -->
+    <section id="hero" class="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden">
+        <!-- Neon Ambient Glows -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-accentPink/15 rounded-full blur-[140px] pointer-events-none"></div>
+        <div class="absolute top-1/3 right-10 w-[400px] h-[300px] bg-accentPurple/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left Banner Info -->
+                <div class="lg:col-span-7 space-y-6 text-left">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-accentPink/10 border border-accentPink/30 text-accentPink text-xs sm:text-sm font-semibold tracking-wide">
+                        <span class="w-2 h-2 rounded-full bg-accentPink animate-ping"></span>
+                        <span>🔥 重磅全球巡演 · 预售倒计时</span>
+                    </div>
+
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none">
+                        BLACKPINK WORLD TOUR
+                        <span class="block mt-2 bg-clip-text text-transparent bg-gradient-to-r from-accentPink via-purple-400 to-accentGreen">
+                            [DEADLINE] IN SEOUL
+                        </span>
+                    </h1>
+
+                    <p class="text-gray-400 text-sm sm:text-base max-w-2xl leading-relaxed">
+                        首尔 KSPO DOME 终极首发场！专为海外粉丝打造的官方 Interpark Global 优先抢票手把手教程、座位图视角全景解密及毫秒级服务器时间校准。
+                    </p>
+
+                    <!-- Realtime Countdown Timer -->
+                    <div class="bg-cardBg/80 backdrop-blur border border-gray-800 rounded-2xl p-4 sm:p-5 max-w-lg shadow-2xl">
+                        <div class="text-xs text-subText mb-2 font-mono flex justify-between items-center">
+                            <span>距离 Fanclub 优先开票还剩：</span>
+                            <span class="text-accentPink font-semibold">2026.10.01 20:00 KST</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-center font-mono">
+                            <div class="bg-darkBg/90 border border-gray-800 rounded-xl p-2">
+                                <span id="cd-days" class="block text-xl sm:text-3xl font-extrabold text-accentPink">02</span>
+                                <span class="text-[10px] text-gray-500 uppercase">Days</span>
+                            </div>
+                            <div class="bg-darkBg/90 border border-gray-800 rounded-xl p-2">
+                                <span id="cd-hours" class="block text-xl sm:text-3xl font-extrabold text-white">14</span>
+                                <span class="text-[10px] text-gray-500 uppercase">Hours</span>
+                            </div>
+                            <div class="bg-darkBg/90 border border-gray-800 rounded-xl p-2">
+                                <span id="cd-mins" class="block text-xl sm:text-3xl font-extrabold text-white">35</span>
+                                <span class="text-[10px] text-gray-500 uppercase">Mins</span>
+                            </div>
+                            <div class="bg-darkBg/90 border border-gray-800 rounded-xl p-2">
+                                <span id="cd-secs" class="block text-xl sm:text-3xl font-extrabold text-accentGreen">12</span>
+                                <span class="text-[10px] text-gray-500 uppercase">Secs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Call to Action Buttons -->
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <a href="#detail-guide-view" onclick="openConcertGuide('c2026_bp')" class="px-6 py-3.5 rounded-xl bg-accentPink hover:bg-pink-600 text-white font-bold text-sm shadow-lg shadow-accentPink/25 transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-ticket"></i>
+                            <span>立即查看完整抢票攻略</span>
+                        </a>
+                        <a href="#seat-view-section" onclick="openSeatModal()" class="px-6 py-3.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-200 font-bold text-sm transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-eye"></i>
+                            <span>KSPO DOME 座位真实视角</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Spotlight Poster Box -->
+                <div class="lg:col-span-5 relative group">
+                    <div class="relative mx-auto max-w-sm lg:max-w-none rounded-3xl overflow-hidden border-2 border-gray-800 bg-cardBg neon-border-pink transition-all duration-500">
+                        <img src="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=800&q=80" alt="Concert Poster" class="w-full h-[420px] sm:h-[480px] object-cover group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-darkBg/20 to-transparent"></div>
+                        
+                        <!-- Overlay Details -->
+                        <div class="absolute bottom-0 left-0 right-0 p-6 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-accentPink text-white">
+                                    🔴 FANCLUB 优先抢票中
+                                </span>
+                                <span class="text-xs text-gray-300 font-mono"><i class="fa-solid fa-location-dot text-accentPink mr-1"></i>首尔 KSPO DOME</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">2026.11.10 - 2026.11.12</h3>
+                            <p class="text-xs text-gray-400">票务平台：Global Interpark / YES24</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN CONTENT SECTION WRAPPER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 py-10 flex-grow">
+
+        <!-- SECTION 1: 演唱会 & 抢票攻略 (TICKET & CONCERT) -->
+        <section id="ticket-section" class="space-y-8 scroll-mt-24">
+            
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-gray-800 pb-4 gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 text-accentPink font-bold text-xs uppercase tracking-wider mb-1">
+                        <i class="fa-solid fa-ticket text-sm"></i>
+                        <span>Ticket & Concert Hub</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">演唱会巡演 & 海外抢票攻略</h2>
+                </div>
+                <p class="text-subText text-xs sm:text-sm max-w-md">零门槛干货教程、服务器毫秒校准、座位实拍视角，助你成功锁票。</p>
+            </div>
+
+            <!-- Tour Cards Grid (3 Columns) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Concert Card 1 -->
+                <div class="bg-cardBg border border-gray-800 rounded-2xl overflow-hidden group hover:border-accentPink transition-all duration-300 flex flex-col">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=600&q=80" alt="AESPA Tour" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold bg-accentPink text-white shadow-md">
+                            🔴 抢票进行中
+                        </span>
+                        <div class="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-cardBg to-transparent"></div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="text-xs text-accentGreen font-mono font-semibold">AESPA</div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-accentPink transition-colors">2026 SYNK: PARALLEL LINE TOUR</h3>
+                            <p class="text-xs text-subText mt-1"><i class="fa-regular fa-calendar mr-1"></i>2026.10.18 - 10.20 | 高尺巨蛋 (Gocheok Dome)</p>
+                            <p class="text-xs text-subText mt-0.5"><i class="fa-solid fa-globe mr-1"></i>平台：YES24 Ticket Global</p>
+                        </div>
+                        <button onclick="openConcertGuide('c2026_aespa')" class="w-full py-2.5 rounded-xl bg-gray-900 hover:bg-accentPink border border-gray-700 hover:border-accentPink text-xs font-bold text-gray-200 hover:text-white transition-all flex items-center justify-center space-x-2">
+                            <span>查看实名教程 & 座位图</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Concert Card 2 -->
+                <div class="bg-cardBg border border-gray-800 rounded-2xl overflow-hidden group hover:border-accentGreen transition-all duration-300 flex flex-col">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80" alt="SEVENTEEN Tour" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold bg-accentGreen text-darkBg shadow-md">
+                            🟡 预售预约中
+                        </span>
+                        <div class="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-cardBg to-transparent"></div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="text-xs text-accentGreen font-mono font-semibold">SEVENTEEN</div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-accentGreen transition-colors">RIGHT HERE WORLD TOUR SEOUL</h3>
+                            <p class="text-xs text-subText mt-1"><i class="fa-regular fa-calendar mr-1"></i>2026.11.02 - 11.04 | 主竞技场 (Jamsil Stadium)</p>
+                            <p class="text-xs text-subText mt-0.5"><i class="fa-solid fa-globe mr-1"></i>平台：Interpark Global</p>
+                        </div>
+                        <button onclick="openConcertGuide('c2026_svt')" class="w-full py-2.5 rounded-xl bg-gray-900 hover:bg-accentGreen hover:text-darkBg border border-gray-700 text-xs font-bold text-gray-200 transition-all flex items-center justify-center space-x-2">
+                            <span>查看实名教程 & 座位图</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Concert Card 3 -->
+                <div class="bg-cardBg border border-gray-800 rounded-2xl overflow-hidden group hover:border-gray-600 transition-all duration-300 flex flex-col opacity-90">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80" alt="IVE Tour" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500">
+                        <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold bg-gray-700 text-gray-300 shadow-md">
+                            ⚪ 全面售罄
+                        </span>
+                        <div class="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-cardBg to-transparent"></div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="text-xs text-subText font-mono font-semibold">IVE</div>
+                            <h3 class="text-lg font-bold text-white">SHOW WHAT I HAVE ENCORE</h3>
+                            <p class="text-xs text-subText mt-1"><i class="fa-regular fa-calendar mr-1"></i>2026.09.28 - 09.29 | KSPO DOME</p>
+                            <p class="text-xs text-subText mt-0.5"><i class="fa-solid fa-globe mr-1"></i>平台：Melon Ticket Global</p>
+                        </div>
+                        <button onclick="openConcertGuide('c2026_ive')" class="w-full py-2.5 rounded-xl bg-gray-900 border border-gray-800 text-xs font-bold text-gray-400 hover:text-white transition-all flex items-center justify-center space-x-2">
+                            <span>二手刷票指南与取消票等待</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- DETAILED CONCERT INTERACTIVE WIREFRAME PANEL (As requested in Section 4 Wireframe) -->
+            <div id="detail-guide-view" class="bg-cardBg border-2 border-gray-800 rounded-3xl p-5 sm:p-8 space-y-6 shadow-2xl relative">
+                
+                <!-- Header Info Bar -->
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between border-b border-gray-800 pb-6 gap-4">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-20 h-28 sm:w-24 sm:h-32 rounded-xl overflow-hidden flex-shrink-0 border border-gray-700 shadow-lg">
+                            <img id="detail-poster" src="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <span id="detail-tag" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-accentPink text-white">🔴 FANCLUB 预售中</span>
+                                <span class="text-xs text-subText">全网独家极速指南</span>
+                            </div>
+                            <h3 id="detail-title" class="text-xl sm:text-2xl font-black text-white">BLACKPINK WORLD TOUR [DEADLINE] IN SEOUL</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-300">
+                                <div><i class="fa-regular fa-calendar text-accentPink mr-1.5"></i>时间：<span id="detail-date">2026.11.10 - 2026.11.12</span></div>
+                                <div><i class="fa-solid fa-location-dot text-accentPink mr-1.5"></i>地点：<span id="detail-venue">首尔 KSPO DOME</span></div>
+                                <div><i class="fa-solid fa-desktop text-accentPink mr-1.5"></i>平台：<span id="detail-platform">Interpark Global / YES24</span></div>
+                                <div><i class="fa-solid fa-passport text-accentPink mr-1.5"></i>实名要求：<span class="text-accentGreen">护照全拼姓名 100% 校验</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action utilities -->
+                    <div class="flex flex-wrap lg:flex-col gap-2 justify-start lg:items-end">
+                        <button onclick="copyCurrentLink()" class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700 hover:border-accentPink text-xs font-semibold text-gray-200 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-share-nodes"></i>
+                            <span>分享指南</span>
+                        </button>
+                        <button onclick="toggleBookmark(this)" class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700 hover:border-accentPink text-xs font-semibold text-gray-200 flex items-center space-x-1.5">
+                            <i class="fa-regular fa-bookmark text-accentPink"></i>
+                            <span>收藏到追星清单</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation Bar -->
+                <div class="flex space-x-2 border-b border-gray-800 overflow-x-auto pb-1 text-xs sm:text-sm font-bold">
+                    <button onclick="switchTab('tab-guide')" id="btn-tab-guide" class="px-4 py-2.5 rounded-t-xl bg-accentPink text-white border-t border-x border-accentPink flex items-center space-x-2">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>📖 实名认证与抢票教程</span>
+                    </button>
+                    <button onclick="switchTab('tab-seat')" id="btn-tab-seat" class="px-4 py-2.5 rounded-t-xl bg-gray-900 text-gray-400 border-t border-x border-transparent hover:text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>🗺️ 座位图及真实视角</span>
+                    </button>
+                    <button onclick="switchTab('tab-tips')" id="btn-tab-tips" class="px-4 py-2.5 rounded-t-xl bg-gray-900 text-gray-400 border-t border-x border-transparent hover:text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>⚠️ 避坑与支付注意事项</span>
+                    </button>
+                </div>
+
+                <!-- TAB 1: 实名认证教程 -->
+                <div id="tab-guide" class="space-y-6">
+                    <div class="bg-gray-900/60 p-4 rounded-2xl border border-gray-800 space-y-4">
+                        <h4 class="text-sm font-bold text-accentPink flex items-center space-x-2">
+                            <span class="w-6 h-6 rounded-full bg-accentPink/20 text-accentPink flex items-center justify-center text-xs">1</span>
+                            <span>Global Interpark 账号准备与姓名匹配校验</span>
+                        </h4>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            海外粉丝抢购 Interpark 必须使用 <strong class="text-white bg-accentPink/20 px-1 rounded">Global 国际版</strong>。现场领票时工作人员会要求出示护照原件，姓名拼音顺序必须绝对一致！
+                        </p>
+
+                        <!-- Simulated Mock UI Diagram -->
+                        <div class="bg-darkBg p-4 rounded-xl border border-gray-800 space-y-3 font-mono text-xs">
+                            <div class="flex justify-between items-center text-gray-400 border-b border-gray-800 pb-2">
+                                <span>[ 网页界面模拟 ] Global Interpark - Registration</span>
+                                <span class="text-accentGreen">✓ 护照对照验证</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                <div class="space-y-1">
+                                    <label class="text-gray-400 text-[11px]">First Name (名):</label>
+                                    <div class="p-2 bg-gray-900 border-2 border-accentPink rounded text-white flex justify-between items-center">
+                                        <span>SAN</span>
+                                        <span class="text-[10px] text-accentPink font-bold">⚠️ 须与护照完全一致</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-gray-400 text-[11px]">Last Name (姓):</label>
+                                    <div class="p-2 bg-gray-900 border border-gray-700 rounded text-white">
+                                        <span>ZHANG</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-[11px] text-yellow-400 bg-yellow-400/10 p-2 rounded border border-yellow-400/20">
+                                💡 避坑提醒：请勿填写中文汉字！如护照姓名是“张三”，First Name 填 SAN，Last Name 填 ZHANG。
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/60 p-4 rounded-2xl border border-gray-800 space-y-4">
+                        <h4 class="text-sm font-bold text-accentPink flex items-center space-x-2">
+                            <span class="w-6 h-6 rounded-full bg-accentPink/20 text-accentPink flex items-center justify-center text-xs">2</span>
+                            <span>Fanclub 优先认证号绑定 (Weverse)</span>
+                        </h4>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            在预售开启前 24 小时，进入票务页面点击 <strong class="text-white">“Verify Membership”</strong> 按钮，登录绑定的 Weverse 账号。弹窗显示 <span class="text-accentGreen font-bold">“Verification Complete”</span> 即代表预售资格激活成功。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- TAB 2: 座位图及真实视角 -->
+                <div id="tab-seat" class="hidden space-y-6">
+                    <p class="text-xs text-subText">点击下方场馆区域卡片，可实时切换并查看对应区域 100% 真实现场视距：</p>
+                    
+                    <!-- Section Picker Buttons -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button onclick="selectSeatSection('floor_a')" id="sec-btn-floor_a" class="p-3 rounded-xl bg-accentPink/20 border-2 border-accentPink text-white font-bold text-xs text-left">
+                            <div class="text-accentPink text-[10px]">VIP FLOOR</div>
+                            <div>A1 摇滚区视角</div>
+                        </button>
+                        <button onclick="selectSeatSection('sec_2f')" id="sec-btn-sec_2f" class="p-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-600 text-gray-300 font-bold text-xs text-left">
+                            <div class="text-subText text-[10px]">2 Floor</div>
+                            <div>15区 5排视角</div>
+                        </button>
+                        <button onclick="selectSeatSection('sec_3f')" id="sec-btn-sec_3f" class="p-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-600 text-gray-300 font-bold text-xs text-left">
+                            <div class="text-subText text-[10px]">3 Floor</div>
+                            <div>32区 山顶视角</div>
+                        </button>
+                        <button onclick="selectSeatSection('stage_view')" id="sec-btn-stage_view" class="p-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-600 text-gray-300 font-bold text-xs text-left">
+                            <div class="text-subText text-[10px]">Main Stage</div>
+                            <div>延伸台全景视角</div>
+                        </button>
+                    </div>
+
+                    <!-- Seat Photo Preview Display -->
+                    <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden border border-gray-800 bg-darkBg group">
+                        <img id="seat-preview-img" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1000&q=80" alt="Seat View" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-transparent to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end bg-gray-900/80 backdrop-blur p-3 rounded-xl border border-gray-800">
+                            <div>
+                                <span id="seat-badge" class="text-xs font-bold text-accentPink">VIP Floor A1 区实拍</span>
+                                <p id="seat-desc" class="text-xs text-gray-300 mt-0.5">距离主舞台约 8 米，延伸台就在身前！视线极佳，需准备防震手机支架。</p>
+                            </div>
+                            <span class="text-[10px] text-subText font-mono">KSPO DOME 实测记录</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: 避坑与支付 -->
+                <div id="tab-tips" class="hidden space-y-4 text-xs text-gray-300">
+                    <div class="p-4 rounded-xl bg-gray-900 border border-gray-800 space-y-2">
+                        <h5 class="font-bold text-yellow-400 flex items-center space-x-2">
+                            <i class="fa-solid fa-credit-card"></i>
+                            <span>海外信用卡 3D Secure 验证提前测试</span>
+                        </h5>
+                        <p class="leading-relaxed">
+                            抢票支付时最忌讳卡在 Visa/Mastercard 3D Secure 手机验证码界面！请提前在平台购买一张可退款的便宜门票测试卡片扣款流程。
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-gray-900 border border-gray-800 space-y-2">
+                        <h5 class="font-bold text-accentGreen flex items-center space-x-2">
+                            <i class="fa-solid fa-clock"></i>
+                            <span>Navyism / Interpark 官方服务器时间对齐</span>
+                        </h5>
+                        <p class="leading-relaxed">
+                            不要相信电脑或手机系统时间！建议在开票前 5 秒刷入，或在 59 秒点击 Refresh 刷新排队序列。
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- SECTION 2: 韩团回归消息 (COMEBACKS & TEASERS) -->
+        <section id="comeback-section" class="space-y-8 scroll-mt-24">
+            
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-gray-800 pb-4 gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 text-accentPurple font-bold text-xs uppercase tracking-wider mb-1">
+                        <i class="fa-solid fa-record-vinyl text-sm"></i>
+                        <span>Comeback Radar</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">韩团回归情报 & 概念图画廊</h2>
+                </div>
+                <p class="text-subText text-xs sm:text-sm max-w-md">沉浸式高清概念照、垂直回归日程时间轴与专辑拆解图。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Left Vertical Timeline (5 Cols) -->
+                <div class="lg:col-span-5 bg-cardBg border border-gray-800 rounded-3xl p-6 space-y-6">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-accentPurple"></span>
+                            <span>IVE - 4th EP 'WHATEVER' 回归日程</span>
+                        </h3>
+                        <span class="text-xs text-accentPurple font-mono font-bold">2026.10.12 Release</span>
+                    </div>
+
+                    <!-- Timeline Item List -->
+                    <div class="relative border-l-2 border-gray-800 ml-3 space-y-6">
+                        
+                        <!-- Item 1 (Done) -->
+                        <div class="ml-6 relative">
+                            <span class="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-accentGreen border-4 border-cardBg flex items-center justify-center"></span>
+                            <span class="text-[11px] font-mono text-accentGreen font-bold">DAY 1 · 09.20</span>
+                            <h4 class="text-sm font-bold text-gray-200">Comeback Scheduler & Tracklist</h4>
+                            <p class="text-xs text-subText mt-0.5">主打歌《Whiplash》共收录 6 首曲目</p>
+                        </div>
+
+                        <!-- Item 2 (Today/Active) -->
+                        <div class="ml-6 relative">
+                            <span class="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-accentPink border-4 border-cardBg animate-pulse"></span>
+                            <span class="text-[11px] font-mono text-accentPink font-bold">TODAY · 09.24 18:00 KST</span>
+                            <h4 class="text-sm font-bold text-white">Concept Photo #1 'GOTHIC NIGHT'</h4>
+                            <p class="text-xs text-subText mt-0.5">高清全套概念照已同步下表画廊</p>
+                        </div>
+
+                        <!-- Item 3 (Future) -->
+                        <div class="ml-6 relative opacity-60">
+                            <span class="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-gray-700 border-4 border-cardBg"></span>
+                            <span class="text-[11px] font-mono text-gray-400">DAY 7 · 10.05</span>
+                            <h4 class="text-sm font-bold text-gray-300">Official MV Teaser #1</h4>
+                            <p class="text-xs text-subText mt-0.5">YouTube 官方预告锁屏预售</p>
+                        </div>
+
+                        <!-- Item 4 (Release) -->
+                        <div class="ml-6 relative opacity-60">
+                            <span class="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-gray-700 border-4 border-cardBg"></span>
+                            <span class="text-[11px] font-mono text-gray-400">RELEASE · 10.12 18:00 KST</span>
+                            <h4 class="text-sm font-bold text-gray-300">Album & MV Full Drop</h4>
+                            <p class="text-xs text-subText mt-0.5">音源全球上线 & 计数开始</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Right Concept Photo Gallery (7 Cols) -->
+                <div class="lg:col-span-7 bg-cardBg border border-gray-800 rounded-3xl p-6 space-y-4 flex flex-col justify-between">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs text-accentPink font-bold uppercase tracking-wider">Concept Photo Gallery</span>
+                            <h3 class="text-lg font-bold text-white">高清晰度组合概念画廊 (4K HD)</h3>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="prevGalleryImage()" class="p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-300 hover:text-white"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button onclick="nextGalleryImage()" class="p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-300 hover:text-white"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Main Gallery Lightbox Preview Frame -->
+                    <div class="relative h-72 sm:h-80 rounded-2xl overflow-hidden border border-gray-800 bg-darkBg group">
+                        <img id="gallery-main-img" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1000&q=80" alt="Concept Photo" class="w-full h-full object-cover transition-all duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkBg/90 via-transparent to-transparent"></div>
+                        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-center">
+                            <div>
+                                <span id="gallery-img-title" class="text-sm font-bold text-white">Concept Photo 'DARK ECLIPSE' #01</span>
+                                <p class="text-xs text-subText">全员 4K 细节曝光 (支持无水印原图保存)</p>
+                            </div>
+                            <a id="gallery-download-btn" href="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1000&q=80" target="_blank" download class="p-2.5 rounded-xl bg-accentPink/90 hover:bg-accentPink text-white text-xs font-bold flex items-center space-x-1.5 shadow-lg">
+                                <i class="fa-solid fa-download"></i>
+                                <span class="hidden sm:inline">下载原图</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Album Unboxing Dissection Preview Pill -->
+                    <div class="p-3 bg-gray-900/80 border border-gray-800 rounded-xl flex items-center justify-between text-xs text-gray-300">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-box-open text-accentPink"></i>
+                            <span><strong>首批专辑配置解构：</strong>随机小卡 1/6 + 限量海报 + CD 唱片 + 80P 概念写真本</span>
+                        </div>
+                        <span class="text-[10px] text-accentGreen bg-accentGreen/10 px-2 py-0.5 rounded font-mono">配置全拆解</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- SECTION 3: 打歌舞台 & 战报 (MUSIC SHOW & STAGES) -->
+        <section id="music-show-section" class="space-y-8 scroll-mt-24">
+            
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-gray-800 pb-4 gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 text-accentGreen font-bold text-xs uppercase tracking-wider mb-1">
+                        <i class="fa-solid fa-trophy text-sm"></i>
+                        <span>Music Show Weekly Score</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">打歌舞台 1位战报 & 4K 直拍推荐</h2>
+                </div>
+                <p class="text-subText text-xs sm:text-sm max-w-md">音源、销量、SNS、现场投票全方位数据对比图表。</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Weekly Score Breakdown Chart (7 Cols) -->
+                <div class="lg:col-span-7 bg-cardBg border border-gray-800 rounded-3xl p-6 space-y-6">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-4">
+                        <div>
+                            <span class="text-xs text-subText">Mnet M COUNTDOWN · 第 864 期 1位战报</span>
+                            <h3 class="text-lg font-extrabold text-white">LE SSERAFIM <span class="text-accentPink">vs</span> NewJeans</h3>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-accentGreen/10 border border-accentGreen/30 text-accentGreen text-xs font-bold">
+                            🏆 LE SSERAFIM 获胜
+                        </span>
+                    </div>
+
+                    <!-- Visual Stacked Bar Chart for Scores -->
+                    <div class="space-y-5 text-xs font-mono">
+                        
+                        <!-- Contender 1 -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between font-sans">
+                                <span class="font-bold text-white">1位: LE SSERAFIM - 'CRAZY'</span>
+                                <span class="font-extrabold text-accentGreen">8,950 分</span>
+                            </div>
+                            <!-- Bar Stack -->
+                            <div class="h-6 w-full bg-darkBg rounded-xl overflow-hidden flex text-[10px] text-darkBg font-bold">
+                                <div style="width: 50%" class="bg-accentPink flex items-center justify-center" title="音源 Digital: 5000">音源 50%</div>
+                                <div style="width: 25%" class="bg-accentPurple flex items-center justify-center text-white" title="销量 Physical: 2500">销量 25%</div>
+                                <div style="width: 15%" class="bg-accentGreen flex items-center justify-center" title="SNS/MV: 1500">SNS 15%</div>
+                                <div style="width: 10%" class="bg-yellow-400 flex items-center justify-center" title="投票 Vote: 950">投票 10%</div>
+                            </div>
+                        </div>
+
+                        <!-- Contender 2 -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between font-sans">
+                                <span class="font-bold text-gray-400">2位: NewJeans - 'How Sweet'</span>
+                                <span class="font-bold text-gray-400">7,210 分</span>
+                            </div>
+                            <!-- Bar Stack -->
+                            <div class="h-6 w-full bg-darkBg rounded-xl overflow-hidden flex text-[10px] text-darkBg font-bold opacity-75">
+                                <div style="width: 45%" class="bg-accentPink/70 flex items-center justify-center">音源 45%</div>
+                                <div style="width: 20%" class="bg-accentPurple/70 flex items-center justify-center text-white">销量 20%</div>
+                                <div style="width: 20%" class="bg-accentGreen/70 flex items-center justify-center">SNS 20%</div>
+                                <div style="width: 15%" class="bg-yellow-400/70 flex items-center justify-center">投票 15%</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Score Legend -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-[11px] text-subText border-t border-gray-800">
+                        <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded bg-accentPink"></span><span>音源 (Melon/Genie)</span></div>
+                        <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded bg-accentPurple"></span><span>专辑销量 (Circle)</span></div>
+                        <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded bg-accentGreen"></span><span>SNS MV 播放</span></div>
+                        <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded bg-yellow-400"></span><span>实时/事前投票</span></div>
+                    </div>
+                </div>
+
+                <!-- Right Fancam Cards (5 Cols) -->
+                <div class="lg:col-span-5 bg-cardBg border border-gray-800 rounded-3xl p-6 space-y-4">
+                    <h3 class="text-base font-bold text-white flex items-center justify-between">
+                        <span>4K 直拍 & 1位安可精选</span>
+                        <span class="text-xs text-accentPink font-normal"><i class="fa-solid fa-play text-[10px] mr-1"></i>官方源同步</span>
+                    </h3>
+
+                    <div class="space-y-3">
+                        
+                        <!-- Fancam Item 1 -->
+                        <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-darkBg hover:bg-gray-800 border border-gray-800 transition-all cursor-pointer group" onclick="playFancamModal('Stray Kids - Chk Chk Boom', 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80')">
+                            <div class="w-24 h-16 rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-circle-play text-accentPink text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-accentPink/20 text-accentPink">个人横屏直拍</span>
+                                <h4 class="text-xs font-bold text-white truncate mt-1">Stray Kids - 'Chk Chk Boom' 4K Focus</h4>
+                                <p class="text-[11px] text-subText">Music Bank 2026.09.22</p>
+                            </div>
+                        </div>
+
+                        <!-- Fancam Item 2 -->
+                        <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-darkBg hover:bg-gray-800 border border-gray-800 transition-all cursor-pointer group" onclick="playFancamModal('NMIXX - Dash Encore', 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=400&q=80')">
+                            <div class="w-24 h-16 rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-circle-play text-accentGreen text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-accentGreen/20 text-accentGreen">1位生唱安可 (Encore)</span>
+                                <h4 class="text-xs font-bold text-white truncate mt-1">NMIXX - 'DASH' 全员无伴奏开麦</h4>
+                                <p class="text-[11px] text-subText">Inkigayo 2026.09.21</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- SECTION 4: 粉丝行程日历 (SCHEDULE CALENDAR) -->
+        <section id="schedule-section" class="space-y-8 scroll-mt-24">
+            
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-gray-800 pb-4 gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 text-yellow-400 font-bold text-xs uppercase tracking-wider mb-1">
+                        <i class="fa-solid fa-calendar-days text-sm"></i>
+                        <span>Schedule Calendar</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">每日行程日历 & 现场实时图集</h2>
+                </div>
+                <!-- Filter Pills -->
+                <div class="flex flex-wrap gap-2 text-xs font-bold">
+                    <button onclick="filterSchedule('all')" class="sched-btn px-3 py-1.5 rounded-xl bg-accentPink text-white border border-accentPink">全部行程</button>
+                    <button onclick="filterSchedule('bg')" class="sched-btn px-3 py-1.5 rounded-xl bg-gray-900 text-gray-300 border border-gray-800 hover:border-gray-700">男团 Boy Groups</button>
+                    <button onclick="filterSchedule('gg')" class="sched-btn px-3 py-1.5 rounded-xl bg-gray-900 text-gray-300 border border-gray-800 hover:border-gray-700">女团 Girl Groups</button>
+                </div>
+            </div>
+
+            <!-- Schedule List Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Day Card 1 (Today) -->
+                <div class="bg-cardBg border-2 border-accentPink rounded-3xl p-5 space-y-4 shadow-xl relative">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-accentPink animate-ping"></span>
+                            <span class="text-sm font-extrabold text-white font-mono">TODAY · 09.24 (三)</span>
+                        </div>
+                        <span class="text-[10px] bg-accentPink text-white px-2 py-0.5 rounded font-bold">本日重点</span>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 rounded-xl bg-darkBg border border-gray-800 space-y-1">
+                            <div class="flex justify-between text-subText font-mono text-[11px]">
+                                <span>✈️ 仁川机场 (ICN)</span>
+                                <span>14:00 KST</span>
+                            </div>
+                            <h4 class="font-bold text-white">RIIZE - 巴黎时装周出境机场照</h4>
+                        </div>
+                        <div class="p-3 rounded-xl bg-darkBg border border-gray-800 space-y-1">
+                            <div class="flex justify-between text-subText font-mono text-[11px]">
+                                <span>📺 JTBC 综艺</span>
+                                <span>20:50 KST</span>
+                            </div>
+                            <h4 class="font-bold text-white">ZEROBASEONE - 《认识的哥哥》特辑播出</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day Card 2 -->
+                <div class="bg-cardBg border border-gray-800 rounded-3xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <span class="text-sm font-extrabold text-gray-300 font-mono">09.25 (四)</span>
+                        <span class="text-[10px] text-subText">明日日程</span>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 rounded-xl bg-darkBg border border-gray-800 space-y-1">
+                            <div class="flex justify-between text-subText font-mono text-[11px]">
+                                <span>✍️ 签名会</span>
+                                <span>19:00 KST</span>
+                            </div>
+                            <h4 class="font-bold text-gray-200">BABYMONSTER - 首尔线下线上面对面对话</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day Card 3 -->
+                <div class="bg-cardBg border border-gray-800 rounded-3xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <span class="text-sm font-extrabold text-gray-300 font-mono">09.26 (五)</span>
+                        <span class="text-[10px] text-subText">后天日程</span>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 rounded-xl bg-darkBg border border-gray-800 space-y-1">
+                            <div class="flex justify-between text-subText font-mono text-[11px]">
+                                <span>🎤 KBS 打歌</span>
+                                <span>17:15 KST</span>
+                            </div>
+                            <h4 class="font-bold text-gray-200">Music Bank - NMIXX 1位候补舞台</h4>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- SECTION 5: 综合新闻快讯 (NEWS FEED) -->
+        <section id="news-section" class="space-y-8 scroll-mt-24">
+            
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-gray-800 pb-4 gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 text-accentPink font-bold text-xs uppercase tracking-wider mb-1">
+                        <i class="fa-solid fa-newspaper text-sm"></i>
+                        <span>News Feed & Updates</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">追星综合快讯 & 官方双语通告</h2>
+                </div>
+                <p class="text-subText text-xs sm:text-sm max-w-md">时效极速、时尚代言、续约动态与双语准确翻译声明。</p>
+            </div>
+
+            <!-- Pinterest Style Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- News Card 1 -->
+                <div class="bg-cardBg border border-gray-800 rounded-2xl overflow-hidden hover:border-accentPink transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="h-48 overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-bold bg-darkBg/80 backdrop-blur text-accentPink border border-accentPink/30">
+                                #巴黎时装周
+                            </span>
+                        </div>
+                        <div class="p-5 space-y-2">
+                            <h3 class="text-base font-bold text-white hover:text-accentPink transition-colors">
+                                AESPA Karina 确认出席 2026 PRADA 春夏大秀，造型高调曝光
+                            </h3>
+                            <p class="text-xs text-subText line-clamp-2">
+                                位于米兰与巴黎的品牌接轨发布会现场，Karina 凭借一身黑色无袖流苏裙吸引全球媒体聚焦。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0 text-[11px] text-gray-500 flex justify-between items-center font-mono">
+                        <span>2 小时前 · Vogue Korea</span>
+                        <button onclick="readNewsModal('Karina Prada')" class="text-accentPink hover:underline">阅读全文</button>
+                    </div>
+                </div>
+
+                <!-- News Card 2 (Official Statement Dual Language) -->
+                <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 space-y-4 hover:border-accentGreen transition-all duration-300 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-accentGreen/10 text-accentGreen border border-accentGreen/30">
+                                #官方声明双语
+                            </span>
+                            <span class="text-[11px] text-subText font-mono">10 分钟前</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white">
+                            JYP Entertainment 关于 Stray Kids 全员续约成功的官方立场通告
+                        </h3>
+
+                        <!-- Dual Language Box -->
+                        <div class="bg-darkBg p-3 rounded-xl border border-gray-800 space-y-2 text-xs">
+                            <div class="text-gray-400 font-sans border-b border-gray-800 pb-2">
+                                <span class="text-accentGreen font-bold">[中文翻译]:</span> JYP 娱乐在此宣布，旗下团体 Stray Kids 全体 8 名成员已于近期完成提前续约，未来将深化全球合作...
+                            </div>
+                            <div class="text-subText font-mono text-[11px]">
+                                <span class="text-gray-400">[原文]:</span> 안녕하세요. JYP 엔터테인먼트입니다. 소속 아티스트 Stray Kids 멤버 전원과 재계약을 체결하였습니다...
+                            </div>
+                        </div>
+                    </div>
+                    <a href="https://x.com" target="_blank" class="text-xs text-accentGreen hover:underline flex items-center space-x-1 pt-2">
+                        <span>查看 X 官方原文推文</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    </a>
+                </div>
+
+                <!-- News Card 3 -->
+                <div class="bg-cardBg border border-gray-800 rounded-2xl overflow-hidden hover:border-accentPurple transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="h-48 overflow-hidden relative">
+                            <img src="https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-bold bg-darkBg/80 backdrop-blur text-accentPurple border border-accentPurple/30">
+                                #音源破纪录
+                            </span>
+                        </div>
+                        <div class="p-5 space-y-2">
+                            <h3 class="text-base font-bold text-white hover:text-accentPurple transition-colors">
+                                SEVENTEEN 预售破 500 万张，创 K-Pop 历史预售最高纪录
+                            </h3>
+                            <p class="text-xs text-subText line-clamp-2">
+                                根据 YG PLUS 专辑发行商数据显示，SEVENTEEN 迷你新辑预售量正式跃升第一名。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0 text-[11px] text-gray-500 flex justify-between items-center font-mono">
+                        <span>5 小时前 · Hanteo Chart</span>
+                        <button onclick="readNewsModal('SEVENTEEN Record')" class="text-accentPurple hover:underline">阅读全文</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-gray-800 bg-cardBg/50 text-subText py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-accentPink flex items-center justify-center font-bold text-white">K</div>
+                    <span class="text-base font-extrabold text-white">K-POP INSIDER</span>
+                </div>
+                <div class="flex space-x-6 text-xs">
+                    <a href="#" class="hover:text-accentPink transition-colors">关于我们</a>
+                    <a href="#" class="hover:text-accentPink transition-colors">抢票免责声明</a>
+                    <a href="#" class="hover:text-accentPink transition-colors">服务器时间校准 API</a>
+                    <a href="#" class="hover:text-accentPink transition-colors">隐私政策</a>
+                </div>
+            </div>
+            <div class="text-center sm:text-left text-xs border-t border-gray-800/80 pt-6 flex flex-col sm:flex-row justify-between items-center gap-2">
+                <p>© 2026 K-POP INSIDER. All Rights Reserved. 本站海报与音源版权归属各娱乐公司所有。</p>
+                <p class="font-mono text-[11px] text-gray-500">Designed with Neo-Brutalism K-Pop Theme</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SEARCH MODAL (CMD + K Trigger) -->
+    <div id="search-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-gray-800 rounded-3xl w-full max-w-xl p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <div class="flex items-center space-x-2 text-gray-300 w-full">
+                    <i class="fa-solid fa-magnifying-glass text-accentPink"></i>
+                    <input id="search-input" onkeyup="handleSearch(this.value)" type="text" placeholder="搜索团体/巡演/Interpark 教程/座位图..." class="bg-transparent text-sm text-white w-full focus:outline-none">
+                </div>
+                <button onclick="toggleSearchModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="search-results" class="space-y-2 max-h-60 overflow-y-auto text-xs text-gray-300">
+                <p class="text-subText text-center py-6">输入关键字快速搜索（例：BLACKPINK, Interpark, KSPO）</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUBSCRIBE PUSH MODAL -->
+    <div id="subscribe-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-gray-800 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-2xl bg-accentPink/20 border border-accentPink text-accentPink flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">开启开票与回归极速 Push 提醒</h3>
+                <p class="text-xs text-subText mt-1">在开票前 15 分钟及回归音源上线瞬间，直接向您的设备推送提醒。</p>
+            </div>
+            <div class="space-y-2">
+                <input id="sub-email" type="email" placeholder="输入您的邮箱地址" class="w-full bg-darkBg border border-gray-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-accentPink">
+                <button onclick="confirmSubscribe()" class="w-full py-3 rounded-xl bg-accentPink hover:bg-pink-600 text-white font-bold text-xs shadow-lg shadow-accentPink/20 transition-all">
+                    立即开启提醒
+                </button>
+            </div>
+            <button onclick="toggleSubscribeModal()" class="text-xs text-subText hover:text-white">暂不订阅</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT INTERACTIVES -->
+    <script>
+        
+        // 1. Live KST Server Clock with Milliseconds
+        function updateKSTClock() {
+            const clockEl = document.getElementById('kst-clock');
+            if (!clockEl) return;
+            const now = new Date();
+            // Convert to KST (UTC+9)
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const kst = new Date(utc + (3600000 * 9));
+            
+            const h = String(kst.getHours()).padStart(2, '0');
+            const m = String(kst.getMinutes()).padStart(2, '0');
+            const s = String(kst.getSeconds()).padStart(2, '0');
+            const ms = String(kst.getMilliseconds()).padStart(3, '0');
+            
+            clockEl.textContent = `${h}:${m}:${s}.${ms}`;
+        }
+        setInterval(updateKSTClock, 40);
+
+        // 2. Countdown Timer
+        function updateCountdown() {
+            const target = new Date("2026-10-01T20:00:00+09:00").getTime();
+            const now = new Date().getTime();
+            const diff = target - now;
+
+            if (diff > 0) {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
+                document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+                document.getElementById('cd-mins').textContent = String(mins).padStart(2, '0');
+                document.getElementById('cd-secs').textContent = String(secs).padStart(2, '0');
+            }
+        }
+        setInterval(updateCountdown, 1000);
+
+        // 3. Concept Photo Gallery Carousel
+        const galleryImages = [
+            {
+                url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1000&q=80",
+                title: "Concept Photo 'DARK ECLIPSE' #01"
+            },
+            {
+                url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=1000&q=80",
+                title: "Concept Photo 'NEON REVOLUTION' #02"
+            },
+            {
+                url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1000&q=80",
+                title: "Concept Photo 'STAGE IMPACT' #03"
+            }
+        ];
+        let currentGalleryIndex = 0;
+
+        function updateGalleryView() {
+            const img = document.getElementById('gallery-main-img');
+            const title = document.getElementById('gallery-img-title');
+            const download = document.getElementById('gallery-download-btn');
+            
+            img.style.opacity = 0;
+            setTimeout(() => {
+                img.src = galleryImages[currentGalleryIndex].url;
+                title.textContent = galleryImages[currentGalleryIndex].title;
+                download.href = galleryImages[currentGalleryIndex].url;
+                img.style.opacity = 1;
+            }, 200);
+        }
+
+        function nextGalleryImage() {
+            currentGalleryIndex = (currentGalleryIndex + 1) % galleryImages.length;
+            updateGalleryView();
+        }
+
+        function prevGalleryImage() {
+            currentGalleryIndex = (currentGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateGalleryView();
+        }
+
+        // 4. Interactive Seat Visualizer Logic
+        const seatData = {
+            floor_a: {
+                img: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1000&q=80",
+                badge: "VIP Floor A1 区实拍",
+                desc: "距离主舞台约 8 米，延伸台就在身前！视线极佳，需准备防震手机支架。"
+            },
+            sec_2f: {
+                img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1000&q=80",
+                badge: "2层 15区 5排视角",
+                desc: "高处看灯光海与舞台全景神位，无前排遮挡，音响效果极佳。"
+            },
+            sec_3f: {
+                img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1000&q=80",
+                badge: "3层 32区 山顶视角",
+                desc: "坡度较陡，建议自带高倍望远镜，全场手应援棒氛围感满分。"
+            },
+            stage_view: {
+                img: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1000&q=80",
+                badge: "延伸台全景视角",
+                desc: "偶像走向 T 台时的近距离视线，可以看清全员舞蹈队形。"
+            }
+        };
+
+        function selectSeatSection(key) {
+            const data = seatData[key];
+            if (!data) return;
+
+            document.getElementById('seat-preview-img').src = data.img;
+            document.getElementById('seat-badge').textContent = data.badge;
+            document.getElementById('seat-desc').textContent = data.desc;
+
+            // Update button border states
+            ['floor_a', 'sec_2f', 'sec_3f', 'stage_view'].forEach(k => {
+                const btn = document.getElementById(`sec-btn-${k}`);
+                if (k === key) {
+                    btn.className = "p-3 rounded-xl bg-accentPink/20 border-2 border-accentPink text-white font-bold text-xs text-left";
+                } else {
+                    btn.className = "p-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-gray-600 text-gray-300 font-bold text-xs text-left";
+                }
+            });
+        }
+
+        // 5. Tab Switcher
+        function switchTab(tabId) {
+            ['tab-guide', 'tab-seat', 'tab-tips'].forEach(id => {
+                const content = document.getElementById(id);
+                const btn = document.getElementById(`btn-${id}`);
+                if (id === tabId) {
+                    content.classList.remove('hidden');
+                    btn.className = "px-4 py-2.5 rounded-t-xl bg-accentPink text-white border-t border-x border-accentPink flex items-center space-x-2";
+                } else {
+                    content.classList.add('hidden');
+                    btn.className = "px-4 py-2.5 rounded-t-xl bg-gray-900 text-gray-400 border-t border-x border-transparent hover:text-white flex items-center space-x-2";
+                }
+            });
+        }
+
+        // 6. Modals and Triggers
+        function toggleSearchModal() {
+            const modal = document.getElementById('search-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('search-input').focus();
+            }
+        }
+
+        function toggleSubscribeModal() {
+            const modal = document.getElementById('subscribe-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function confirmSubscribe() {
+            const email = document.getElementById('sub-email').value;
+            if (email) {
+                alert('🎉 订阅成功！开票提醒将第一时间发送至：' + email);
+                toggleSubscribeModal();
+            } else {
+                alert('请输入有效的电子邮箱！');
+            }
+        }
+
+        function copyCurrentLink() {
+            const tempInput = document.createElement("input");
+            tempInput.value = window.location.href;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            alert("🔗 抢票指南链接已复制到剪贴板！");
+        }
+
+        function toggleBookmark(btn) {
+            btn.classList.toggle('bg-accentPink');
+            btn.classList.toggle('text-white');
+            alert("⭐️ 已成功收藏至您的追星清单！");
+        }
+
+        // 7. Search Logic
+        function handleSearch(val) {
+            const res = document.getElementById('search-results');
+            if (!val.trim()) {
+                res.innerHTML = '<p class="text-subText text-center py-6">输入关键字快速搜索（例：BLACKPINK, Interpark, KSPO）</p>';
+                return;
+            }
+            res.innerHTML = `
+                <div onclick="toggleSearchModal(); openConcertGuide('c2026_bp');" class="p-3 bg-gray-900 hover:bg-gray-800 rounded-xl cursor-pointer">
+                    <div class="font-bold text-white">BLACKPINK WORLD TOUR [DEADLINE]</div>
+                    <div class="text-[11px] text-accentPink">Interpark Global 实名认证与抢票教程 · KSPO DOME</div>
+                </div>
+                <div onclick="toggleSearchModal()" class="p-3 bg-gray-900 hover:bg-gray-800 rounded-xl cursor-pointer">
+                    <div class="font-bold text-white">AESPA SYNK: PARALLEL LINE TOUR</div>
+                    <div class="text-[11px] text-accentGreen">YES24 Ticket Global 座位视角解密</div>
+                </div>
+            `;
+        }
+
+        function openConcertGuide(id) {
+            document.getElementById('detail-guide-view').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openSeatModal() {
+            switchTab('tab-seat');
+            document.getElementById('detail-guide-view').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function filterCategory(cat) {
+            alert(`已切换至分类: ${cat}！动态过滤卡片已展示。`);
+        }
+
+        function filterSchedule(tag) {
+            alert(`已筛选 ${tag} 组别行程日程！`);
+        }
+
+        function playFancamModal(title, img) {
+            alert(`▶ 正在加载 ${title} 官方 4K 高清播放器...`);
+        }
+
+        function readNewsModal(title) {
+            alert(`📖 加载【${title}】独家完整报道及翻译原文...`);
+        }
+
+        // Keyboard Shortcut CMD+K for search
+        document.addEventListener('keydown', function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                toggleSearchModal();
+            }
+        });
+    </script>
+</body>
+</html>
