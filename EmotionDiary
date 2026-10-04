@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心靈角落 - 情緒日記</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --bg: #f9f9fb;
+            --card-bg: #ffffff;
+            --text: #2d3436;
+            --light-text: #636e72;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--light-text);
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            margin-bottom: 30px;
+        }
+
+        /* 專屬用家寫下內心想法的預留位置 */
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            resize: none;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+            background-color: #fcfcfd;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #5b4cc4;
+        }
+
+        /* AI 名句激勵彈出區域 */
+        .ai-response {
+            background-color: #f1f0ff;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 25px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .ai-quote {
+            font-size: 18px;
+            font-weight: 500;
+            color: #4834d4;
+            margin: 0;
+        }
+
+        .history-title {
+            margin-top: 50px;
+            font-size: 20px;
+            color: var(--text);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.01);
+        }
+
+        .history-date {
+            font-size: 13px;
+            color: var(--light-text);
+            font-weight: bold;
+        }
+
+        .history-content {
+            margin: 12px 0;
+            white-space: pre-wrap;
+            color: #4a4a4a;
+        }
+
+        .history-quote {
+            font-size: 14px;
+            font-style: italic;
+            color: #4834d4;
+            background: #f8f9fa;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid #6c5ce7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📝 心靈角落</h1>
+        <p class="subtitle">把苦惱與困難寫下來，讓智慧為你解憂</p>
+    </header>
+
+    <!-- 日記輸入卡片 -->
+    <div class="card">
+        <!-- 唯一個預留輸入位置 -->
+        <textarea id="userThought" placeholder="在此寫下你內心的想法、苦惱或遇到的困難..."></textarea>
+        <button onclick="submitDiary()">傾訴完畢，聆聽贈言</button>
+
+        <!-- AI 激勵名句回饋 -->
+        <div id="aiResponse" class="ai-response">
+            <p class="ai-quote" id="resQuote"></p>
+        </div>
+    </div>
+
+    <!-- 歷史紀錄 -->
+    <h2 class="history-title">📚 你的過往足跡</h2>
+    <div id="historyList"></div>
+</div>
+
+<script>
+    // 名人名句庫
+    const QUOTES_DATABASE = {
+        "工作與壓力": [
+            "「壓力就是一塊石頭，對於弱者它是絆腳石，對於強者它是墊腳石。」—— 佚名",
+            "「你不需要很厲害才能開始，但你需要開始才能變得很厲害。」—— 齊格·齊格勒",
+            "「每條河流都有它的源頭，每種困難也都有它的解決方法。」—— 《轉念的力量》"
+        ],
+        "人際與孤獨": [
+            "「你必須學會獨自漫步，這樣當別人離開你時，你才不會倒下。」—— 齊克果",
+            "「真正重要的東西，用眼睛是看不見的，必須用內心去感受。」—— 《小王子》",
+            "「不要為了解釋自己而浪費時間，懂你的人不需要，不懂你的人不相信。」—— 佚名"
+        ],
+        "失敗與挫折": [
+            "「成功不是終點，失敗也非末日，真正重要的是繼續前行的勇氣。」—— 溫斯頓·邱吉爾",
+            "「世界擊碎每個人，但之後，許多人在受傷的地方變得更堅強。」—— 歐內斯特·海明威",
+            "「當你覺得自己正走在地獄時，請繼續走下去。」—— 邱吉爾"
+        ],
+        "迷茫與未來": [
+            "「既然不知道未來會怎樣，不如就走好當下的每一步。」—— 《解憂雜貨店》",
+            "「你所熱愛的東西，有一天會反過來擁抱你。」—— 佚名",
+            "「生命中最重要的一天，是用心過好當下的那一天。」—— 佚名"
+        ],
+        "通用鼓勵": [
+            "「即使在最黑暗的時刻，也可以找到幸福，只要有人記得點亮那盞燈。」—— 《哈利波特》",
+            "「每一個不曾起舞的日子，都是對生命的辜負。」—— 尼采",
+            "「不要害怕陰影，因為那意味著附近有光。」—— 露西·莫德·蒙哥馬利"
+        ]
+    };
+
+    let diaryLogs = JSON.parse(localStorage.getItem('diaryLogs')) || [];
+    renderHistory();
+
+    function submitDiary() {
+        const textarea = document.getElementById('userThought');
+        const text = textarea.value.trim();
+
+        if (text === "") {
+            alert("請先寫下你的想法再提交。");
+            return;
+        }
+
+        // 幕後自動分析文本
+        let category = "通用鼓勵";
+        const lowerText = text.toLowerCase();
+        
+        if (["返工", "工作", "壓力", "老細", "同事", "讀書", "考試", "功課", "好忙", "辛酸", "頂唔順"].some(w => lowerText.includes(w))) {
+            category = "工作與壓力";
+        } else if (["朋友", "拍拖", "分手", "孤獨", "一個人", "鬧交", "屋企人", "寂寞", "溝通"].some(w => lowerText.includes(w))) {
+            category = "人際與孤獨";
+        } else if (["失敗", "唔高興", "放棄", "輸咗", "做錯", "後悔", "好差", "絕望"].some(w => lowerText.includes(w))) {
+            category = "失敗與挫折";
+        } else if (["點算", "迷茫", "未來", "目標", "唔知", "選擇", "前路"].some(w => lowerText.includes(w))) {
+            category = "迷茫與未來";
+        }
+
+        const quotes = QUOTES_DATABASE[category];
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+
+        // 顯示 AI 贈言
+        document.getElementById('resQuote').innerText = randomQuote;
+        document.getElementById('aiResponse').style.display = 'block';
+
+        // 儲存紀錄
+        const today = new Date().toISOString().split('T')[0];
+        diaryLogs.unshift({
+            date: today,
+            content: text,
+            quote: randomQuote
+        });
+
+        localStorage.setItem('diaryLogs', JSON.stringify(diaryLogs));
+        
+        renderHistory();
+        textarea.value = ""; // 清空輸入框以便下次書寫
+    }
+
+    function renderHistory() {
+        const listContainer = document.getElementById('historyList');
+        if (diaryLogs.length === 0) {
+            listContainer.innerHTML = '<p style="color:var(--light-text); text-align:center; font-size:14px;">目前沒有日記紀錄，在上方寫下第一篇吧。</p>';
+            return;
+        }
+
+        listContainer.innerHTML = diaryLogs.map(log => `
+            <div class="history-item">
+                <div class="history-date">📅 ${log.date}</div>
+                <div class="history-content">${escapeHtml(log.content)}</div>
+                <div class="history-quote">${log.quote}</div>
+            </div>
+        `).join('');
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+
+</body>
+</html>
