@@ -2,53 +2,108 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>Pico 2 W 網頁藍牙開關</title>
+    <title>Pico 2 W 網頁藍牙雙向控制器</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f0f2f5; }
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin-top: 50px; 
+            background-color: #f0f2f5; 
+            transition: background-color 0.5s ease; /* 讓背景顏色轉變更平滑 */
+        }
         button { font-size: 20px; padding: 15px 30px; margin: 10px; cursor: pointer; border-radius: 8px; border: none; }
         .connect { background-color: #2196F3; color: white; }
         .on { background-color: #ffeb3b; color: #333; font-weight: bold; }
         .off { background-color: #3f51b5; color: white; }
-        #status { font-weight: bold; color: #666; margin-top: 20px; }
+        
+        /* 狀態顯示框樣式 */
+        #display-box {
+            margin: 30px auto;
+            padding: 20px;
+            width: 300px;
+            border-radius: 12px;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #status-text { font-size: 24px; font-weight: bold; color: #333; }
+        #log { font-weight: bold; color: #666; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <h1>🌐 Pico 2 W 網頁藍牙開關燈</h1>
+    <h1>🌐 Pico 2 W 藍牙雙向控制與監測</h1>
     <button class="connect" onclick="connectPico()">1. 連接 Pico 2 W 藍牙</button>
     <br><br>
-    <button class="on" onclick="sendCommand('ON')">💡 開燈</button>
-    <button class="off" onclick="sendCommand('OFF')">🌑 關燈</button>
+    
+    <!-- 結果顯示區域 -->
+    <div id="display-box">
+        <p>目前燈光狀態：</p>
+        <div id="status-text">⚫ 尚未連線</div>
+    </div>
 
-    <p id="status">狀態：尚未連接</p>
+    <button class="on" onclick="sendCommand('ON')">💡 網頁開燈</button>
+    <button class="off" onclick="sendCommand('OFF')">🌑 網頁關燈</button>
+
+    <p id="log">系統日誌：等待使用者連線...</p>
 
     <script>
-        // 必須與 Pico 端的 16-bit 藍牙 UUID 對應
         const SERVICE_UUID = 0x1815;
         const CHAR_UUID = 0x2A56;
         
         let picoCharacteristic = null;
 
+        // 更新網頁畫面與背景顏色的函式
+        function updateUI(state) {
+            const statusText = document.getElementById('status-text');
+            if (state === "ON") {
+                statusText.innerText = "💡 燈已開啟 (ON)";
+                statusText.style.color = "#ffb300";
+                document.body.style.backgroundColor = "#fffde7"; // 淡黃色背景
+            } else if (state === "OFF") {
+                statusText.innerText = "🌑 燈已關閉 (OFF)";
+                statusText.style.color = "#3f51b5";
+                document.body.style.backgroundColor = "#e8eaf6"; // 淡藍色背景
+            }
+        }
+
+        // 監聽來自 Pico 2 W 的硬體通知 (傾斜開關觸發時)
+        function handleNotification(event) {
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const state = decoder.decode(value).strip ? decoder.decode(value).trim() : decoder.decode(value);
+            
+            console.log("收到 Pico 硬體通知: " + state);
+            document.getElementById('log').innerText = "系統日誌：實體傾斜開關變更了狀態！";
+            updateUI(state);
+        }
+
         async function connectPico() {
-            document.getElementById('status').innerText = "正在尋找 Pico2W_LED...";
+            document.getElementById('log').innerText = "正在尋找 Pico2W_LED...";
             try {
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ name: 'Pico2W_LED' }],
                     optionalServices: [SERVICE_UUID]
                 });
 
-                document.getElementById('status').innerText = "正在建立藍牙連線...";
+                document.getElementById('log').innerText = "正在建立藍牙連線...";
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
                 picoCharacteristic = await service.getCharacteristic(CHAR_UUID);
 
-                document.getElementById('status').innerText = "🎉 連線成功！快試試開燈與關燈吧。";
+                // ⭐ 關鍵：啟動藍牙通知監聽 (Notify)
+                await picoCharacteristic.startNotifications();
+                picoCharacteristic.addEventListener('characteristicvaluechanged', handleNotification);
+
+                document.getElementById('log').innerText = "🎉 連線成功！已同步監聽傾斜開關。";
+                document.getElementById('status-text').innerText = "🌑 燈已關閉 (OFF)";
+                document.body.style.backgroundColor = "#e8eaf6";
             } catch (error) {
                 console.error(error);
-                document.getElementById('status').innerText = "❌ 連線失敗: " + error;
+                document.getElementById('log').innerText = "❌ 連線失敗: " + error;
             }
         }
 
+        // 網頁主動發送指令給 Pico
         async function sendCommand(cmd) {
             if (!picoCharacteristic) {
                 alert("請先點擊按鈕連接藍牙！");
@@ -57,10 +112,12 @@
             try {
                 const encoder = new TextEncoder();
                 await picoCharacteristic.writeValue(encoder.encode(cmd));
-                console.log("指令已發送: " + cmd);
+                console.log("網頁指令已發送: " + cmd);
+                document.getElementById('log').innerText = "系統日誌：網頁主動發送 " + cmd;
+                updateUI(cmd); // 網頁主動點擊時也同步更新網頁 UI
             } catch (error) {
                 console.error(error);
-                document.getElementById('status').innerText = "❌ 發送指令失敗";
+                document.getElementById('log').innerText = "❌ 發送指令失敗";
             }
         }
     </script>
