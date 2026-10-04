@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Pico 2 W 網頁藍牙開關</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f0f2f5; }
+        button { font-size: 20px; padding: 15px 30px; margin: 10px; cursor: pointer; border-radius: 8px; border: none; }
+        .connect { background-color: #2196F3; color: white; }
+        .on { background-color: #ffeb3b; color: #333; font-weight: bold; }
+        .off { background-color: #3f51b5; color: white; }
+        #status { font-weight: bold; color: #666; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>🌐 Pico 2 W 網頁藍牙開關燈</h1>
+    <button class="connect" onclick="connectPico()">1. 連接 Pico 2 W 藍牙</button>
+    <br><br>
+    <button class="on" onclick="sendCommand('ON')">💡 開燈</button>
+    <button class="off" onclick="sendCommand('OFF')">🌑 關燈</button>
+
+    <p id="status">狀態：尚未連接</p>
+
+    <script>
+        // 必須與 Pico 端的 16-bit 藍牙 UUID 對應
+        const SERVICE_UUID = 0x1815;
+        const CHAR_UUID = 0x2A56;
+        
+        let picoCharacteristic = null;
+
+        async function connectPico() {
+            document.getElementById('status').innerText = "正在尋找 Pico2W_LED...";
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'Pico2W_LED' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                document.getElementById('status').innerText = "正在建立藍牙連線...";
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                picoCharacteristic = await service.getCharacteristic(CHAR_UUID);
+
+                document.getElementById('status').innerText = "🎉 連線成功！快試試開燈與關燈吧。";
+            } catch (error) {
+                console.error(error);
+                document.getElementById('status').innerText = "❌ 連線失敗: " + error;
+            }
+        }
+
+        async function sendCommand(cmd) {
+            if (!picoCharacteristic) {
+                alert("請先點擊按鈕連接藍牙！");
+                return;
+            }
+            try {
+                const encoder = new TextEncoder();
+                await picoCharacteristic.writeValue(encoder.encode(cmd));
+                console.log("指令已發送: " + cmd);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('status').innerText = "❌ 發送指令失敗";
+            }
+        }
+    </script>
+</body>
+</html>
