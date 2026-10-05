@@ -3,283 +3,689 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>心靈角落 - 情緒日記</title>
+    <title>心靈角落 - 星空情緒日記</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        starPrimary: '#a29bfe',
+                        starDark: '#0b091a',
+                        starCard: 'rgba(255, 255, 255, 0.07)',
+                        starGold: '#f6e58d'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&display=swap');
+
         :root {
-            --primary: #6c5ce7;
-            --bg: #f9f9fb;
-            --card-bg: #ffffff;
-            --text: #2d3436;
-            --light-text: #636e72;
+            --primary: #a29bfe;
+            --text: #ffffff;
+            --light-text: #b2bec3;
+            --card-bg: rgba(255, 255, 255, 0.08); 
+            --input-bg: rgba(255, 255, 255, 0.05);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(to bottom, #090714, #120e29, #1a153b, #090714);
             color: var(--text);
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
+        .serif-font {
+            font-family: 'Noto Serif TC', serif;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        h1 {
-            color: var(--primary);
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: var(--light-text);
-            margin: 0;
-            font-size: 16px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-            margin-bottom: 30px;
-        }
-
-        /* 專屬用家寫下內心想法的預留位置 */
-        textarea {
+        #starCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 180px;
-            padding: 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            resize: none;
-            font-size: 16px;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-            transition: border-color 0.3s;
-            background-color: #fcfcfd;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        textarea:focus {
+        /* 磨砂玻璃效果 */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-input {
+            background-color: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-input:focus {
             outline: none;
             border-color: var(--primary);
-            background-color: #fff;
+            background-color: rgba(255, 255, 255, 0.09);
+            box-shadow: 0 0 15px rgba(162, 155, 254, 0.4);
         }
 
-        button {
-            width: 100%;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px;
-            font-size: 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
+        /* 呼吸動畫 */
+        @keyframes breathCircle {
+            0%, 100% { transform: scale(1); opacity: 0.4; box-shadow: 0 0 20px rgba(162, 155, 254, 0.2); }
+            50% { transform: scale(1.6); opacity: 0.95; box-shadow: 0 0 50px rgba(162, 155, 254, 0.8); }
         }
 
-        button:hover {
-            background-color: #5b4cc4;
+        .anim-breath {
+            animation: breathCircle 19s infinite ease-in-out;
         }
 
-        /* AI 名句激勵彈出區域 */
-        .ai-response {
-            background-color: #f1f0ff;
-            border-left: 4px solid var(--primary);
-            padding: 20px;
-            border-radius: 0 12px 12px 0;
-            margin-top: 25px;
+        /* 隱藏滾動條 */
+        .no-scrollbar::-webkit-scrollbar {
             display: none;
-            animation: fadeIn 0.5s ease;
         }
-
-        .ai-quote {
-            font-size: 18px;
-            font-weight: 500;
-            color: #4834d4;
-            margin: 0;
-        }
-
-        .history-title {
-            margin-top: 50px;
-            font-size: 20px;
-            color: var(--text);
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 10px;
-        }
-
-        .history-item {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.01);
-        }
-
-        .history-date {
-            font-size: 13px;
-            color: var(--light-text);
-            font-weight: bold;
-        }
-
-        .history-content {
-            margin: 12px 0;
-            white-space: pre-wrap;
-            color: #4a4a4a;
-        }
-
-        .history-quote {
-            font-size: 14px;
-            font-style: italic;
-            color: #4834d4;
-            background: #f8f9fa;
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin-top: 10px;
-            border-left: 3px solid #6c5ce7;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body>
+<body class="relative text-gray-100 antialiased selection:bg-purple-500 selection:text-white">
 
-<div class="container">
-    <header>
-        <h1>📝 心靈角落</h1>
-        <p class="subtitle">把苦惱與困難寫下來，讓智慧為你解憂</p>
+<!-- 動態流星與星雲背景 -->
+<canvas id="starCanvas"></canvas>
+
+<div class="relative z-10 max-w-3xl mx-auto px-4 py-8 sm:py-12">
+    <!-- 頁眉標題與工具列 -->
+    <header class="text-center mb-8">
+        <div class="flex justify-center items-center gap-2 mb-2">
+            <span class="text-3xl animate-pulse">🌌</span>
+            <h1 class="text-3xl sm:text-4xl font-bold tracking-wider text-white drop-shadow-[0_0_12px_rgba(162,155,254,0.6)] serif-font">
+                心靈星空
+            </h1>
+        </div>
+        <p class="text-gray-300 text-sm sm:text-base opacity-90 max-w-md mx-auto">
+            將繁重的煩惱傾訴給星空，聽聽來自宇宙深處的溫柔迴響
+        </p>
+
+        <!-- 輔助功能捷徑欄 -->
+        <div class="flex flex-wrap justify-center items-center gap-3 mt-6">
+            <button id="soundToggleBtn" onclick="toggleAmbientSound()" class="glass-card px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1.5 hover:bg-white/20 transition duration-300">
+                <i data-lucide="volume-x" id="soundIcon" class="w-4 h-4 text-purple-300"></i>
+                <span id="soundText">治癒星音: 關閉</span>
+            </button>
+
+            <button onclick="openBreathingModal()" class="glass-card px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1.5 hover:bg-white/20 transition duration-300">
+                <i data-lucide="wind" class="w-4 h-4 text-cyan-300"></i>
+                <span>4-7-8 呼吸沉靜</span>
+            </button>
+
+            <a href="#historySection" class="glass-card px-3 py-1.5 rounded-full text-xs sm:text-sm flex items-center gap-1.5 hover:bg-white/20 transition duration-300">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                <span>過往星跡</span>
+            </a>
+        </div>
     </header>
 
-    <!-- 日記輸入卡片 -->
-    <div class="card">
-        <!-- 唯一個預留輸入位置 -->
-        <textarea id="userThought" placeholder="在此寫下你內心的想法、苦惱或遇到的困難..."></textarea>
-        <button onclick="submitDiary()">傾訴完畢，聆聽贈言</button>
-
-        <!-- AI 激勵名句回饋 -->
-        <div id="aiResponse" class="ai-response">
-            <p class="ai-quote" id="resQuote"></p>
+    <!-- 主要傾訴卡片 -->
+    <main class="glass-card rounded-2xl p-6 sm:p-8 mb-10 transition-all duration-500">
+        <!-- 心境標籤選擇器 -->
+        <div class="mb-5">
+            <label class="block text-xs font-semibold text-purple-200 tracking-wider uppercase mb-2">
+                當前心境標籤 (選擇最貼近的感受)
+            </label>
+            <div class="flex flex-wrap gap-2" id="moodBadges">
+                <button type="button" onclick="selectMood('迷茫 🌊')" class="mood-btn glass-card px-3 py-1 rounded-lg text-xs hover:border-purple-300 transition border border-transparent">迷茫 🌊</button>
+                <button type="button" onclick="selectMood('疲累 🌙')" class="mood-btn glass-card px-3 py-1 rounded-lg text-xs hover:border-purple-300 transition border border-transparent">疲累 🌙</button>
+                <button type="button" onclick="selectMood('焦慮 ⚡')" class="mood-btn glass-card px-3 py-1 rounded-lg text-xs hover:border-purple-300 transition border border-transparent">焦慮 ⚡</button>
+                <button type="button" onclick="selectMood('悲傷 🌧️')" class="mood-btn glass-card px-3 py-1 rounded-lg text-xs hover:border-purple-300 transition border border-transparent">悲傷 🌧️</button>
+                <button type="button" onclick="selectMood('平靜 🍃')" class="mood-btn glass-card px-3 py-1 rounded-lg text-xs hover:border-purple-300 transition border border-transparent">平靜 🍃</button>
+                <button type="button" onclick="selectMood('期待 ✨')" class="mood-btn glass-card px-3 py-1 rounded-lg text-xs hover:border-purple-300 transition border border-transparent">期待 ✨</button>
+            </div>
         </div>
-    </div>
 
-    <!-- 歷史紀錄 -->
-    <h2 class="history-title">📚 你的過往足跡</h2>
-    <div id="historyList"></div>
+        <!-- 輸入區域 -->
+        <div class="relative mb-4">
+            <textarea id="userThought" class="glass-input w-full h-44 p-4 rounded-xl text-white placeholder-gray-400 text-base resize-none" placeholder="在此寫下你內心的想法、苦惱、遺憾或遇到的困難..."></textarea>
+            <div class="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none" id="charCount">0 字</div>
+        </div>
+
+        <!-- 提交按鈕 -->
+        <button id="submitBtn" onclick="submitDiary()" class="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-medium py-3.5 px-6 rounded-xl shadow-lg shadow-purple-900/30 hover:shadow-purple-800/50 transform active:scale-[0.99] transition duration-200 flex justify-center items-center gap-2">
+            <i data-lucide="send" class="w-5 h-5"></i>
+            <span id="btnText">傾訴完畢，將煩惱許願給星空</span>
+        </button>
+
+        <!-- AI 回應結果展示卡片 -->
+        <div id="aiResponse" class="hidden mt-8 pt-6 border-t border-white/10 animate-fade-in">
+            <div class="bg-purple-950/40 border border-purple-400/30 rounded-xl p-5 sm:p-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                    <i data-lucide="quote" class="w-24 h-24 text-purple-200"></i>
+                </div>
+
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <span id="resTag" class="text-xs font-semibold uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">星空智者回應</span>
+                </div>
+
+                <blockquote id="resQuote" class="serif-font text-lg sm:text-xl font-medium text-amber-200 mb-4 leading-relaxed tracking-wide">
+                    <!-- 金句填充處 -->
+                </blockquote>
+
+                <div class="text-sm text-gray-200 leading-relaxed mb-5 whitespace-pre-wrap" id="resReframe">
+                    <!-- 心靈共鳴梳理填充處 -->
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-lg p-3.5 flex items-start gap-3">
+                    <div class="p-1.5 bg-emerald-500/20 rounded-md text-emerald-300 mt-0.5">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-emerald-300 font-semibold mb-0.5">今晚的微療癒行動</div>
+                        <div class="text-xs text-gray-200" id="resMicroAction"><!-- 微小行動填充處 --></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 歷史日誌軌跡 -->
+    <section id="historySection" class="mt-12">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold tracking-wide flex items-center gap-2 text-purple-100">
+                <i data-lucide="book-open" class="w-5 h-5 text-purple-400"></i>
+                <span>過往星跡</span>
+            </h2>
+            <div class="flex items-center gap-2">
+                <button onclick="exportHistory()" class="text-xs text-gray-300 hover:text-white glass-card px-2.5 py-1 rounded-md transition" title="導出備份">
+                    導出備份
+                </button>
+                <button onclick="clearHistory()" class="text-xs text-red-300 hover:text-red-200 glass-card px-2.5 py-1 rounded-md transition" title="清空軌跡">
+                    清空歷史
+                </button>
+            </div>
+        </div>
+
+        <div id="historyList" class="space-y-4">
+            <!-- 歷史紀錄將由 JS 動態渲染 -->
+        </div>
+    </section>
+</div>
+
+<!-- 4-7-8 呼吸 Modal -->
+<div id="breathModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex justify-center items-center p-4">
+    <div class="glass-card max-w-sm w-full rounded-2xl p-6 text-center relative border border-white/20">
+        <button onclick="closeBreathingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <h3 class="text-xl font-bold text-white mb-1">4-7-8 星空呼吸</h3>
+        <p class="text-xs text-gray-300 mb-8">跟隨星光的脈動，吸氣4秒，留息7秒，呼氣8秒</p>
+
+        <!-- 呼吸圓環動畫 -->
+        <div class="relative w-40 h-40 mx-auto mb-8 flex justify-center items-center">
+            <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-400 anim-breath"></div>
+            <div class="relative z-10 w-28 h-28 rounded-full bg-slate-900/90 border border-purple-300/30 flex justify-center items-center flex-col">
+                <span id="breathPhase" class="text-sm font-semibold text-purple-200">準備</span>
+                <span id="breathTimer" class="text-2xl font-bold text-white mt-1">4</span>
+            </div>
+        </div>
+
+        <p class="text-xs text-purple-200 italic">「專注於呼吸，讓所有繁雜思緒如雲霧散去」</p>
+    </div>
+</div>
+
+<!-- Toast 通知條 -->
+<div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white border border-purple-500/40 px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-md text-xs sm:text-sm flex items-center gap-2 z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
+    <i data-lucide="info" class="w-4 h-4 text-purple-400"></i>
+    <span id="toastMsg">訊息通知</span>
 </div>
 
 <script>
-    // 名人名句庫
-    const QUOTES_DATABASE = {
-        "工作與壓力": [
-            "「壓力就是一塊石頭，對於弱者它是絆腳石，對於強者它是墊腳石。」—— 佚名",
-            "「你不需要很厲害才能開始，但你需要開始才能變得很厲害。」—— 齊格·齊格勒",
-            "「每條河流都有它的源頭，每種困難也都有它的解決方法。」—— 《轉念的力量》"
-        ],
-        "人際與孤獨": [
-            "「你必須學會獨自漫步，這樣當別人離開你時，你才不會倒下。」—— 齊克果",
-            "「真正重要的東西，用眼睛是看不見的，必須用內心去感受。」—— 《小王子》",
-            "「不要為了解釋自己而浪費時間，懂你的人不需要，不懂你的人不相信。」—— 佚名"
-        ],
-        "失敗與挫折": [
-            "「成功不是終點，失敗也非末日，真正重要的是繼續前行的勇氣。」—— 溫斯頓·邱吉爾",
-            "「世界擊碎每個人，但之後，許多人在受傷的地方變得更堅強。」—— 歐內斯特·海明威",
-            "「當你覺得自己正走在地獄時，請繼續走下去。」—— 邱吉爾"
-        ],
-        "迷茫與未來": [
-            "「既然不知道未來會怎樣，不如就走好當下的每一步。」—— 《解憂雜貨店》",
-            "「你所熱愛的東西，有一天會反過來擁抱你。」—— 佚名",
-            "「生命中最重要的一天，是用心過好當下的那一天。」—— 佚名"
-        ],
-        "通用鼓勵": [
-            "「即使在最黑暗的時刻，也可以找到幸福，只要有人記得點亮那盞燈。」—— 《哈利波特》",
-            "「每一個不曾起舞的日子，都是對生命的辜負。」—— 尼采",
-            "「不要害怕陰影，因為那意味著附近有光。」—— 露西·莫德·蒙哥馬利"
-        ]
-    };
+    // ==================== 流星與星空繪製引擎 ====================
+    const canvas = document.getElementById('starCanvas');
+    const ctx = canvas.getContext('2d');
 
-    let diaryLogs = JSON.parse(localStorage.getItem('diaryLogs')) || [];
-    renderHistory();
+    let stars = [];
+    let meteors = [];
 
-    function submitDiary() {
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initStars();
+    }
+
+    function initStars() {
+        stars = [];
+        const count = Math.floor((canvas.width * canvas.height) / 7500);
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.8,
+                alpha: Math.random(),
+                speed: 0.005 + Math.random() * 0.015,
+                color: Math.random() > 0.8 ? '#a29bfe' : (Math.random() > 0.85 ? '#f6e58d' : '#ffffff')
+            });
+        }
+    }
+
+    function createMeteor() {
+        meteors.push({
+            x: Math.random() * canvas.width + 200,
+            y: Math.random() * (canvas.height / 2) - 100,
+            length: 80 + Math.random() * 100,
+            speed: 5 + Math.random() * 7,
+            dx: -(3 + Math.random() * 4),
+            dy: 4 + Math.random() * 5,
+            alpha: 1
+        });
+    }
+
+    function renderCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. 靜態閃爍星星
+        stars.forEach(star => {
+            star.alpha += star.speed;
+            if (star.alpha > 1 || star.alpha < 0.2) star.speed = -star.speed;
+            ctx.fillStyle = star.color;
+            ctx.globalAlpha = Math.max(0.1, star.alpha);
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        // 2. 流星雨控制
+        if (Math.random() < 0.02 && meteors.length < 4) {
+            createMeteor();
+        }
+
+        // 3. 繪製流星拖尾
+        for (let i = meteors.length - 1; i >= 0; i--) {
+            let m = meteors[i];
+            let gradient = ctx.createLinearGradient(m.x, m.y, m.x - m.dx * 0.5, m.y - m.dy * 0.5);
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${m.alpha})`);
+            gradient.addColorStop(0.4, `rgba(162, 155, 254, ${m.alpha * 0.6})`);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.beginPath();
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.8;
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(m.x - m.dx * (m.length / 10), m.y - m.dy * (m.length / 10));
+            ctx.stroke();
+
+            m.x += m.dx;
+            m.y += m.dy;
+            m.alpha -= 0.008;
+
+            if (m.y > canvas.height || m.x < -100 || m.alpha <= 0) {
+                meteors.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(renderCanvas);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    renderCanvas();
+
+    // ==================== 純 Web Audio 音效合成器 (免加載檔案) ====================
+    let audioCtx = null;
+    let isSoundPlaying = false;
+    let soundNodes = [];
+
+    function toggleAmbientSound() {
+        if (!isSoundPlaying) {
+            startAmbientSound();
+        } else {
+            stopAmbientSound();
+        }
+    }
+
+    function startAmbientSound() {
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // 1. 深邃空間 Drone 低音
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(110, audioCtx.currentTime); // A2
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(164.81, audioCtx.currentTime); // E3
+
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+
+            soundNodes = [osc1, osc2, gain];
+            isSoundPlaying = true;
+
+            document.getElementById('soundIcon').setAttribute('data-lucide', 'volume-2');
+            document.getElementById('soundText').innerText = "治癒星音: 播放中";
+            showToast("🌌 治癒星空音律已啟動");
+            lucide.createIcons();
+        } catch (e) {
+            console.error(e);
+            showToast("您的瀏覽器暫時不支援音效播放");
+        }
+    }
+
+    function stopAmbientSound() {
+        soundNodes.forEach(node => {
+            if (node.stop) node.stop();
+            if (node.disconnect) node.disconnect();
+        });
+        soundNodes = [];
+        isSoundPlaying = false;
+        document.getElementById('soundIcon').setAttribute('data-lucide', 'volume-x');
+        document.getElementById('soundText').innerText = "治癒星音: 關閉";
+        showToast("音效已靜音");
+        lucide.createIcons();
+    }
+
+    // ==================== Gemini API AI 心理陪伴邏輯 ====================
+    let selectedMood = '';
+
+    function selectMood(mood) {
+        selectedMood = mood;
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            if (btn.innerText.includes(mood.split(' ')[0])) {
+                btn.classList.add('border-purple-400', 'bg-purple-500/20');
+            } else {
+                btn.classList.remove('border-purple-400', 'bg-purple-500/20');
+            }
+        });
+    }
+
+    // 監聽字數計數
+    document.getElementById('userThought').addEventListener('input', (e) => {
+        document.getElementById('charCount').innerText = `${e.target.value.length} 字`;
+    });
+
+    async function submitDiary() {
         const textarea = document.getElementById('userThought');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
         const text = textarea.value.trim();
 
-        if (text === "") {
-            alert("請先寫下你的想法再提交。");
+        if (!text) {
+            showToast("請先寫下你內心的想法，再許願給星空吧。");
             return;
         }
 
-        // 幕後自動分析文本
-        let category = "通用鼓勵";
-        const lowerText = text.toLowerCase();
-        
-        if (["返工", "工作", "壓力", "老細", "同事", "讀書", "考試", "功課", "好忙", "辛酸", "頂唔順"].some(w => lowerText.includes(w))) {
-            category = "工作與壓力";
-        } else if (["朋友", "拍拖", "分手", "孤獨", "一個人", "鬧交", "屋企人", "寂寞", "溝通"].some(w => lowerText.includes(w))) {
-            category = "人際與孤獨";
-        } else if (["失敗", "唔高興", "放棄", "輸咗", "做錯", "後悔", "好差", "絕望"].some(w => lowerText.includes(w))) {
-            category = "失敗與挫折";
-        } else if (["點算", "迷茫", "未來", "目標", "唔知", "選擇", "前路"].some(w => lowerText.includes(w))) {
-            category = "迷茫與未來";
+        submitBtn.disabled = true;
+        btnText.innerText = "星空正在聆聽並迴響中...";
+
+        // 發送文字粒子飛向星空動畫
+        triggerStarWishAnimation();
+
+        try {
+            const result = await fetchGeminiCounseling(text, selectedMood);
+            
+            // 顯示結果
+            document.getElementById('resQuote').innerText = `「${result.quote}」`;
+            document.getElementById('resReframe').innerText = result.reframe;
+            document.getElementById('resMicroAction').innerText = result.microAction;
+            document.getElementById('resTag').innerText = result.moodTag || (selectedMood || "星空啟示");
+
+            document.getElementById('aiResponse').classList.remove('hidden');
+
+            // 儲存至紀錄
+            const newEntry = {
+                id: Date.now(),
+                date: new Date().toLocaleString('zh-HK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                userContent: text,
+                mood: selectedMood || '未標記',
+                aiQuote: result.quote,
+                aiReframe: result.reframe,
+                aiAction: result.microAction,
+                moodTag: result.moodTag
+            };
+
+            saveToHistory(newEntry);
+            showToast("✨ 星空已接收你的許願，並賜予迴響");
+
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            // 降級離線備援方案
+            const fallback = getFallbackCounseling(text);
+            document.getElementById('resQuote').innerText = `「${fallback.quote}」`;
+            document.getElementById('resReframe').innerText = fallback.reframe;
+            document.getElementById('resMicroAction').innerText = fallback.microAction;
+            document.getElementById('resTag').innerText = "星空溫柔迴響";
+            document.getElementById('aiResponse').classList.remove('hidden');
+
+            saveToHistory({
+                id: Date.now(),
+                date: new Date().toLocaleString('zh-HK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                userContent: text,
+                mood: selectedMood || '未標記',
+                aiQuote: fallback.quote,
+                aiReframe: fallback.reframe,
+                aiAction: fallback.microAction,
+                moodTag: "靜謐微光"
+            });
+        } finally {
+            submitBtn.disabled = false;
+            btnText.innerText = "傾訴完畢，將煩惱許願給星空";
         }
+    }
 
-        const quotes = QUOTES_DATABASE[category];
-        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+    async function fetchGeminiCounseling(userText, mood) {
+        const apiKey = ""; // Gemini 預設留空以供自動注入
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-        // 顯示 AI 贈言
-        document.getElementById('resQuote').innerText = randomQuote;
-        document.getElementById('aiResponse').style.display = 'block';
+        const systemPrompt = `你是一位溫柔、具深度同理心與哲學智慧的心靈陪伴導師。
+請仔細閱讀使用者的心靈傾訴與當前情緒標籤（標籤：${mood || '未選'}）。
+請務必回傳結構化的 JSON 格式，包含以下欄位：
+1. "quote": 一句原創且充滿智慧、療癒溫暖的哲理金句（約20-35字）。
+2. "reframe": 溫柔的情感共鳴與認知重塑（約100-140字），引導使用者換個角度溫柔地擁抱自己。
+3. "microAction": 1個今晚就能輕鬆完成的微小療癒行動（例如：喝杯溫熱開水、伸個懶腰、閉眼聽三次呼吸）。
+4. "moodTag": 為使用者當下心境命名一個富有詩意的標籤（例如：雨後微光、夜空沉思）。`;
 
-        // 儲存紀錄
-        const today = new Date().toISOString().split('T')[0];
-        diaryLogs.unshift({
-            date: today,
-            content: text,
-            quote: randomQuote
+        const payload = {
+            contents: [{ parts: [{ text: userText }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        quote: { type: "STRING" },
+                        reframe: { type: "STRING" },
+                        microAction: { type: "STRING" },
+                        moodTag: { type: "STRING" }
+                    },
+                    required: ["quote", "reframe", "microAction", "moodTag"]
+                }
+            }
+        };
+
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
 
-        localStorage.setItem('diaryLogs', JSON.stringify(diaryLogs));
-        
+        if (!res.ok) throw new Error("API request failed");
+
+        const data = await res.json();
+        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        return JSON.parse(jsonText);
+    }
+
+    // 離線備援金句庫
+    function getFallbackCounseling(text) {
+        const quotes = [
+            { quote: "黑夜無論怎樣悠長，白晝總會到來；每一顆星辰都在寂靜中積蓄光芒。", reframe: "允許自己現在感到疲倦或困惑，這並非軟弱，而是心靈正在休息。就像夜空需要黑暗才能顯現繁星，此刻的沉澱是在為下一次的盛開積聚力量。", microAction: "深呼吸三次，揉揉緊繃的肩膀，對自己說一句「辛苦了」。" },
+            { quote: "風會吹散濃霧，時間會安撫焦慮，你比自己想像的更具韌性。", reframe: "生活偶爾會失去秩序，但請相信這只是暫時的交響樂章低谷。不必急於解決所有難題，今晚就把煩惱交給星空，安心入睡。", microAction: "去倒一杯溫熱的水，緩緩喝下，感受溫暖傳遍全身。" }
+        ];
+        return quotes[Math.floor(Math.random() * quotes.length)];
+    }
+
+    function triggerStarWishAnimation() {
+        // 生成多顆向上升起的許願粒子
+        for (let i = 0; i < 20; i++) {
+            meteors.push({
+                x: window.innerWidth / 2 + (Math.random() - 0.5) * 300,
+                y: window.innerHeight * 0.7,
+                length: 40 + Math.random() * 50,
+                speed: -(3 + Math.random() * 4),
+                dx: (Math.random() - 0.5) * 2,
+                dy: -(4 + Math.random() * 4),
+                alpha: 1
+            });
+        }
+    }
+
+    // ==================== 歷史軌跡與資料儲存 ====================
+    let historyEntries = JSON.parse(localStorage.getItem('starDiaryLogs')) || [];
+
+    function saveToHistory(entry) {
+        historyEntries.unshift(entry);
+        localStorage.setItem('starDiaryLogs', JSON.stringify(historyEntries));
         renderHistory();
-        textarea.value = ""; // 清空輸入框以便下次書寫
     }
 
     function renderHistory() {
-        const listContainer = document.getElementById('historyList');
-        if (diaryLogs.length === 0) {
-            listContainer.innerHTML = '<p style="color:var(--light-text); text-align:center; font-size:14px;">目前沒有日記紀錄，在上方寫下第一篇吧。</p>';
+        const listEl = document.getElementById('historyList');
+        if (historyEntries.length === 0) {
+            listEl.innerHTML = `
+                <div class="glass-card rounded-xl p-8 text-center text-gray-400 text-sm">
+                    ✦ 目前尚無星跡紀錄，在上方寫下你的第一篇許願吧 ✦
+                </div>
+            `;
             return;
         }
 
-        listContainer.innerHTML = diaryLogs.map(log => `
-            <div class="history-item">
-                <div class="history-date">📅 ${log.date}</div>
-                <div class="history-content">${escapeHtml(log.content)}</div>
-                <div class="history-quote">${log.quote}</div>
+        listEl.innerHTML = historyEntries.map(item => `
+            <div class="glass-card rounded-xl p-5 border border-white/10 hover:border-purple-400/30 transition duration-300">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-purple-300 font-medium">${item.date}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/20">${item.moodTag || item.mood}</span>
+                </div>
+                <p class="text-sm text-gray-100 whitespace-pre-wrap mb-3 font-light">${escapeHtml(item.userContent)}</p>
+                
+                ${item.aiQuote ? `
+                    <div class="bg-black/20 rounded-lg p-3 border-l-2 border-amber-300/70 text-xs text-amber-100 italic">
+                        「${item.aiQuote}」
+                    </div>
+                ` : ''}
             </div>
         `).join('');
     }
 
-    function escapeHtml(text) {
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+    function clearHistory() {
+        if (historyEntries.length === 0) return;
+        if (confirm("確定要抹去所有過往星跡紀錄嗎？此操作不可撤銷。")) {
+            historyEntries = [];
+            localStorage.removeItem('starDiaryLogs');
+            renderHistory();
+            showToast("歷史軌跡已清空");
+        }
     }
-</script>
 
+    function exportHistory() {
+        if (historyEntries.length === 0) {
+            showToast("尚無可導出的星跡");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(historyEntries, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `star_diary_backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showToast("星跡備份已下載");
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // ==================== 4-7-8 呼吸 Modal 邏輯 ====================
+    let breathTimerInterval = null;
+
+    function openBreathingModal() {
+        document.getElementById('breathModal').classList.remove('hidden');
+        startBreathingCycle();
+    }
+
+    function closeBreathingModal() {
+        document.getElementById('breathModal').classList.add('hidden');
+        if (breathTimerInterval) clearInterval(breathTimerInterval);
+    }
+
+    function startBreathingCycle() {
+        let second = 0;
+        const phaseEl = document.getElementById('breathPhase');
+        const timerEl = document.getElementById('breathTimer');
+
+        if (breathTimerInterval) clearInterval(breathTimerInterval);
+
+        // 循環長度: 吸氣4s + 留息7s + 呼氣8s = 19s
+        breathTimerInterval = setInterval(() => {
+            second = (second % 19) + 1;
+
+            if (second <= 4) {
+                phaseEl.innerText = "吸氣";
+                timerEl.innerText = 5 - second;
+            } else if (second <= 11) {
+                phaseEl.innerText = "留息";
+                timerEl.innerText = 12 - second;
+            } else {
+                phaseEl.innerText = "呼氣";
+                timerEl.innerText = 20 - second;
+            }
+        }, 1000);
+    }
+
+    // Toast 提示框
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        toastMsg.innerText = msg;
+        toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+        }, 3000);
+    }
+
+    // 頁面初始化
+    window.onload = function() {
+        lucide.createIcons();
+        renderHistory();
+    };
+</script>
 </body>
 </html>
