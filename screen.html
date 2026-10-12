@@ -1,13 +1,15 @@
-
+<!DOCTYPE html>
 <html lang="zh-TW" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPad 多螢幕同步拼貼播放牆 (雲端版)</title>
+    <title>iPad 多螢幕同步拼貼播放牆 (免設定雲端版)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js for reactive UI -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- MQTT.js for robust WebSocket sync -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
             overscroll-behavior: none;
@@ -30,45 +32,23 @@
                 <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-600/20 text-indigo-400 mb-1">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path></svg>
                 </div>
-                <h1 class="text-2xl font-bold tracking-tight">iPad 拼接影音牆 (雲端同步)</h1>
-                <p class="text-xs text-neutral-400">採用 Firebase 雲端防火牆穿透技術，支援 20 台 iPad 無縫同步</p>
+                <h1 class="text-2xl font-bold tracking-tight">iPad 拼接影音牆 (即時同步)</h1>
+                <p class="text-xs text-neutral-400">免帳號、免複雜設定，自動穿透防火牆同步多達 20 台 iPad</p>
             </div>
 
-            <!-- 狀態提示 -->
-            <template x-if="errorMessage">
-                <div class="bg-amber-950/50 border border-amber-600/50 p-3 rounded-xl text-amber-200 text-xs space-y-1">
-                    <div class="font-bold flex items-center space-x-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                        <span>系統提示</span>
-                    </div>
-                    <div x-text="errorMessage"></div>
+            <!-- 連線狀態與提示 -->
+            <div :class="connectionStatusType === 'success' ? 'bg-emerald-950/50 border-emerald-600/50 text-emerald-200' : (connectionStatusType === 'warning' ? 'bg-amber-950/50 border-amber-600/50 text-amber-200' : 'bg-neutral-950/60 border-neutral-800 text-neutral-300')" class="border p-3 rounded-xl text-xs space-y-1 transition">
+                <div class="font-bold flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full" :class="connectionStatusType === 'success' ? 'bg-emerald-400 animate-pulse' : (connectionStatusType === 'warning' ? 'bg-amber-400' : 'bg-neutral-400')"></span>
+                    <span x-text="connectionStatusText"></span>
                 </div>
-            </template>
+            </div>
 
             <div class="space-y-3 text-sm">
                 <!-- 房間 ID -->
                 <div>
                     <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">同步房間代碼 (所有 iPad 必須相同)</label>
                     <input type="text" x-model="config.roomId" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：room-20">
-                </div>
-
-                <!-- Firebase 雲端設定 -->
-                <div class="bg-neutral-950/60 p-4 rounded-xl border border-neutral-800 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Firebase 雲端資料庫設定</span>
-                        <a href="https://console.firebase.google.com/" target="_blank" class="text-xs text-indigo-400 underline hover:text-indigo-300">取得免費專案 ↗</a>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] text-neutral-400 mb-1">Project ID</label>
-                            <input type="text" x-model="config.fbProjectId" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white" placeholder="my-project-id">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-neutral-400 mb-1">API Key</label>
-                            <input type="text" x-model="config.fbApiKey" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white" placeholder="AIzaSy...">
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-neutral-400 leading-relaxed">提示：若未填寫將使用內建公開同步通道（適合少量測試，正式多機部署建議填入自己的免費 Firebase 專案以防頻寬限制）。</p>
                 </div>
 
                 <!-- 網格設定 -->
@@ -105,7 +85,7 @@
 
                 <!-- 影片網址 -->
                 <div>
-                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">影片直鏈網址 (URL)</label>
+                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">影片網址 (URL)</label>
                     <input type="text" x-model="config.videoUrl" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://example.com/video.mp4">
                 </div>
 
@@ -113,6 +93,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">或上傳本機影片檔案</label>
                     <input type="file" accept="video/*" @change="handleFileSelect($event)" class="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer bg-neutral-800 border border-neutral-700 rounded-xl p-2">
+                    <p class="text-[11px] text-neutral-400 mt-1">提示：跨多台 iPad 建議使用公開影片網址，若使用本機上傳請確保每台 iPad 各自選擇相同影片檔案。</p>
                 </div>
             </div>
 
@@ -190,21 +171,13 @@
             </button>
 
             <div class="text-xs pl-2 border-l border-neutral-700 flex items-center space-x-1">
-                <span :class="cloudConnected ? 'text-emerald-400' : 'text-amber-400'" x-text="cloudConnected ? '● 雲端連線' : '○ 連線中'"></span>
+                <span :class="isOnline ? 'text-emerald-400' : 'text-amber-400'" x-text="isOnline ? '● 雲端連線' : '○ 本機模式'"></span>
             </div>
         </div>
 
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        window.FBModule = { initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, onSnapshot };
-    </script>
-
+    <!-- 邏輯腳本 -->
     <script>
         function videoWallApp() {
             return {
@@ -214,19 +187,16 @@
                 testPattern: false,
                 isPlaying: false,
                 isMuted: true,
-                cloudConnected: false,
-                errorMessage: '',
+                isOnline: false,
+                connectionStatusText: '準備連線至多裝置同步通道...',
+                connectionStatusType: 'neutral',
                 
-                db: null,
-                auth: null,
-                unsubscribe: null,
+                mqttClient: null,
                 broadcastChannel: null,
                 isRemoteTrigger: false,
 
                 config: {
                     roomId: 'ipad-wall-room-1',
-                    fbProjectId: '',
-                    fbApiKey: '',
                     totalRows: 4,
                     totalCols: 5,
                     myRow: 0,
@@ -235,7 +205,7 @@
                 },
 
                 init() {
-                    const saved = localStorage.getItem('ipad_wall_cloud_config');
+                    const saved = localStorage.getItem('ipad_wall_multibroker_config');
                     if (saved) {
                         try {
                             const parsed = JSON.parse(saved);
@@ -256,12 +226,11 @@
                 },
 
                 async startWall() {
-                    localStorage.setItem('ipad_wall_cloud_config', JSON.stringify(this.config));
+                    localStorage.setItem('ipad_wall_multibroker_config', JSON.stringify(this.config));
                     this.showSettings = false;
                     this.connected = true;
-                    this.errorMessage = '';
 
-                    // 初始化同機分頁廣播
+                    // 1. 初始化同機分頁廣播 (同機測試用)
                     try {
                         if (window.BroadcastChannel) {
                             if (this.broadcastChannel) this.broadcastChannel.close();
@@ -270,8 +239,8 @@
                         }
                     } catch(e) {}
 
-                    // 初始化 Firebase 雲端資料庫
-                    await this.initCloudSync();
+                    // 2. 初始化跨裝置 WebSocket MQTT 連線
+                    this.initMQTTWithFallback();
 
                     const video = this.$refs.videoElement;
                     if (video) {
@@ -282,66 +251,87 @@
                     }
                 },
 
-                async initCloudSync() {
-                    try {
-                        if (!window.FBModule) {
-                            setTimeout(() => this.initCloudSync(), 500);
+                initMQTTWithFallback() {
+                    const brokers = [
+                        { name: 'EMQX', url: 'wss://broker.emqx.io:8084/mqtt' },
+                        { name: 'HiveMQ', url: 'wss://broker.hivemq.com:8884/mqtt' },
+                        { name: 'Mosquitto', url: 'wss://test.mosquitto.org:8081/mqtt' }
+                    ];
+
+                    let brokerIdx = 0;
+
+                    const tryConnect = () => {
+                        if (brokerIdx >= brokers.length) {
+                            this.isOnline = false;
+                            this.connectionStatusType = 'warning';
+                            this.connectionStatusText = '公共網路連線受阻，已自動啟用本機與同網域同步模式。';
                             return;
                         }
 
-                        const { initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot } = window.FBModule;
+                        const currentBroker = brokers[brokerIdx];
+                        this.connectionStatusType = 'neutral';
+                        this.connectionStatusText = `正在連線至同步通道 (${currentBroker.name})...`;
 
-                        // 若使用者未填寫自訂 Firebase，使用預設公開示範專案
-                        const firebaseConfig = {
-                            apiKey: this.config.fbApiKey || "AIzaSyD-demo-key-videowall-2026",
-                            projectId: this.config.fbProjectId || "videowall-demo-sync",
-                            authDomain: "videowall-demo-sync.firebaseapp.com"
-                        };
+                        try {
+                            const clientId = 'ipad_wall_' + Math.random().toString(16).substring(2, 10);
+                            const client = mqtt.connect(currentBroker.url, {
+                                clientId: clientId,
+                                keepalive: 30,
+                                reconnectPeriod: 2000,
+                                timeout: 5000
+                            });
 
-                        const app = initializeApp(firebaseConfig, 'wallApp_' + Math.random());
-                        this.auth = getAuth(app);
-                        this.db = getFirestore(app);
+                            this.mqttClient = client;
 
-                        await signInAnonymously(this.auth);
-                        this.cloudConnected = true;
+                            client.on('connect', () => {
+                                this.isOnline = true;
+                                this.connectionStatusType = 'success';
+                                this.connectionStatusText = `已成功連線至同步伺服器 (${currentBroker.name})！所有 iPad 可完美同步。`;
+                                const topic = `videowall/room/${this.config.roomId}/sync`;
+                                client.subscribe(topic);
+                            });
 
-                        // 監聽雲端房間指令
-                        const docRef = doc(this.db, 'artifacts', 'videowall_global', 'public', 'data', this.config.roomId);
-                        
-                        if (this.unsubscribe) this.unsubscribe();
-                        
-                        this.unsubscribe = onSnapshot(docRef, (docSnap) => {
-                            if (docSnap.exists()) {
-                                const data = docSnap.data();
-                                if (!this.isRemoteTrigger) {
-                                    this.handleRemoteCommand(data);
-                                }
-                            }
-                        }, (err) => {
-                            this.cloudConnected = false;
-                            this.errorMessage = `雲端連線提示: ${err.message}`;
-                        });
+                            client.on('message', (topic, payload) => {
+                                try {
+                                    const data = JSON.parse(payload.toString());
+                                    if (!this.isRemoteTrigger) {
+                                        this.handleRemoteCommand(data);
+                                    }
+                                } catch(e){}
+                            });
 
-                    } catch (err) {
-                        this.cloudConnected = false;
-                        this.errorMessage = `雲端初始化失敗 (${err.message})。請確認 Firebase 設定是否正確。`;
-                    }
+                            client.on('error', (err) => {
+                                client.end();
+                                brokerIdx++;
+                                tryConnect();
+                            });
+
+                            client.on('offline', () => {
+                                this.isOnline = false;
+                            });
+
+                        } catch(e) {
+                            brokerIdx++;
+                            tryConnect();
+                        }
+                    };
+
+                    tryConnect();
                 },
 
-                async sendCommand(action, currentTime) {
+                sendCommand(action, currentTime) {
                     const data = { action, currentTime, timestamp: Date.now() };
 
-                    // 1. 廣播至同機分頁
+                    // 1. 同機分頁廣播
                     if (this.broadcastChannel) {
                         try { this.broadcastChannel.postMessage(data); } catch(e) {}
                     }
 
-                    // 2. 廣播至雲端 Firebase
-                    if (this.db && this.cloudConnected) {
+                    // 2. 跨裝置 MQTT 廣播
+                    if (this.mqttClient && this.isOnline) {
                         try {
-                            const { doc, setDoc } = window.FBModule;
-                            const docRef = doc(this.db, 'artifacts', 'videowall_global', 'public', 'data', this.config.roomId);
-                            await setDoc(docRef, data);
+                            const topic = `videowall/room/${this.config.roomId}/sync`;
+                            this.mqttClient.publish(topic, JSON.stringify(data));
                         } catch(e) {}
                     }
                 },
