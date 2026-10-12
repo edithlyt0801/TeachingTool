@@ -100,9 +100,15 @@
 
                 <!-- 影片網址 -->
                 <div>
-                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">影片直鏈網址 (MP4 / WebM)</label>
+                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">影片直鏈網址 (URL)</label>
                     <input type="text" x-model="config.videoUrl" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://example.com/video.mp4">
-                    <p class="text-xs text-neutral-500 mt-1">建議使用高畫質 (4K/1080p)、已針對大螢幕比例剪輯的影片。</p>
+                </div>
+
+                <!-- 新增：上傳本機影片檔案 -->
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">或上傳本機影片檔案 (Local Video File)</label>
+                    <input type="file" accept="video/*" @change="handleFileSelect($event)" class="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer bg-neutral-800 border border-neutral-700 rounded-xl p-2">
+                    <p class="text-xs text-amber-400/80 mt-1.5">⚠️ <b>多機注意</b>：本機上傳的影片檔會轉換為暫存網址。若使用多部不同 iPad 同步，建議每台 iPad 各自點擊上傳相同影片檔案，或使用公開影片網址 (URL)。</p>
                 </div>
             </div>
 
@@ -211,10 +217,26 @@
                     // Load saved config if available
                     const saved = localStorage.getItem('ipad_wall_config');
                     if (saved) {
-                        try { this.config = JSON.parse(saved); } catch(e){}
+                        try { 
+                            const parsed = JSON.parse(saved);
+                            // Keep default videoUrl if saved was a blob url (as blobs expire across reloads)
+                            if (parsed.videoUrl && !parsed.videoUrl.startsWith('blob:')) {
+                                this.config = parsed;
+                            } else if (parsed) {
+                                this.config = { ...parsed, videoUrl: this.config.videoUrl };
+                            }
+                        } catch(e){}
                     }
                     if (!this.config.brokerUrl) {
                         this.config.brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
+                    }
+                },
+
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const blobUrl = URL.createObjectURL(file);
+                        this.config.videoUrl = blobUrl;
                     }
                 },
 
