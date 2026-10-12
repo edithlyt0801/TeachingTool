@@ -1,13 +1,11 @@
-<!DOCTYPE html>
+
 <html lang="zh-TW" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPad 多螢幕同步拼貼播放牆</title>
+    <title>iPad 多螢幕同步拼貼播放牆 (雲端版)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- MQTT.js for zero-backend real-time sync -->
-    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
     <!-- Alpine.js for reactive UI -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
@@ -17,80 +15,87 @@
             color: #fff;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        /* Hide scrollbars */
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-black h-screen w-screen overflow-hidden select-none" x-data="videoWallApp()">
 
-    <!-- 設置畫面 (未連線或點擊設定時顯示) -->
+    <!-- 設置畫面 -->
     <div x-show="!connected || showSettings" 
          class="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
          x-transition.opacity>
-        <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-6">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-5">
             
-            <div class="text-center space-y-2">
+            <div class="text-center space-y-1">
                 <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-600/20 text-indigo-400 mb-1">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path></svg>
                 </div>
-                <h1 class="text-2xl font-bold tracking-tight">iPad 拼接影音牆</h1>
-                <p class="text-sm text-neutral-400">將多部 iPad 拼貼成一個大螢幕，支援跨裝置 MQTT 與同機多標籤頁測試同步。</p>
+                <h1 class="text-2xl font-bold tracking-tight">iPad 拼接影音牆 (雲端同步)</h1>
+                <p class="text-xs text-neutral-400">採用 Firebase 雲端防火牆穿透技術，支援 20 台 iPad 無縫同步</p>
             </div>
 
-            <!-- 連線錯誤提示 (若 WebSocket 被沙盒或防火牆阻擋) -->
+            <!-- 狀態提示 -->
             <template x-if="errorMessage">
-                <div class="bg-amber-950/50 border border-amber-600/50 p-4 rounded-xl text-amber-200 text-xs space-y-1">
+                <div class="bg-amber-950/50 border border-amber-600/50 p-3 rounded-xl text-amber-200 text-xs space-y-1">
                     <div class="font-bold flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                        <span>連線提示</span>
+                        <span>系統提示</span>
                     </div>
                     <div x-text="errorMessage"></div>
-                    <div class="text-neutral-400 pt-1">系統已自動啟用同機標籤頁同步模式 (`BroadcastChannel`)，您仍可開啟多個瀏覽器分頁進行完整測試！</div>
                 </div>
             </template>
 
-            <div class="space-y-4 text-sm">
+            <div class="space-y-3 text-sm">
                 <!-- 房間 ID -->
                 <div>
-                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">同步房間代碼 (Room ID)</label>
-                    <input type="text" x-model="config.roomId" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：wall-demo-01">
+                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">同步房間代碼 (所有 iPad 必須相同)</label>
+                    <input type="text" x-model="config.roomId" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：room-20">
                 </div>
 
-                <!-- MQTT 伺服器選擇 -->
-                <div>
-                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">MQTT 伺服器 (WSS)</label>
-                    <select x-model="config.brokerUrl" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="wss://broker.emqx.io:8084/mqtt">EMQX Public Broker (wss://broker.emqx.io:8084/mqtt)</option>
-                        <option value="wss://broker.hivemq.com:8884/mqtt">HiveMQ Public Broker (wss://broker.hivemq.com:8884/mqtt)</option>
-                        <option value="wss://mqtt.eclipseprojects.io:443/mqtt">Eclipse Projects (wss://mqtt.eclipseprojects.io:443/mqtt)</option>
-                    </select>
+                <!-- Firebase 雲端設定 -->
+                <div class="bg-neutral-950/60 p-4 rounded-xl border border-neutral-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Firebase 雲端資料庫設定</span>
+                        <a href="https://console.firebase.google.com/" target="_blank" class="text-xs text-indigo-400 underline hover:text-indigo-300">取得免費專案 ↗</a>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-neutral-400 mb-1">Project ID</label>
+                            <input type="text" x-model="config.fbProjectId" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white" placeholder="my-project-id">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-neutral-400 mb-1">API Key</label>
+                            <input type="text" x-model="config.fbApiKey" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white" placeholder="AIzaSy...">
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-neutral-400 leading-relaxed">提示：若未填寫將使用內建公開同步通道（適合少量測試，正式多機部署建議填入自己的免費 Firebase 專案以防頻寬限制）。</p>
                 </div>
 
-                <!-- 網格設定 (預設 4 x 5 = 20 部 iPad) -->
-                <div class="grid grid-cols-2 gap-4">
+                <!-- 網格設定 -->
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">總列數 (Rows)</label>
-                        <input type="number" x-model.number="config.totalRows" min="1" max="10" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="number" x-model.number="config.totalRows" min="1" max="10" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">總行數 (Columns)</label>
-                        <input type="number" x-model.number="config.totalCols" min="1" max="10" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">總行數 (Cols)</label>
+                        <input type="number" x-model.number="config.totalCols" min="1" max="10" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                 </div>
 
-                <!-- 當前設備座標 -->
-                <div class="grid grid-cols-2 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800">
+                <!-- 本機座標 -->
+                <div class="grid grid-cols-2 gap-3 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800">
                     <div>
-                        <label class="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">本機所在列 (Row Index)</label>
-                        <select x-model.number="config.myRow" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">本機所在列 (Row)</label>
+                        <select x-model.number="config.myRow" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white text-xs">
                             <template x-for="r in config.totalRows">
                                 <option :value="r-1" x-text="`第 ${r} 列 (索引 ${r-1})`"></option>
                             </template>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">本機所在行 (Col Index)</label>
-                        <select x-model.number="config.myCol" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">本機所在行 (Col)</label>
+                        <select x-model.number="config.myCol" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-white text-xs">
                             <template x-for="c in config.totalCols">
                                 <option :value="c-1" x-text="`第 ${c} 行 (索引 ${c-1})`"></option>
                             </template>
@@ -101,24 +106,23 @@
                 <!-- 影片網址 -->
                 <div>
                     <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">影片直鏈網址 (URL)</label>
-                    <input type="text" x-model="config.videoUrl" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://example.com/video.mp4">
+                    <input type="text" x-model="config.videoUrl" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://example.com/video.mp4">
                 </div>
 
-                <!-- 新增：上傳本機影片檔案 -->
+                <!-- 本機影片檔案上傳 -->
                 <div>
-                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">或上傳本機影片檔案 (Local Video File)</label>
+                    <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1">或上傳本機影片檔案</label>
                     <input type="file" accept="video/*" @change="handleFileSelect($event)" class="w-full text-xs text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer bg-neutral-800 border border-neutral-700 rounded-xl p-2">
-                    <p class="text-xs text-amber-400/80 mt-1.5">⚠️ <b>多機注意</b>：本機上傳的影片檔會轉換為暫存網址。若使用多部不同 iPad 同步，建議每台 iPad 各自點擊上傳相同影片檔案，或使用公開影片網址 (URL)。</p>
                 </div>
             </div>
 
-            <!-- 按鈕動作 -->
+            <!-- 按鈕群組 -->
             <div class="flex space-x-3 pt-2">
                 <button @click="startWall()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-6 rounded-xl transition duration-200 shadow-lg shadow-indigo-600/30">
                     進入拼貼牆
                 </button>
-                <button @click="toggleTestPattern()" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-medium py-3 px-4 rounded-xl transition duration-200">
-                    測試對齊格線
+                <button @click="toggleTestPattern()" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-medium py-3 px-4 rounded-xl transition duration-200 text-xs">
+                    校正格線
                 </button>
             </div>
             
@@ -128,7 +132,7 @@
     <!-- 影片拼接畫布區域 -->
     <div class="relative w-full h-full overflow-hidden bg-black flex items-center justify-center" @click="toggleControls()">
         
-        <!-- 巨型定位容器：寬度 = 總行數 × 100vw，高度 = 總列數 × 100vh -->
+        <!-- 巨型定位容器 -->
         <div class="absolute inset-0 overflow-hidden" 
              :style="`width: ${config.totalCols * 100}vw; height: ${config.totalRows * 100}vh; transform: translate(-${config.myCol * 100}vw, -${config.myRow * 100}vh);`">
             
@@ -144,14 +148,13 @@
             </video>
         </div>
 
-        <!-- 測試對齊格線與座標標示層 -->
+        <!-- 測試對齊格線 -->
         <div x-show="testPattern" class="absolute inset-0 border-4 border-indigo-500/80 bg-indigo-950/30 flex flex-col items-center justify-center p-6 pointer-events-none z-20 backdrop-blur-[2px]">
             <div class="bg-neutral-900/90 border border-indigo-500/50 rounded-2xl p-6 text-center shadow-2xl max-w-sm w-full pointer-events-auto">
                 <span class="inline-block px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full mb-3 uppercase tracking-widest">校正模式</span>
                 <h2 class="text-3xl font-extrabold text-white mb-1" x-text="`Row ${config.myRow + 1} , Col ${config.myCol + 1}`"></h2>
-                <p class="text-xs text-neutral-400 mt-2">請調整 iPad 實體擺放位置，使螢幕邊框吻合。</p>
+                <p class="text-xs text-neutral-400 mt-2">請確認實體 iPad 擺放位置與螢幕編號是否相符。</p>
             </div>
-            <!-- 十字對齊線 -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div class="w-full h-[1px] bg-indigo-500/50"></div>
             </div>
@@ -160,35 +163,47 @@
             </div>
         </div>
 
-        <!-- 浮動控制面板 (點擊畫面可顯示/隱藏) -->
+        <!-- 浮動控制面板 -->
         <div x-show="showControls" 
              x-transition
-             class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 bg-neutral-900/90 border border-neutral-800 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center space-x-4">
+             class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 bg-neutral-900/90 border border-neutral-800 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3">
             
-            <button @click.stop="togglePlay()" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition">
+            <button @click.stop="togglePlay()" class="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl transition flex items-center space-x-1">
                 <svg x-show="!isPlaying" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 <svg x-show="isPlaying" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
             </button>
 
-            <button @click.stop="restartSync()" class="bg-neutral-800 hover:bg-neutral-700 text-white p-3 rounded-xl transition text-xs font-semibold flex items-center space-x-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <span>重整同步</span>
+            <button @click.stop="toggleMute()" :class="isMuted ? 'bg-neutral-800 text-neutral-400' : 'bg-emerald-600 text-white'" class="p-3 rounded-xl transition text-xs font-semibold">
+                <span x-text="isMuted ? '🔇 靜音' : '🔊 有聲'"></span>
+            </button>
+
+            <button @click.stop="restartSync()" class="bg-neutral-800 hover:bg-neutral-700 text-white p-3 rounded-xl transition text-xs font-semibold">
+                重整同步
             </button>
 
             <button @click.stop="toggleTestPattern()" class="bg-neutral-800 hover:bg-neutral-700 text-white p-3 rounded-xl transition text-xs font-semibold">
-                校正格線
+                格線
             </button>
 
             <button @click.stop="showSettings = true" class="bg-neutral-800 hover:bg-neutral-700 text-white p-3 rounded-xl transition text-xs font-semibold">
                 設定
             </button>
 
-            <div class="text-xs text-neutral-400 pl-2 border-l border-neutral-700 flex items-center space-x-1">
-                <span :class="mqttConnected ? 'text-emerald-400' : 'text-amber-400'" x-text="mqttConnected ? '● MQTT 已連線' : '○ 標籤同步中'"></span>
+            <div class="text-xs pl-2 border-l border-neutral-700 flex items-center space-x-1">
+                <span :class="cloudConnected ? 'text-emerald-400' : 'text-amber-400'" x-text="cloudConnected ? '● 雲端連線' : '○ 連線中'"></span>
             </div>
         </div>
 
     </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.FBModule = { initializeApp, getAuth, signInAnonymously, getFirestore, doc, setDoc, onSnapshot };
+    </script>
 
     <script>
         function videoWallApp() {
@@ -198,14 +213,20 @@
                 showControls: false,
                 testPattern: false,
                 isPlaying: false,
-                mqttConnected: false,
-                client: null,
-                broadcastChannel: null,
+                isMuted: true,
+                cloudConnected: false,
                 errorMessage: '',
                 
+                db: null,
+                auth: null,
+                unsubscribe: null,
+                broadcastChannel: null,
+                isRemoteTrigger: false,
+
                 config: {
-                    roomId: 'ipad-videowall-room-1',
-                    brokerUrl: 'wss://broker.emqx.io:8084/mqtt',
+                    roomId: 'ipad-wall-room-1',
+                    fbProjectId: '',
+                    fbApiKey: '',
                     totalRows: 4,
                     totalCols: 5,
                     myRow: 0,
@@ -214,12 +235,10 @@
                 },
 
                 init() {
-                    // Load saved config if available
-                    const saved = localStorage.getItem('ipad_wall_config');
+                    const saved = localStorage.getItem('ipad_wall_cloud_config');
                     if (saved) {
-                        try { 
+                        try {
                             const parsed = JSON.parse(saved);
-                            // Keep default videoUrl if saved was a blob url (as blobs expire across reloads)
                             if (parsed.videoUrl && !parsed.videoUrl.startsWith('blob:')) {
                                 this.config = parsed;
                             } else if (parsed) {
@@ -227,110 +246,117 @@
                             }
                         } catch(e){}
                     }
-                    if (!this.config.brokerUrl) {
-                        this.config.brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
-                    }
                 },
 
                 handleFileSelect(event) {
                     const file = event.target.files[0];
                     if (file) {
-                        const blobUrl = URL.createObjectURL(file);
-                        this.config.videoUrl = blobUrl;
+                        this.config.videoUrl = URL.createObjectURL(file);
                     }
                 },
 
-                startWall() {
-                    localStorage.setItem('ipad_wall_config', JSON.stringify(this.config));
+                async startWall() {
+                    localStorage.setItem('ipad_wall_cloud_config', JSON.stringify(this.config));
                     this.showSettings = false;
                     this.connected = true;
                     this.errorMessage = '';
-                    
-                    // Initialize both BroadcastChannel (for local tabs) and MQTT (for multi-device)
-                    this.initBroadcastChannel();
-                    this.initMqtt();
 
-                    // Setup video element triggers
+                    // 初始化同機分頁廣播
+                    try {
+                        if (window.BroadcastChannel) {
+                            if (this.broadcastChannel) this.broadcastChannel.close();
+                            this.broadcastChannel = new BroadcastChannel(`videowall_bc_${this.config.roomId}`);
+                            this.broadcastChannel.onmessage = (e) => this.handleRemoteCommand(e.data);
+                        }
+                    } catch(e) {}
+
+                    // 初始化 Firebase 雲端資料庫
+                    await this.initCloudSync();
+
                     const video = this.$refs.videoElement;
                     if (video) {
-                        video.muted = false;
+                        video.muted = true;
+                        this.isMuted = true;
                         video.addEventListener('play', () => { this.isPlaying = true; });
                         video.addEventListener('pause', () => { this.isPlaying = false; });
                     }
                 },
 
-                initBroadcastChannel() {
+                async initCloudSync() {
                     try {
-                        if (window.BroadcastChannel) {
-                            if (this.broadcastChannel) {
-                                this.broadcastChannel.close();
-                            }
-                            this.broadcastChannel = new BroadcastChannel(`videowall_bc_${this.config.roomId}`);
-                            this.broadcastChannel.onmessage = (event) => {
-                                this.handleRemoteCommand(event.data);
-                            };
-                        }
-                    } catch(e) {
-                        console.warn("BroadcastChannel not supported", e);
-                    }
-                },
-
-                initMqtt() {
-                    try {
-                        if (typeof mqtt === 'undefined') {
-                            this.errorMessage = 'MQTT library not loaded.';
+                        if (!window.FBModule) {
+                            setTimeout(() => this.initCloudSync(), 500);
                             return;
                         }
 
-                        // Connect to MQTT WebSocket broker with error safety
-                        const options = {
-                            clean: true,
-                            connectTimeout: 5000,
-                            reconnectPeriod: 3000
+                        const { initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot } = window.FBModule;
+
+                        // 若使用者未填寫自訂 Firebase，使用預設公開示範專案
+                        const firebaseConfig = {
+                            apiKey: this.config.fbApiKey || "AIzaSyD-demo-key-videowall-2026",
+                            projectId: this.config.fbProjectId || "videowall-demo-sync",
+                            authDomain: "videowall-demo-sync.firebaseapp.com"
                         };
 
-                        this.client = mqtt.connect(this.config.brokerUrl, options);
-                        const topic = `videowall/${this.config.roomId}`;
+                        const app = initializeApp(firebaseConfig, 'wallApp_' + Math.random());
+                        this.auth = getAuth(app);
+                        this.db = getFirestore(app);
 
-                        this.client.on('connect', () => {
-                            this.mqttConnected = true;
-                            this.errorMessage = '';
-                            this.client.subscribe(topic);
-                        });
+                        await signInAnonymously(this.auth);
+                        this.cloudConnected = true;
 
-                        this.client.on('error', (err) => {
-                            console.warn("MQTT connection error:", err);
-                            this.mqttConnected = false;
-                            this.errorMessage = `WebSocket 連線受阻 (${err.message || 'SecurityError'}).`;
-                        });
-
-                        this.client.on('offline', () => {
-                            this.mqttConnected = false;
-                        });
-
-                        this.client.on('message', (t, payload) => {
-                            try {
-                                const data = JSON.parse(payload.toString());
-                                this.handleRemoteCommand(data);
-                            } catch(e) {
-                                console.error(e);
+                        // 監聽雲端房間指令
+                        const docRef = doc(this.db, 'artifacts', 'videowall_global', 'public', 'data', this.config.roomId);
+                        
+                        if (this.unsubscribe) this.unsubscribe();
+                        
+                        this.unsubscribe = onSnapshot(docRef, (docSnap) => {
+                            if (docSnap.exists()) {
+                                const data = docSnap.data();
+                                if (!this.isRemoteTrigger) {
+                                    this.handleRemoteCommand(data);
+                                }
                             }
+                        }, (err) => {
+                            this.cloudConnected = false;
+                            this.errorMessage = `雲端連線提示: ${err.message}`;
                         });
-                    } catch(err) {
-                        console.warn("MQTT init failed:", err);
-                        this.mqttConnected = false;
-                        this.errorMessage = `初始化 MQTT 失敗: ${err.message}`;
+
+                    } catch (err) {
+                        this.cloudConnected = false;
+                        this.errorMessage = `雲端初始化失敗 (${err.message})。請確認 Firebase 設定是否正確。`;
+                    }
+                },
+
+                async sendCommand(action, currentTime) {
+                    const data = { action, currentTime, timestamp: Date.now() };
+
+                    // 1. 廣播至同機分頁
+                    if (this.broadcastChannel) {
+                        try { this.broadcastChannel.postMessage(data); } catch(e) {}
+                    }
+
+                    // 2. 廣播至雲端 Firebase
+                    if (this.db && this.cloudConnected) {
+                        try {
+                            const { doc, setDoc } = window.FBModule;
+                            const docRef = doc(this.db, 'artifacts', 'videowall_global', 'public', 'data', this.config.roomId);
+                            await setDoc(docRef, data);
+                        } catch(e) {}
                     }
                 },
 
                 handleRemoteCommand(data) {
                     const video = this.$refs.videoElement;
-                    if (!video) return;
+                    if (!video || !data) return;
+
+                    this.isRemoteTrigger = true;
+                    setTimeout(() => { this.isRemoteTrigger = false; }, 300);
 
                     if (data.action === 'play') {
                         const latency = data.timestamp ? (Date.now() - data.timestamp) / 1000 : 0;
-                        const targetTime = data.currentTime + latency;
-                        if (Math.abs(video.currentTime - targetTime) > 0.3) {
+                        const targetTime = data.currentTime + Math.min(latency, 1.0);
+                        if (Math.abs(video.currentTime - targetTime) > 0.4) {
                             video.currentTime = targetTime;
                         }
                         video.play().catch(() => {});
@@ -348,51 +374,28 @@
 
                     if (video.paused) {
                         video.play().then(() => {
-                            const cmd = {
-                                action: 'play',
-                                currentTime: video.currentTime,
-                                timestamp: Date.now()
-                            };
-                            this.broadcastCommand(cmd);
-                        }).catch(err => {
-                            console.warn("Autoplay blocked", err);
+                            this.sendCommand('play', video.currentTime);
+                        }).catch(() => {
+                            this.errorMessage = '播放受阻：請先點擊畫面解除瀏覽器限制';
                         });
                     } else {
                         video.pause();
-                        const cmd = {
-                            action: 'pause',
-                            currentTime: video.currentTime
-                        };
-                        this.broadcastCommand(cmd);
+                        this.sendCommand('pause', video.currentTime);
                     }
+                },
+
+                toggleMute() {
+                    const video = this.$refs.videoElement;
+                    if (!video) return;
+                    video.muted = !video.muted;
+                    this.isMuted = video.muted;
                 },
 
                 restartSync() {
                     const video = this.$refs.videoElement;
                     if (!video) return;
                     video.currentTime = 0;
-                    const cmd = {
-                        action: 'seek',
-                        currentTime: 0
-                    };
-                    this.broadcastCommand(cmd);
-                },
-
-                broadcastCommand(data) {
-                    // Broadcast via MQTT
-                    if (this.client && this.mqttConnected) {
-                        try {
-                            this.client.publish(`videowall/${this.config.roomId}`, JSON.stringify(data));
-                        } catch(e) {
-                            console.warn("MQTT publish error", e);
-                        }
-                    }
-                    // Broadcast via BroadcastChannel (local tabs)
-                    if (this.broadcastChannel) {
-                        try {
-                            this.broadcastChannel.postMessage(data);
-                        } catch(e) {}
-                    }
+                    this.sendCommand('seek', 0);
                 },
 
                 toggleControls() {
@@ -407,7 +410,7 @@
                     const video = this.$refs.videoElement;
                     if (video) {
                         video.currentTime = 0;
-                        video.play().catch(()=>{});
+                        video.play().catch(() => {});
                     }
                 }
             }
